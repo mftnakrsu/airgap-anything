@@ -309,6 +309,42 @@ class WarningRulesTest(LintTestCase):
         self.assertEqual(self.codes(), ["W3"])
 
 
+class InsideAgentRulesTest(LintTestCase):
+    def agents(self, text):
+        (self.root / "AGENTS.md").write_text(text, encoding="utf-8")
+
+    def test_w4_when_an_agent_works_inside_and_the_rules_are_missing(self):
+        for operator in ("local_agent", "people_then_agent"):
+            with self.subTest(operator=operator):
+                self.project(support.base_answers(**{"inside.operator": operator}))
+                findings = self.lint()
+                self.assertEqual([f.code for f in findings], ["W4"])
+                self.assertEqual(findings[0].severity, "warning")
+                self.assertEqual(
+                    findings[0].message,
+                    f"inside.operator is {operator}: the agent instruction block lacks the "
+                    "section 'Rules for an agent inside the network'",
+                )
+                self.agents(projects.AGENTS_TEXT_WITH_RULES)
+                self.assertEqual(self.lint(), [])
+
+    def test_no_w4_for_people(self):
+        self.project(support.base_answers(**{"inside.operator": "people"}))
+        self.assertEqual(self.codes(), [])
+        self.project(support.base_answers(**{"inside.operator": "unknown"}))
+        self.assertEqual(self.codes(), ["W2"])
+
+    def test_the_marker_counts_only_inside_the_block(self):
+        self.project(support.base_answers(**{"inside.operator": "local_agent"}))
+        self.agents(projects.AGENTS_TEXT + "<!-- airgap-architect:inside-agent -->\n")
+        self.assertEqual(self.codes(), ["W4"])
+
+    def test_a_missing_block_is_reported_once_as_w3(self):
+        self.project(support.base_answers(**{"inside.operator": "local_agent"}))
+        self.agents("# Agents\n")
+        self.assertEqual(self.codes(), ["W3"])
+
+
 class VerificationTokenTest(LintTestCase):
     def estimate_decisions(self, layer):
         decisions = support.base_decisions()

@@ -61,6 +61,8 @@ SECTION_MARKERS = (
 ISOLATION_MARKER = "isolation-design"
 AGENT_BLOCK_START = "<!-- airgap-architect:start -->"
 AGENT_BLOCK_END = "<!-- airgap-architect:end -->"
+# Opens the section "Rules for an agent inside the network" within the block.
+AGENT_RULES_MARKER = "<!-- airgap-architect:inside-agent -->"
 
 UNKNOWN = "unknown"
 

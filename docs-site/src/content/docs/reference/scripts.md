@@ -12,7 +12,7 @@ All scripts require Python 3.11 or newer, import only standard-library modules, 
 |---|---|---|---|
 | `tier.py` | `answers` | `tier` | 0 ok, 2 missing or invalid answers (listed by ID), 3 environment |
 | `size.py` | `answers` | `sizing`, `assumptions` | 0 ok, 2 missing or invalid answers, 3 environment |
-| `manifest.py` | `decisions`, `workload.models` and `hardware.gpus` from `answers`, catalog | `transfer-manifest.md` | 0 ok, 2 unknown component or no `answers` object, 3 environment |
+| `manifest.py` | `decisions`, and `workload.models`, `hardware.gpus` and `hardware.cpu_arch` from `answers`, catalog | `transfer-manifest.md`, `transfer-manifest.json` | 0 ok, 2 unknown component or no `answers` object, 3 environment |
 | `lint.py` | Everything | Report as text or JSON | 0 clean, 1 errors found, 3 environment |
 
 Every script also exits 2 when `blueprint.json` cannot be read, holds a value the scripts cannot use, or, for a script that writes, cannot be written. Exit 3, environment, means that Python is older than 3.11 or that the catalog cannot be read or fails validation; the skill then stops and tells the user.

@@ -3,7 +3,7 @@
 - **Date:** 2026-11-20
 - **Status:** Approved by the maintainer on 2026-11-20
 - **Names:** repository and plugin `airgap-anything`; skill `airgap-architect` (see §18)
-- **Revised:** 2026-11-21, after research: T1 user threshold 25 → 50 and chat/RAG duty 0.15-0.30 → 0.25-0.50 (sources in rules.toml). 2026-11-21 and 2026-11-22, during implementation: a context per user group and a KV cache counted in tokens and packed in whole requests, with a note on larger GPU groups (§7, §10.2, §16); a GPU vendor, image rows per hardware class and a manifest digest over decisions, models and GPUs (§7, §10.5, §11.1, §14.2); GPU names that stay unique after normalization (§10.5); source code at the release tag as `docs` evidence (§11.2). 2026-11-22, after the final review: the E8 and E9 rows, exit 3 and the `manifest.py` row in §12, the decision's `benchmark` list (§13, §14.2), and the vLLM links of §10.2 pinned to v0.34.0
+- **Revised:** 2026-11-21, after research: T1 user threshold 25 → 50 and chat/RAG duty 0.15-0.30 → 0.25-0.50 (sources in rules.toml). 2026-11-21 and 2026-11-22, during implementation: a context per user group and a KV cache counted in tokens and packed in whole requests, with a note on larger GPU groups (§7, §10.2, §16); a GPU vendor, image rows per hardware class and a manifest digest over decisions, models and GPUs (§7, §10.5, §11.1, §14.2); GPU names that stay unique after normalization (§10.5); source code at the release tag as `docs` evidence (§11.2). 2026-11-22, after the final review: the E8 and E9 rows, exit 3 and the `manifest.py` row in §12, the decision's `benchmark` list (§13, §14.2), and the vLLM links of §10.2 pinned to v0.34.0; during sub-project 2 (design spec `2026-11-22-airgap-transfer-design.md`): the questions `inside.operator` and `hardware.cpu_arch` (§7), package rows as tables with an architecture (§11.1), the JSON manifest, E8 over both manifest files and W4 (§12)
 - **Covers:** sub-project 1 — the core pipeline plus the LLM platform layer
 
 ## 1. Summary
@@ -318,7 +318,7 @@ A table of common datacenter and workstation GPUs: model, vendor, VRAM, TDP, sou
 One TOML file per component, named after its `id`:
 
 ```toml
-schema_version = 1
+schema_version = 2
 id = "vllm"
 name = "vLLM"
 layer = "llm-serving"
@@ -354,7 +354,7 @@ repo = "air-gapped/skills"
 skill = "vllm-deployment"
 ```
 
-`airgap.images` rows are `{ ref, digest, hardware }`. `hardware` names the hardware classes an image is for (`nvidia`, `amd`, `intel`, `cpu`); without it the image is for any hardware. There is one image row per hardware class the project's installation documentation names; aliases of the same image are not listed. Angle-bracket values are filled per component during implementation. `version` is always an exact version, never `latest`, and it is the highest stable version, which is not always the release GitHub marks as latest (a project that patches an older line can publish that patch after a newer release). `airgap.packages` names the files for linux/amd64 (x86_64) hosts exactly as the release names them, and `airgap.notes` gives the files for other architectures; the transfer manifest lists each `airgap.packages` string as a carry item. `requires` drives the `state` layer: PostgreSQL or Valkey is chosen when a chosen component requires it. When other entries list a component in `requires` and their documentation names the versions they support, `version` is the newest release that all of them support, and `airgap.notes` says why.
+`airgap.images` rows are `{ ref, digest, hardware }`. `hardware` names the hardware classes an image is for (`nvidia`, `amd`, `intel`, `cpu`); without it the image is for any hardware. There is one image row per hardware class the project's installation documentation names; aliases of the same image are not listed. Angle-bracket values are filled per component during implementation. `version` is always an exact version, never `latest`, and it is the highest stable version, which is not always the release GitHub marks as latest (a project that patches an older line can publish that patch after a newer release). `airgap.packages` rows are `{ file, arch, url, checksums }` (component `schema_version` 2, design spec `2026-11-22-airgap-transfer-design.md` §7): the file as the release names it, `amd64`, `arm64` or `any`, the download URL, and the URL of the publisher's checksum file or `""`; the transfer manifest lists the rows for `hardware.cpu_arch` and the `any` rows as carry items. `requires` drives the `state` layer: PostgreSQL or Valkey is chosen when a chosen component requires it. When other entries list a component in `requires` and their documentation names the versions they support, `version` is the newest release that all of them support, and `airgap.notes` says why.
 
 ### 11.2 Evidence policy
 
@@ -380,7 +380,7 @@ All scripts require Python 3.11 or newer, import only standard-library modules, 
 |---|---|---|---|
 | `tier.py` | `answers` | `tier` | 0 ok, 2 missing or invalid answers (listed by ID), 3 environment |
 | `size.py` | `answers` | `sizing`, `assumptions` | 0 ok, 2 missing or invalid answers, 3 environment |
-| `manifest.py` | `decisions`, `workload.models` and `hardware.gpus` from `answers`, catalog | `transfer-manifest.md` | 0 ok, 2 unknown component or no `answers` object, 3 environment |
+| `manifest.py` | `decisions`, and `workload.models`, `hardware.gpus` and `hardware.cpu_arch` from `answers`, catalog | `transfer-manifest.md`, `transfer-manifest.json` | 0 ok, 2 unknown component or no `answers` object, 3 environment |
 | `lint.py` | Everything | Report as text or JSON | 0 clean, 1 errors found, 3 environment |
 
 Every script also exits 2 when `blueprint.json` cannot be read, holds a value the scripts cannot use, or, for a script that writes, cannot be written. Exit 3, environment, means that Python is older than 3.11 or that the catalog cannot be read or fails validation; the skill then stops and tells the user.
@@ -398,7 +398,7 @@ Lint errors:
 | E5 | No escalator is violated without an override |
 | E6 | `tier` and `sizing` equal a fresh computation from `answers` |
 | E7 | The blueprint file has all template sections, names every chosen component with its version, and has an "Isolation design" subsection when `org.isolation = multi_level` |
-| E8 | The transfer manifest exists and its recorded digest matches the current `decisions`, `workload.models` and `hardware.gpus` |
+| E8 | Both transfer manifest files, `transfer-manifest.md` and `transfer-manifest.json`, exist and their recorded digest matches the current `decisions`, `workload.models`, `hardware.gpus` and `hardware.cpu_arch` |
 | E9 | Every decision labeled `estimate` appears in the blueprint's verification section, and so does every component in a decision's `benchmark` list |
 | E10 | `sizing.fits` is true, or an override explains how the gap is closed |
 | E11 | Everything listed in a chosen component's `requires` is itself chosen or named in `existing` |
@@ -410,6 +410,7 @@ Lint warnings:
 | W1 | A catalog entry used by the blueprint was last verified more than 180 days ago |
 | W2 | A required answer is "unknown" and a default was used |
 | W3 | The agent instruction block is missing from `AGENTS.md` |
+| W4 | `inside.operator` is `local_agent` or `people_then_agent` and the agent instruction block lacks the section "Rules for an agent inside the network" |
 
 Lint notes:
 

@@ -5,6 +5,7 @@ from airgap_lib.answers import QUESTIONS
 from airgap_lib.constants import (
     AGENT_BLOCK_END,
     AGENT_BLOCK_START,
+    AGENT_RULES_MARKER,
     ISOLATION_MARKER,
     SECTION_MARKERS,
     section_marker,
@@ -53,6 +54,24 @@ class TemplateReferenceTest(unittest.TestCase):
         text = read(REFERENCES / "agents-snippet.md")
         self.assertLess(text.find(AGENT_BLOCK_START), text.find(AGENT_BLOCK_END))
         self.assertNotEqual(text.find(AGENT_BLOCK_START), -1)
+
+    def test_agents_snippet_has_the_inside_agent_rules_in_a_block_of_their_own(self):
+        text = read(REFERENCES / "agents-snippet.md")
+        rules_at = text.find(AGENT_RULES_MARKER)
+        self.assertGreater(rules_at, text.find(AGENT_BLOCK_END))
+        rules = text[rules_at : text.index("```", rules_at)]
+        self.assertIn("### Rules for an agent inside the network", rules)
+        for phrase in ("exit code", "MISSING.txt", "Never download", "Never edit", "Never improvise"):
+            self.assertIn(phrase, rules)
+        self.assertNotIn(AGENT_BLOCK_END, rules)
+
+    def test_blueprint_template_names_the_inside_operator_and_the_next_skill(self):
+        text = read(REFERENCES / "blueprint-template.md")
+        transfer = text[text.find(section_marker("transfer")) : text.find(section_marker("data-flow"))]
+        for phrase in ("inside.operator", "INSIDE.md", "AGENTS-INSIDE.md", "airgap-transfer", "Platform:"):
+            self.assertIn(phrase, transfer)
+        operations = text[text.find(section_marker("operations")) : text.find(section_marker("verification"))]
+        self.assertIn("inside.operator", operations)
 
 
 if __name__ == "__main__":

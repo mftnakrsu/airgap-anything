@@ -9,6 +9,7 @@ from airgap_lib.catalog import Catalog
 from airgap_lib.constants import (
     AGENT_BLOCK_END,
     AGENT_BLOCK_START,
+    AGENT_RULES_MARKER,
     ISOLATION_MARKER,
     SECTION_MARKERS,
     section_marker,
@@ -25,6 +26,10 @@ from airgap_lib.transfer import (
 from tests import support
 
 AGENTS_TEXT = f"{AGENT_BLOCK_START}\nFollow the blueprint.\n{AGENT_BLOCK_END}\n"
+AGENTS_TEXT_WITH_RULES = (
+    f"{AGENT_BLOCK_START}\nFollow the blueprint.\n{AGENT_RULES_MARKER}\n"
+    f"### Rules for an agent inside the network\n{AGENT_BLOCK_END}\n"
+)
 
 
 def blueprint_markdown(blueprint: dict, catalog: Catalog, verification: str = "", isolation: bool = False) -> str:

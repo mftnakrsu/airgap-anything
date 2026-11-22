@@ -30,7 +30,7 @@ Work through the steps in order. Read a step's reference file when you reach the
 | 4 | Decisions | Write one decision per layer into `decisions` | `references/layers/llm-serving.md`, `references/layers/llm-gateway.md`, `references/layers/supporting-defaults.md` |
 | 5 | Transfer manifest | Run `manifest.py`; it is the list of what to carry in | |
 | 6 | Blueprint | Set `blueprint_path`, then write the blueprint file | `references/blueprint-template.md` |
-| 7 | Agent instructions | Add the block to `AGENTS.md` | `references/agents-snippet.md` |
+| 7 | Agent instructions | Add the block to `AGENTS.md`, with the inside-agent rules when `inside.operator` names an agent | `references/agents-snippet.md` |
 | 8 | Lint | Run `lint.py`; fix and repeat until it exits 0 | |
 | 9 | Hand-off | Show the blueprint and the step that follows approval (third column of the table below), then stop until the user approves | "Blueprint path and superpowers" below |
 
@@ -47,7 +47,7 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/manifest.py" --blueprint docs/airgap/bluepr
 python3 "${CLAUDE_SKILL_DIR}/scripts/lint.py" --blueprint docs/airgap/blueprint.json
 ```
 
-`manifest.py` writes `docs/airgap/transfer-manifest.md` next to `blueprint.json`. `lint.py` reads `blueprint_path` and `AGENTS.md` relative to `--project-root` (default `.`); from another directory, pass `--project-root` with the project root. Each script lists its other options with `--help`.
+`manifest.py` writes `docs/airgap/transfer-manifest.md` and `docs/airgap/transfer-manifest.json` next to `blueprint.json`; the JSON file is what the `airgap-transfer` skill reads. `lint.py` reads `blueprint_path` and `AGENTS.md` relative to `--project-root` (default `.`); from another directory, pass `--project-root` with the project root. Each script lists its other options with `--help`.
 
 | Exit code | Meaning | What you do |
 |---|---|---|
@@ -56,7 +56,7 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/lint.py" --blueprint docs/airgap/blueprint.
 | 2 | An answer is missing or invalid, `blueprint.json` cannot be read, or, in `manifest.py`, a decision names a component that is not in the catalog | Go back to the question or decision the message names |
 | 3 | Python is older than 3.11, or the catalog cannot be read | Stop and tell the user |
 
-`lint.py` reports a component that is not in the catalog as error E2, exit 1. Warnings (W1 to W3) and notes (N1) do not change the exit code.
+`lint.py` reports a component that is not in the catalog as error E2, exit 1. Warnings (W1 to W4) and notes (N1) do not change the exit code.
 
 ## Decisions
 
@@ -92,7 +92,7 @@ A decision may also carry `benchmark`: a list of catalog IDs that are carried in
 | Situation | Blueprint path | After the user approves |
 |---|---|---|
 | `superpowers:writing-plans` is available | `docs/superpowers/specs/`, then the date, the project name and `-airgap-blueprint-design.md`, for example `docs/superpowers/specs/2026-11-20-example-airgap-blueprint-design.md` | Invoke `superpowers:writing-plans` with that file |
-| Superpowers is not installed | `docs/airgap/blueprint.md` | Print the next steps yourself: transfer, install, benchmark |
+| Superpowers is not installed | `docs/airgap/blueprint.md` | Print the next steps yourself: transfer with `airgap-transfer`, install, benchmark |
 | `superpowers:brainstorming` is already running, because it started before this skill; this skill does not start it | As in the first row | Run one interview, not two. Brainstorming owns the rhythm and the approval gates; this skill supplies the questions, tables, scripts and template. Run `lint.py` as part of the spec self-review. |
 
 The interview starts the blueprint with `"blueprint_path": ""`, and lint rejects an empty value. Set it to the path above in `blueprint.json` before you write the blueprint.

@@ -1,4 +1,4 @@
-"""Blueprint lint: errors E1-E11, warnings W1-W3 and note N1 of the design spec."""
+"""Blueprint lint: errors E1-E11, warnings W1-W4 and note N1 of the design specs."""
 from __future__ import annotations
 
 import re
@@ -19,6 +19,8 @@ from .catalog import Catalog, is_stale
 from .constants import (
     AGENT_BLOCK_END,
     AGENT_BLOCK_START,
+    AGENT_OPERATORS,
+    AGENT_RULES_MARKER,
     ISOLATION_MARKER,
     LAYERS,
     SECTION_MARKERS,
@@ -384,6 +386,19 @@ def _lint(
         or AGENT_BLOCK_END not in agents_text
     ):
         findings.append(Finding("W3", "the agent instruction block is missing from AGENTS.md"))
+
+    # W4: an agent works inside, so the block carries the rules for it.
+    operator = resolved.get("inside.operator")
+    if operator in AGENT_OPERATORS and agents_text is not None:
+        start, end = agents_text.find(AGENT_BLOCK_START), agents_text.find(AGENT_BLOCK_END)
+        if 0 <= start < end and AGENT_RULES_MARKER not in agents_text[start:end]:
+            findings.append(
+                Finding(
+                    "W4",
+                    f"inside.operator is {operator}: the agent instruction block lacks the "
+                    "section 'Rules for an agent inside the network'",
+                )
+            )
 
     # N1: every override in effect is reported.
     for decision in decisions:
