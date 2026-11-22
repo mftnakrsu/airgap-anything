@@ -64,9 +64,11 @@ class ManifestTest(unittest.TestCase):
 
 # The rules below are the ones Anthropic's directory applies to a plugin folder submitted by an
 # organization that is not Verified (developer portal validation, 2026-11-22, and
-# https://claude.com/docs/plugins/pre-submission-checklist). The portal accepted the skill's
-# Python and TOML files; it refuses scripts with #!, SVG other than the icon, package-manager
-# files, and commands that download and run code, even in documentation.
+# https://claude.com/docs/plugins/pre-submission-checklist): no scripts with #!, no SVG other than
+# the icon, no package-manager files, no commands that download and run code, even in
+# documentation. Python and TOML files are the exception: the portal accepts them only from a
+# Verified organization (it blocked the catalog's first TOML file), and the skill needs both, so
+# a directory listing waits for Verified status. See docs/packaging-facts.md, Q8.
 ALLOWED_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".py", ".toml"}
 PACKAGE_FILES = {"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-workspace.yaml", "requirements.txt",
                  "pyproject.toml", "uv.lock", "bun.lock", "bun.lockb", ".npmrc", "bunfig.toml", "uv.toml"}
