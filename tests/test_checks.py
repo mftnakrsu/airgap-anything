@@ -6,7 +6,7 @@ from pathlib import Path
 from tests import projects, support
 from airgap_lib.checks import lint_project, split_sections
 from airgap_lib.constants import SECTION_MARKERS, section_marker
-from airgap_lib.transfer import MANIFEST_FILENAME, render_manifest
+from airgap_lib.transfer import MANIFEST_FILENAME, MANIFEST_JSON_FILENAME
 
 
 class LintTestCase(unittest.TestCase):
@@ -31,9 +31,7 @@ class LintTestCase(unittest.TestCase):
     def edit(self, change, refresh_manifest=True):
         data = projects.edit_blueprint(self.path, change)
         if refresh_manifest:
-            (self.path.parent / MANIFEST_FILENAME).write_text(
-                render_manifest(data, self.catalog, "2026-11-20"), encoding="utf-8"
-            )
+            projects.write_manifests(self.path, self.catalog, data)
         return data
 
     def decision(self, data, layer):
@@ -187,9 +185,26 @@ class ErrorRulesTest(LintTestCase):
             lambda data: self.decision(data, "ui").update(rationale="Changed."),
             refresh_manifest=False,
         )
-        self.assertEqual(self.codes(), ["E8"])
+        self.assertEqual(self.codes(), ["E8", "E8"])
         (self.path.parent / MANIFEST_FILENAME).unlink()
-        self.assertEqual(self.codes(), ["E8"])
+        (self.path.parent / MANIFEST_JSON_FILENAME).unlink()
+        self.assertEqual(self.codes(), ["E8", "E8"])
+
+    def test_e8_checks_each_file_on_its_own(self):
+        self.project()
+        (self.path.parent / MANIFEST_JSON_FILENAME).unlink()
+        findings = self.lint()
+        self.assertEqual([f.code for f in findings], ["E8"])
+        self.assertEqual(findings[0].message, "transfer-manifest.json not found; run manifest.py")
+        self.project()
+        (self.path.parent / MANIFEST_JSON_FILENAME).write_text('{"inputs_digest": "sha256:old"}', encoding="utf-8")
+        findings = self.lint()
+        self.assertEqual([f.message for f in findings], ["transfer-manifest.json is stale; run manifest.py again"])
+
+    def test_e8_a_changed_cpu_arch_makes_both_files_stale(self):
+        self.project()
+        self.edit(lambda data: data["answers"].update({"hardware.cpu_arch": "arm64"}), refresh_manifest=False)
+        self.assertEqual(self.codes(), ["E8", "E8"])
 
     def test_e9_estimate_decision_must_be_listed(self):
         decisions = support.base_decisions()
@@ -428,11 +443,13 @@ class UnreadableFilesTest(LintTestCase):
         self.assertNotIn("not found", findings[0].message)
 
     def test_non_utf8_manifest_is_an_e8_finding(self):
-        self.project()
-        (self.path.parent / MANIFEST_FILENAME).write_bytes(b"\xff\xfe\x00bad")
-        findings = self.lint()
-        self.assertEqual([f.code for f in findings], ["E8"])
-        self.assertIn("cannot be read", findings[0].message)
+        for name in (MANIFEST_FILENAME, MANIFEST_JSON_FILENAME):
+            with self.subTest(name=name):
+                self.project()
+                (self.path.parent / name).write_bytes(b"\xff\xfe\x00bad")
+                findings = self.lint()
+                self.assertEqual([f.code for f in findings], ["E8"])
+                self.assertEqual(findings[0].message, f"{name} cannot be read: it is not valid UTF-8")
 
     def test_blueprint_path_below_a_regular_file(self):
         self.project()

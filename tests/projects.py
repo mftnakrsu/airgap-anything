@@ -15,7 +15,13 @@ from airgap_lib.constants import (
 )
 from airgap_lib.sizing import compute_sizing
 from airgap_lib.tiering import compute_tier
-from airgap_lib.transfer import MANIFEST_FILENAME, render_manifest
+from airgap_lib.transfer import (
+    MANIFEST_FILENAME,
+    MANIFEST_JSON_FILENAME,
+    build_manifest,
+    render_json,
+    render_markdown,
+)
 from tests import support
 
 AGENTS_TEXT = f"{AGENT_BLOCK_START}\nFollow the blueprint.\n{AGENT_BLOCK_END}\n"
@@ -67,11 +73,17 @@ def write_project(root: Path, catalog: Catalog, blueprint: dict, verification: s
     (path.parent / "blueprint.md").write_text(
         blueprint_markdown(blueprint, catalog, verification, isolation), encoding="utf-8"
     )
-    (path.parent / MANIFEST_FILENAME).write_text(
-        render_manifest(blueprint, catalog, "2026-11-20"), encoding="utf-8"
-    )
+    write_manifests(path, catalog, blueprint)
     (root / "AGENTS.md").write_text(AGENTS_TEXT, encoding="utf-8")
     return path
+
+
+def write_manifests(blueprint_path: Path, catalog: Catalog, blueprint: dict) -> None:
+    """Write transfer-manifest.md and .json next to blueprint.json, as manifest.py does."""
+    data = build_manifest(blueprint, catalog, "2026-11-20")
+    folder = Path(blueprint_path).parent
+    (folder / MANIFEST_FILENAME).write_text(render_markdown(data), encoding="utf-8")
+    (folder / MANIFEST_JSON_FILENAME).write_text(render_json(data), encoding="utf-8")
 
 
 def make_project(root: Path, catalog: Catalog, answers=None, decisions=None, verification: str = "", isolation: bool = False) -> Path:
