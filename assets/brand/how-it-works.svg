@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 352" width="1000" height="352" role="img" aria-labelledby="how-it-works-title how-it-works-desc">
+  <title id="how-it-works-title">How airgap-architect works</title>
+  <desc id="how-it-works-desc">Eight steps on a connected workstation, done by the model, the scripts and you; the files cross the air gap and the agent inside builds without internet.</desc>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7D8590"/></marker></defs>
+  <rect x="40" y="44" width="248" height="24" rx="4" fill="#EEF1F4"/>
+  <text x="48" y="60" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#121417">OUTSIDE · A CONNECTED WORKSTATION</text>
+  <rect x="780" y="44" width="128" height="24" rx="4" fill="#EEF1F4"/>
+  <text x="788" y="60" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#121417">INSIDE · OFFLINE</text>
+  <line x1="196" y1="142" x2="214" y2="142" stroke="#7D8590" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="372" y1="142" x2="390" y2="142" stroke="#7D8590" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="548" y1="142" x2="566" y2="142" stroke="#7D8590" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="196" y1="262" x2="214" y2="262" stroke="#7D8590" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="372" y1="262" x2="390" y2="262" stroke="#7D8590" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="548" y1="262" x2="566" y2="262" stroke="#7D8590" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M646 184 V194 Q646 202 638 202 H126 Q118 202 118 210 V218" fill="none" stroke="#7D8590" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="744" y="84" width="16" height="232" fill="#FFC800"/>
+  <line x1="724" y1="262" x2="778" y2="262" stroke="#7D8590" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="720" y="318" width="64" height="22" rx="4" fill="#FFC800"/>
+  <text x="752" y="333" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="700" letter-spacing="0.1em" text-anchor="middle" fill="#121417">AIR GAP</text>
+  <rect x="40" y="100" width="156" height="84" rx="6" fill="#FFFFFF" stroke="#8C959F" stroke-width="1.25"/>
+  <text x="54" y="124" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">MODEL</text>
+  <text x="54" y="148" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#121417">1  Interview</text>
+  <text x="54" y="168" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#57606A">asks, one by one</text>
+  <rect x="216" y="100" width="156" height="84" rx="6" fill="#EEF1F4" stroke="#8C959F" stroke-width="1.25"/>
+  <text x="230" y="124" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">SCRIPT</text>
+  <text x="230" y="148" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#121417">2  Tier</text>
+  <text x="230" y="168" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#57606A">org complexity</text>
+  <rect x="392" y="100" width="156" height="84" rx="6" fill="#EEF1F4" stroke="#8C959F" stroke-width="1.25"/>
+  <text x="406" y="124" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">SCRIPT</text>
+  <text x="406" y="148" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#121417">3  Sizing</text>
+  <text x="406" y="168" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#57606A">GPUs and power</text>
+  <rect x="568" y="100" width="156" height="84" rx="6" fill="#FFFFFF" stroke="#8C959F" stroke-width="1.25"/>
+  <text x="582" y="124" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">MODEL</text>
+  <text x="582" y="148" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#121417">4  Decisions</text>
+  <text x="582" y="168" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#57606A">one per layer</text>
+  <rect x="40" y="220" width="156" height="84" rx="6" fill="#EEF1F4" stroke="#8C959F" stroke-width="1.25"/>
+  <text x="54" y="244" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">SCRIPT</text>
+  <text x="54" y="268" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#121417">5  Manifest</text>
+  <text x="54" y="288" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#57606A">what to carry in</text>
+  <rect x="216" y="220" width="156" height="84" rx="6" fill="#FFFFFF" stroke="#8C959F" stroke-width="1.25"/>
+  <text x="230" y="244" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">MODEL</text>
+  <text x="230" y="268" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#121417">6  Blueprint</text>
+  <text x="230" y="288" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#57606A">the plan and why</text>
+  <rect x="392" y="220" width="156" height="84" rx="6" fill="#EEF1F4" stroke="#8C959F" stroke-width="1.25"/>
+  <text x="406" y="244" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">SCRIPT</text>
+  <text x="406" y="268" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#121417">7  Lint</text>
+  <text x="406" y="288" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#57606A">checks the files</text>
+  <rect x="568" y="220" width="156" height="84" rx="6" fill="#FFFFFF" stroke="#8C959F" stroke-width="1.25" stroke-dasharray="5,4"/>
+  <text x="582" y="244" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">YOU</text>
+  <text x="582" y="268" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#121417">8  Hand-off</text>
+  <text x="582" y="288" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#57606A">after you approve</text>
+  <rect x="780" y="100" width="180" height="204" rx="6" fill="#FFFFFF" stroke="#8C959F" stroke-width="1.5"/>
+  <text x="796" y="128" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#57606A">THE AGENT INSIDE</text>
+  <text x="796" y="156" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#121417">Build</text>
+  <text x="796" y="184" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#57606A">No internet.</text>
+  <text x="796" y="204" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#57606A">It follows the</text>
+  <text x="796" y="224" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#57606A">blueprint and the</text>
+  <text x="796" y="244" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#57606A">files carried in.</text>
+</svg>

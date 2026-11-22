@@ -1,0 +1,28 @@
+{
+  "org.users_total": 2000,
+  "org.departments": 12,
+  "org.isolation": "per_department",
+  "org.audit_required": true,
+  "org.downtime_tolerance": "none",
+  "org.ops_capacity": "platform_team",
+  "org.kubernetes_experience": true,
+  "workload.usage": { "chat": 0.7, "code_assistant": 0.2, "rag": 0.1 },
+  "workload.models": [
+    {
+      "name": "company-70b",
+      "role": "chat",
+      "params_b": 70,
+      "precision": "fp8",
+      "context_tokens": 8192,
+      "arch": { "layers": 80, "kv_heads": 8, "head_dim": 128, "kv_dtype": "fp16" }
+    }
+  ],
+  "hardware.gpus": [
+    { "model": "generic-141gb", "count": 24, "vram_gb": 141, "tdp_w": 700 }
+  ],
+  "existing.identity": "ad_ldap",
+  "existing.api_gateway": "kong",
+  "existing.kubernetes": "openshift",
+  "transfer.channel": "data_diode",
+  "transfer.cadence": "monthly"
+}

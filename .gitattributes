@@ -1,0 +1,6 @@
+# GitHub's language bar counts the skill and its tests, not the design work files
+# (logo concepts, previews) or the generated brand and demo assets.
+design/** linguist-documentation
+assets/** linguist-generated
+docs-site/** linguist-documentation
+docs-site/package-lock.json linguist-generated

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title desc">
+  <title id="title">airgap-anything icon, animated</title>
+  <desc id="desc">On a yellow tile, the crossbar of the A opens, a block passes through the gap, and the A turns over into the for-all sign.</desc>
+  <style>
+    .turn { transform-box: fill-box; transform-origin: center; animation: turn 10s cubic-bezier(.6, 0, .3, 1) infinite; }
+    @keyframes turn { 0%, 50% { transform: scaleY(1); } 58%, 78% { transform: scaleY(-1); } 86%, 100% { transform: scaleY(1); } }
+    .sl, .sr { animation: bar-l 10s cubic-bezier(.3, 0, .2, 1) infinite; }
+    .sr { animation-name: bar-r; }
+    @keyframes bar-l { 0%, 4% { transform: translateX(17px); } 12%, 92% { transform: translateX(0); } 100% { transform: translateX(17px); } }
+    @keyframes bar-r { 0%, 4% { transform: translateX(-17px); } 12%, 92% { transform: translateX(0); } 100% { transform: translateX(-17px); } }
+    .blk { opacity: 0; animation: pass 10s cubic-bezier(.45, 0, .2, 1) infinite; }
+    @keyframes pass { 0%, 13% { transform: translateY(232px); opacity: 0; } 17% { opacity: 1; } 40% { transform: translateY(98px); opacity: 1; } 46%, 100% { transform: translateY(92px); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .turn, .sl, .sr, .blk { animation: none; } }
+  </style>
+  <rect width="256" height="256" rx="56" fill="#FFC800"/>
+  <g transform="translate(46.1 45.9) scale(0.64)" fill="#121417">
+    <g class="turn">
+      <path d="M108 30H148L240 214H200L128 70L56 214H16Z"/>
+      <path class="sl" d="M66 140H112V172H50Z"/>
+      <path class="sr" d="M144 140H190L206 172H144Z"/>
+    </g>
+    <rect class="blk" x="118" y="0" width="20" height="20"/>
+  </g>
+</svg>

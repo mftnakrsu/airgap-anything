@@ -1,0 +1,117 @@
+schema_version = 1
+id = "vllm"
+name = "vLLM"
+layer = "llm-serving"
+summary = "High-throughput inference and serving engine for large language models that batches incoming requests continuously and exposes an OpenAI-compatible HTTP server."
+tiers = ["T1", "T2", "T3"]
+requires = []
+version = "v0.34.0"
+license = "Apache-2.0"
+last_verified = 2026-11-22
+
+[evidence]
+level = "docs"
+sources = [
+  "https://github.com/vllm-project/vllm/releases/tag/v0.34.0",
+  "https://github.com/vllm-project/vllm/blob/main/LICENSE",
+  "https://pypi.org/pypi/vllm/json",
+  "https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags?page_size=100&name=0.34.0",
+  "https://hub.docker.com/v2/repositories/vllm/vllm-openai-rocm/tags?page_size=100&name=0.34.0",
+  "https://hub.docker.com/v2/repositories/vllm/vllm-openai-xpu/tags?page_size=100&name=0.34.0",
+  "https://hub.docker.com/v2/repositories/vllm/vllm-openai-cpu/tags?page_size=100&name=0.34.0",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/README.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/deployment/docker.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/gpu.cuda.inc.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/gpu.rocm.inc.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/gpu.xpu.inc.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/cpu.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/cpu.x86.inc.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/contributing/dockerfile/dockerfile.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/.buildkite/scripts/publish-release-images.sh",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/usage/usage_stats.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/usage/usage_lib.py",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/envs.py",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/models/supported_models.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/serving/online_serving/README.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/serving/online_serving/openai_compatible_server.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/features/initialized_snapshots.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/usage/security.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/design/prefix_caching.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/features/automatic_prefix_caching.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/config/cache.py",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/engine/arg_utils.py",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/config/model.py",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/entrypoints/openai/responses/serving.py",
+  "https://github.com/vllm-project/vllm/security/advisories/GHSA-4qjh-9fv9-r85r",
+  "https://github.com/vllm-project/vllm/pull/17045",
+  "https://github.com/vllm-project/vllm/security/advisories/GHSA-935w-9g4m-p28p",
+  "https://github.com/vllm-project/vllm/security/advisories/GHSA-rh6f-3x46-j33q",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/configuration/optimization.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/design/arch_overview.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/docs/serving/data_parallel_deployment.md",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/config/scheduler.py",
+  "https://github.com/vllm-project/vllm/blob/v0.34.0/requirements/common.txt",
+  "https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables",
+]
+verified_by = ""
+notes = "All values were read on 2026-11-21 from the pages in sources (the advisory GHSA-rh6f-3x46-j33q was re-read on 2026-11-22); the documentation pages are the files of the repository at tag v0.34.0 (the version documented here). Version v0.34.0 is the latest GitHub release (published 2026-11-16, not a prerelease), the version on PyPI, and the image tags are written with the leading v (v0.34.0), which exist on Docker Hub for vllm/vllm-openai, vllm/vllm-openai-rocm, vllm/vllm-openai-xpu and vllm/vllm-openai-cpu. The meaning of the CUDA, EFA and zstd tags comes from the release script and the Dockerfile page at the tag, and the ROCm tag meaning from the ROCm installation page and the same script. The offline settings for the Hugging Face Hub are not documented by vLLM itself except in passing (HF_HUB_OFFLINE in the snapshot page, --enable-offline-docs, HF_ENDPOINT with MatrixHub, VLLM_USE_MODELSCOPE); the description of HF_HUB_OFFLINE and HF_HUB_DISABLE_TELEMETRY is taken from the huggingface_hub documentation, which is the documentation of a library vLLM depends on (requirements/common.txt lists transformers and huggingface_hub). The offline behavior was not run: it is documented but not verified in a disconnected network."
+
+[airgap]
+images = [
+  { ref = "vllm/vllm-openai:v0.34.0", digest = "", hardware = ["nvidia"] },
+  { ref = "vllm/vllm-openai-rocm:v0.34.0", digest = "", hardware = ["amd"] },
+  { ref = "vllm/vllm-openai-xpu:v0.34.0", digest = "", hardware = ["intel"] },
+  { ref = "vllm/vllm-openai-cpu:v0.34.0", digest = "", hardware = ["cpu"] },
+]
+packages = []
+runtime_downloads = [
+  "Model weights, configuration and tokenizer: vLLM resolves a model name against the Hugging Face Hub and downloads it on first use into the Hugging Face cache (the Docker pages mount ~/.cache/huggingface into the container at /root/.cache/huggingface). Stage models on a connected host with hf download <model> (optionally --cache-dir) and copy the cache, or give vllm serve a local path (the supported-models page says the model argument is a 'Name or path of your model').",
+  "Hugging Face offline switch: HF_HUB_OFFLINE=1 makes huggingface_hub make no HTTP calls to the Hub and use only cached files, raising an error when a file is missing (huggingface_hub documentation). The vLLM snapshot page uses HF_HUB_OFFLINE=1 for the same purpose. Not run by the entry author.",
+  "Internal mirror: set HF_ENDPOINT to a Hugging Face-compatible mirror; the supported-models page describes this for MatrixHub, 'useful for air-gapped clusters', and VLLM_USE_MODELSCOPE=True switches to ModelScope with trust_remote_code=True.",
+  "Compiled kernels: for CUDA installs, vllm download-kernels installs FlashInfer's precompiled kernels; without them, vLLM downloads and compiles kernels at startup, which the page says can add several minutes on Hopper and newer GPUs. Run it on the connected host and in custom container images.",
+  "API documentation page: the FastAPI /docs endpoint requires an internet connection by default; start the server with --enable-offline-docs to serve it offline.",
+  "vLLM Recipes: on the CPU image, recipe-assisted serving (the serve_with_recipe.sh entrypoint) queries recipes.vllm.ai at runtime; regular serving does not.",
+]
+license_server = false
+notes = "Offline behavior is documented but not verified: the entry author did not run vLLM, and the documentation has no dedicated air-gap page. Images, one per hardware class named in the installation pages (tags checked on Docker Hub on 2026-11-21): vllm/vllm-openai:v0.34.0 for NVIDIA GPUs (the release script marks CUDA 13.0 as the default CUDA build; the Docker page says the default CUDA images use Ubuntu 24.04), vllm/vllm-openai-rocm:v0.34.0 for AMD GPUs (the ROCm 10.0 image; the installation page says ROCm 10.0 images use zstd-compressed layers and need Docker 23 or newer or containerd 1.5 or newer), vllm/vllm-openai-xpu:v0.34.0 for Intel GPUs (x86_64 only) and vllm/vllm-openai-cpu:v0.34.0 for CPU-only hosts. The NVIDIA and CPU tags are multi-architecture manifest lists (x86_64 and aarch64, or arm64 for the CPU image): copy the platform of the target hosts. The CPU installation pages name the per-architecture tags (v${VLLM_VERSION}-x86_64 and v${VLLM_VERSION}-arm64); the CPU row uses the unsuffixed multi-architecture manifest list of the same version, which exists on Docker Hub and which the release script builds from those two tags. Dropped from the list: the per-architecture tags v0.34.0-x86_64, v0.34.0-aarch64 and v0.34.0-arm64 of those images (the platform images the manifest lists are made from, under different digests than the manifest lists), vllm/vllm-openai-xpu:v0.34.0-x86_64 (a single-platform amd64 image with a different digest than v0.34.0, not an alias; the XPU installation page names only latest and <tag> and the release script builds the unsuffixed tag from this one, so the listed row covers it), the alias vllm/vllm-openai-rocm:v0.34.0-rocm100 (same digest as v0.34.0), the build-only vllm/vllm-openai-rocm:v0.34.0-base and v0.34.0-rocm100-base images (the ROCm stack and vLLM's dependencies without vLLM), the recompressed duplicate vllm/vllm-openai:v0.34.0-x86_64-zstd, and the AWS EFA variants v0.34.0-efa, v0.34.0-x86_64-efa and v0.34.0-aarch64-efa (CUDA 13.0 images with the AWS EFA userspace stack for EFA-enabled AWS instances, per the Dockerfile page; not needed on premises). Alternative install route without containers, not carry items: the GitHub release v0.34.0 carries vllm-0.34.0-cp38-abi3-manylinux_2_28_x86_64.whl and vllm-0.34.0-cp38-abi3-manylinux_2_28_aarch64.whl (CUDA, default build), vllm-0.34.0+cpu-cp38-abi3-manylinux_2_39_x86_64.whl, vllm-0.34.0+cpu-cp38-abi3-manylinux_2_39_aarch64.whl and vllm-0.34.0+cpu-cp38-abi3-macosx_11_0_arm64.whl (CPU), vllm-0.34.0+xpu-cp38-abi3-manylinux_2_34_x86_64.whl (Intel GPU) and vllm-0.34.0.tar.gz; the wheels need PyTorch and other Python dependencies from PyPI or the PyTorch index, which this entry does not enumerate. Images are run as root by default; the CUDA image also supports --user 2000:0 (Docker page). The server listens on port 8000 in the documentation examples. Run containers with --ipc=host or --shm-size for shared memory (installation page). Settings: command-line arguments, environment variables (VLLM_*) and a YAML config file."
+
+[[airgap.telemetry]]
+what = "Anonymous usage statistics (hardware, platform, vLLM version, model architecture and a few engine settings, with a random UUID) sent by default to https://stats.vllm.ai (VLLM_USAGE_STATS_SERVER in vllm/envs.py); a copy is kept in ~/.config/vllm/usage_stats.json."
+disable = "VLLM_NO_USAGE_STATS=1, or DO_NOT_TRACK=1, or create the file ~/.config/vllm/do_not_track (documented on the usage stats page; the source also reads VLLM_DO_NOT_TRACK=1)."
+
+[[airgap.telemetry]]
+what = "Hugging Face library telemetry: the huggingface_hub documentation says some data is collected by default by Hugging Face libraries such as transformers; vLLM depends on transformers and huggingface_hub (requirements/common.txt). The vLLM documentation does not mention it, and whether vLLM triggers it was not verified."
+disable = "HF_HUB_DISABLE_TELEMETRY=1 (DO_NOT_TRACK is documented by huggingface_hub as equivalent)."
+
+[[airgap.telemetry]]
+what = "Hub update checks of the hf command-line tool, which the vLLM pages recommend for downloading models (hf download); relevant only on the connected staging host."
+disable = "HF_HUB_DISABLE_UPDATE_CHECK=1 (huggingface_hub documentation)."
+
+[choose]
+when = [
+  "Many users or applications are served at the same time on GPUs: the README lists 'Continuous batching of incoming requests, chunked prefill, prefix caching', and the optimization page says chunked prefill is enabled by default in V1, the scheduler batches pending decode requests first and fills a token budget (max_num_batched_tokens) each step. The documented concurrency settings are max_num_seqs (maximum number of sequences per iteration), max_num_batched_tokens and, to bound the queue, --max-num-queued-reqs (max_num_queued_reqs in vllm/config/scheduler.py, whose docstring says it caps requests in flight, waiting or running, and that new requests are rejected with HTTP 503 when the limit is reached; unlimited by default) and --max-num-queued-tokens (max_num_queued_tokens, a 503 limit on the prompt-token backlog of requests in prefill). The data parallel deployment page says both limits apply to the whole server, not per data-parallel rank, unlike --max-num-seqs which applies per rank, and recommends sizing --max-num-queued-reqs as roughly data-parallel-size * max-num-seqs plus the desired queue depth. --scheduling-policy chooses fcfs (default) or priority.",
+  "A model must be spread over several GPUs or nodes: the README lists tensor, pipeline, data, expert and context parallelism.",
+  "Clients speak the OpenAI API: the server implements the Completions, Chat Completions, Responses, Embeddings, Transcriptions and Translation APIs (/v1/...), and the README adds the Anthropic Messages API and gRPC support. Prometheus metrics are at /metrics.",
+]
+avoid_when = [
+  "A GPU-free host is the only hardware and throughput matters: vLLM has CPU installation pages (x86 with AVX512 recommended or AVX2 with limited features, ARM AArch64, Apple silicon, IBM Z) and CPU images, so it does run without a GPU, but the x86 page lists only FP32, FP16 and BF16 data types and 'basic model inferencing and serving'; the CUDA installation page requires compute capability 7.5 or higher.",
+]
+alternatives = ["sglang", "ollama"]
+caveats = [
+  "Engine decision table, GPU-free operation: yes, through the CPU build (CPU wheels and the vllm/vllm-openai-cpu images), with the limits in avoid_when. GPU installs: NVIDIA CUDA (compute capability 7.5 or higher), AMD ROCm, Intel XPU, and Apple Silicon through vLLM-Metal (README and installation pages).",
+  "API key authentication does not protect every endpoint: --api-key (or VLLM_API_KEY) only authenticates paths under /v1, /v2, /inference and /cohere; for example /invocations is not authenticated. Put a reverse proxy in front (OpenAI-compatible server page and security page). The optional gRPC interface (--grpc-port) is off unless enabled and has no authentication (security page).",
+  "Optional dependencies are not included in the CUDA image to avoid licensing issues; add them in a derived image from a connected network (Docker installation page).",
+  "The LoRA dynamic loading endpoints (/v1/load_lora_adapter) are described as only for local development.",
+  "No paid edition or license check was found in the documentation.",
+  "Prefix caching, what is shared and what separates callers when departments share one server: prefix caching is on by default for the models that support it, which includes the generative decoder models a chat platform serves (source code at the tag: the enable_prefix_caching argument of vllm serve defaults to None in vllm/engine/arg_utils.py, and _set_default_chunked_prefill_and_prefix_caching_args there sets it to model_config.is_prefix_caching_supported from vllm/config/model.py, which is False for encoder-only pooling models, pooling models with MEAN or CLS pooling, attention-free and encoder-decoder models, and the code also forces it off on RISC-V CPUs). So requests to one server reuse each other's cached prompt prefixes: the security page says 'Requests from different callers are scheduled together and share the same caches' and that vLLM 'does not provide isolation between tenants that share the same server process'. A caller can infer from time to first token whether a guessed prefix is cached (security page, 'Prefix Cache Timing Side-Channel Mitigation'; advisory GHSA-4qjh-9fv9-r85r, CVE-2025-46570, severity low, vulnerable below 0.9.0). The 0.9.0 fix is an opt-in, not a change of the default: its only fix, PR 17045, 'adds support for an optional `cache_salt` field in the request schema', and without a salt the cache is shared as before, so v0.34.0 does not protect departments that nobody configured. What separates callers: the optional cache_salt field of the request, accepted by the chat completions, completions, responses, embeddings and other endpoints, which 'is mixed into the hash of the first KV cache block, so only requests carrying the same salt can share cached prefix blocks' (security page). The salt is a secret: a guessable one such as a user name or account ID leaves the attack open, and the page recommends 43 base64 characters (256 bits). Salting costs cache hits: 'cached blocks are only reusable by requests with the same salt' (security page). Turning the cache off instead: --no-enable-prefix-caching (the flag appears in the automatic prefix caching page at the tag, not as a security measure); the cost of turning it off is not documented.",
+  "Prefix caching, known gaps and what is not documented (security page, the advisories and the source at v0.34.0): the salt was lost on some paths, both fixed before v0.34.0. GHSA-935w-9g4m-p28p (CVE-2026-105752, fixed in 0.30.0): the tool-continuation turns of the /v1/responses route for GPT-OSS models dropped the salt; the source at the tag (vllm/entrypoints/openai/responses/serving.py) carries the salt into the next turn, and the fix was not run. GHSA-rh6f-3x46-j33q (fixed in 0.31.0): a LoRA name equal to a salt gave the same first-block hash, and an image whose EXIF ImageID is a UUID was keyed in the multimodal processor cache by that UUID, so images that carry the same ImageID aliased each other; below 0.31.0, departments that shared images were affected by the second site. For media, the security page says to generate cryptographically random uuid values per media item and that 'Clients must ensure UUID uniqueness across all callers on the same server'. Not documented: whether the salt protects the multimodal processor cache and the encoder output cache (the page calls the salt 'defense in depth' for media); how a gateway sets or scopes the salt per department for the gateways of this catalog (the LiteLLM entry's sources document no per-team or per-key request parameters).",
+  "If several departments share one vLLM and org.isolation is not none, the decision's rationale must say which of these applies (security page, 'Multi-Tenant Deployments'): a dedicated vLLM instance per department ('Run a dedicated vLLM instance per tenant.'); or prefix caching switched off; or a gateway that 'authenticates callers and scopes client-supplied cache identifiers, such as `cache_salt` and multimodal `uuid` values, per tenant', with a distinct random secret salt per department on every request. The rationale must also say that the page calls cache_salt a reduction of 'specific cross-tenant risks', 'not an isolation boundary'. A design that leaves prefix caching on and sets nothing per department is wrong, and keeping the departments apart only in the UI does not isolate their cached prompts.",
+]
+
+[[deeper_skills]]
+repo = "ScaleDockHQ/llm-skills"
+skill = "vllm"
+
+[[deeper_skills]]
+repo = "air-gapped/skills"
+skill = "vllm-configuration"

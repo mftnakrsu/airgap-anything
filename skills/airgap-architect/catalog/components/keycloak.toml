@@ -1,0 +1,68 @@
+schema_version = 1
+id = "keycloak"
+name = "Keycloak"
+layer = "identity"
+summary = "Open-source identity and access management server that provides single sign-on over OpenID Connect and SAML, brokers other identity providers and federates user directories such as LDAP and Active Directory."
+tiers = ["T1", "T2", "T3"]
+requires = ["postgresql"]
+version = "26.8.2"
+license = "Apache-2.0"
+last_verified = 2026-11-21
+
+[evidence]
+level = "docs"
+sources = [
+  "https://github.com/keycloak/keycloak/releases/tag/26.8.2",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/LICENSE.txt",
+  "https://www.keycloak.org/downloads",
+  "https://www.keycloak.org/getting-started/getting-started-docker",
+  "https://quay.io/api/v1/repository/keycloak/keycloak/tag/?specificTag=26.8.2",
+  "https://www.keycloak.org/server/containers",
+  "https://www.keycloak.org/server/db",
+  "https://www.keycloak.org/server/configuration-production",
+  "https://www.keycloak.org/docs/latest/server_admin/index.html",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/guides/server/db.adoc",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/guides/server/templates/databases.adoc",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/guides/server/containers.adoc",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/guides/server/caching.adoc",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/guides/server/outgoinghttp.adoc",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/guides/server/features.adoc",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/guides/observability/telemetry.adoc",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/guides/observability/tracing.adoc",
+  "https://github.com/keycloak/keycloak/blob/26.8.2/docs/documentation/server_admin/topics/user-federation/ldap.adoc",
+]
+verified_by = ""
+notes = "Read on 2026-11-21 (the PostgreSQL pairing re-checked on 2026-11-22). Version 26.8.2 is the latest GitHub release (published 2026-11-05, not a prerelease, tag written 26.8.2 without a leading v) and the version on the project's downloads page and in its Docker getting-started guide; the image tag 26.8.2 exists on quay.io/keycloak/keycloak (checked through the Quay API). The guides on keycloak.org were opened live (database, containers, production configuration, downloads, getting started, server administration guide); the documentation sources of the same guides at the tag 26.8.2 were read as repository files, because those pages are templates and the published guides left the container tag as latest. The telemetry and air-gap findings are negative: they rest on searching the guides and documentation folders of the repository at tag 26.8.2 for 'telemetry', 'usage statistic', 'phone home', 'update check', 'analytics', 'call home', 'new version', 'air-gap', 'airgap' and 'offline', and on a GitHub code search of keycloak/keycloak for 'usage statistics', 'phone home', 'update check', 'analytics' and 'telemetry' (no hit for the first three; 'analytics' only in the themes guide and a theme test; 'telemetry' only OpenTelemetry files); the 'offline' hits are offline tokens and offline sessions, which are an OAuth feature, not disconnected operation. A search is not proof of absence. The offline behavior was not run: it is documented only as far as the pages say and not verified in a disconnected network."
+
+[airgap]
+images = [{ ref = "quay.io/keycloak/keycloak:26.8.2", digest = "" }]
+packages = []
+runtime_downloads = []
+license_server = false
+notes = "No air-gap or offline-installation documentation found on 2026-11-21 (the containers guide says nothing about running offline and does not say whether the container needs network access at startup); the examples need a reachable database at the configured database URL, and nothing that the server downloads while it runs is documented. The documentation says database drivers are shipped with Keycloak except the Oracle Database driver, so PostgreSQL needs no driver download. Custom providers and the Oracle or SQL Server drivers are added by building a derived image (the guide's examples fetch them with ADD from Maven Central at build time, a connected-network step) and running kc.sh build; the base image has no package manager (microdnf, dnf and rpm are absent), so anything else is added in a multi-stage build. Running the standard start command makes Keycloak apply build options at startup, which the guide says significantly increases startup time and which it does not recommend; the recommended form is an optimized image built with kc.sh build and started with start --optimized. The production guide says all communication to and from Keycloak requires a secure channel (enable HTTPS) and covers the public hostname and the reverse proxy; plan certificates inside the network. start-dev is for development only and disables distributed caches. The official documentation examples use quay.io/keycloak/keycloak:latest in several places; use the pinned tag 26.8.2 (the Docker getting-started guide uses it). Alternative routes, not carry items: the release assets keycloak-26.8.2.tar.gz and keycloak-26.8.2.zip (each with .sha1 and .asc files on the GitHub release page; the downloads page links ZIP and TAR.GZ), whose runtime requirements this entry does not enumerate, and the Keycloak Operator for Kubernetes and OpenShift (listed on the downloads page through OperatorHub; this entry names no operator image or bundle). Initial admin: the start and start-dev commands support options that bootstrap a temporary admin user (KC_BOOTSTRAP_ADMIN_USERNAME and KC_BOOTSTRAP_ADMIN_PASSWORD in the getting-started guide); the guide says the account is temporary."
+
+[[airgap.telemetry]]
+what = "OpenTelemetry export (traces, logs, metrics) to a collector you name; not a vendor report. The opentelemetry feature is enabled by default, but each signal is a separate opt-in: traces need tracing-enabled=true, logs (preview) need the opentelemetry-logs feature and telemetry-logs-enabled=true, metrics (preview) need the opentelemetry-metrics feature and telemetry-metrics-enabled=true. The default collector endpoint, once a signal is on, is http://localhost:4317 (telemetry-endpoint)."
+disable = "Leave the three signals off (the default), or disable the feature at build time with --features-disabled=opentelemetry (the telemetry guide says disabling the feature disables the OpenTelemetry components)."
+
+[choose]
+when = [
+  "Several applications need single sign-on from one place: the guides describe Keycloak as the server that applications to be secured talk to over public endpoints, and the server administration guide has chapters on OpenID Connect and SAML 2.0 identity providers (identity brokering) as well as user federation.",
+  "Users already live in LDAP or Active Directory: the server administration guide says Keycloak includes an LDAP/AD provider, you can federate multiple LDAP servers in one realm, passwords are never imported and are always validated on the LDAP server, and the provider supports failover over a space-separated list of connection URLs (see the caveats).",
+  "More than one identity-server instance is needed for availability: the production guide says a typical production environment contains two or more instances, and the caching guide says Keycloak is designed for high availability and multi-node clustered setups, with the nodes discovering each other through the configured database by default.",
+]
+avoid_when = [
+  "Only the built-in development database (dev-file) is available: the database guide says it is not suitable for production use and must be replaced before deploying to production.",
+]
+alternatives = []
+caveats = [
+  "Database for production (question 5): the default database is dev-file, for development only. The guide lists supported databases and versions: PostgreSQL 18.x, 17.x, 16.x, 15.x and 14.x (tested with 18), EnterpriseDB Advanced 18.x and 17.x, Amazon Aurora PostgreSQL 17.x, 16.x and 15.x, MariaDB 11.8, 11.4, 10.11 and 10.6, MySQL 8.4 and 8.0, Microsoft SQL Server 2022 and 2019, Oracle Database 23.x and 19c, and Azure SQL Database and Managed Instance; it says using a version that differs from those shown is not a supported configuration. requires names postgresql because PostgreSQL is one of the supported databases and the one this catalog has. The catalog's postgresql entry pins PostgreSQL 18.7 for this reason, which is inside Keycloak 26.8.2's supported range (14.x to 18.x), so a design that takes the postgresql entry as written stays on a supported version. The documentation says the database matters for the performance, availability and integrity of Keycloak; high availability of the database is a separate design item (see the postgresql entry).",
+  "LDAP and Active Directory (question 5): users are imported into the Keycloak database by default (the Import Users switch; passwords are never imported) and synchronized on demand or by a periodic background task, or served from LDAP without import with limits on what features work; edit modes are READ_ONLY, WRITABLE and UNSYNCED; Kerberos/SPNEGO can be enabled for users provisioned from LDAP; ldaps:// connections need a truststore configured on the Keycloak side; several connection URLs give failover only between replicas of the same directory, tried left to right at connection time (the server administration guide and its source at the tag).",
+  "Availability (the T3 default): with the default jdbc-ping stack the nodes find each other through the database; cache communication between nodes is encrypted with TLS by default and the firewall must open the ports in the caching guide. Keycloak adds no component to the list for this. The production guide recommends a reverse proxy or load balancer in front.",
+  "Container image: the base image is hardened (no package manager); additions need a derived image. Build an optimized image with kc.sh build for production; running a non-optimized image repeats the build at every start.",
+  "No paid edition, license key or license check of the Keycloak project was found in the documentation read; the license file at the tag is Apache-2.0.",
+]
+
+[[deeper_skills]]
+repo = "air-gapped/skills"
+skill = "keycloak-iam"

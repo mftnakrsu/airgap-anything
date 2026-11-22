@@ -1,0 +1,61 @@
+/*
+ * The airgap-anything brand: Gap Yellow #FFC800 on ink #121417 (assets/brand/BRAND.md).
+ * Starlight sets data-theme="dark" or "light" on <html>; :root holds the dark values.
+ * Yellow is too light for text on white, so the light theme uses a dark ochre for links and
+ * keeps the yellow for surfaces. Text stays at 4.5:1 or more on its background.
+ */
+:root {
+  --sl-color-accent-low: #3a2f00;
+  --sl-color-accent: #ffc800;
+  --sl-color-accent-high: #fff3c4;
+
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #f2f3f5;
+  --sl-color-gray-2: #d0d7de;
+  --sl-color-gray-3: #9aa1a9;
+  --sl-color-gray-4: #5f6368;
+  --sl-color-gray-5: #3a414a;
+  --sl-color-gray-6: #1c2026;
+  --sl-color-black: #121417;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #fff3c4;
+  --sl-color-accent: #7a5c00;
+  --sl-color-accent-high: #3d2e00;
+
+  --sl-color-white: #121417;
+  --sl-color-gray-1: #1c2026;
+  --sl-color-gray-2: #3a414a;
+  --sl-color-gray-3: #57606a;
+  --sl-color-gray-4: #8c959f;
+  --sl-color-gray-5: #d0d7de;
+  --sl-color-gray-6: #f2f3f5;
+  --sl-color-gray-7: #f6f8fa;
+  --sl-color-black: #ffffff;
+}
+
+/* The primary button is the brand pair in both themes: ink on Gap Yellow. */
+.sl-link-button.primary {
+  background: #ffc800;
+  border-color: #ffc800;
+  color: #121417;
+}
+
+/* Cards use the accent instead of Starlight's rotating colours. */
+.card {
+  --sl-card-border: var(--sl-color-accent);
+  --sl-card-bg: var(--sl-color-accent-low);
+}
+
+/* The how-it-works diagram and the terminal recording keep their own size and scroll on phones. */
+.sl-markdown-content .figure {
+  display: block;
+  overflow-x: auto;
+}
+
+.sl-markdown-content .figure img {
+  min-width: 40rem;
+  max-width: 100%;
+  height: auto;
+}

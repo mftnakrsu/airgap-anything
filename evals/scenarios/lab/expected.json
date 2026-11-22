@@ -1,0 +1,46 @@
+{
+  "deterministic": {
+    "tier": {
+      "base": "T1",
+      "floors": {
+        "llm-serving": "T1",
+        "llm-gateway": "T1",
+        "ui": "T1",
+        "identity": "T1",
+        "observability": "T1",
+        "orchestration": "T1",
+        "state": "T1",
+        "registry": "T1"
+      },
+      "requirements": {
+        "gateway_non_empty": false,
+        "isolation_design_section": false,
+        "two_engine_replicas": false,
+        "kubernetes_risk_note": false
+      }
+    },
+    "sizing": {
+      "concurrency": { "low": 1, "high": 2 },
+      "models": [{ "gpus_per_replica": 1, "replicas": 1, "kv_status": "unknown" }],
+      "total_gpus": 1,
+      "servers": 1,
+      "power_kw": null,
+      "fits": true
+    }
+  },
+  "decisions": {
+    "llm-serving": { "components": ["ollama"] },
+    "llm-gateway": { "empty": true },
+    "ui": { "components": ["open-webui"] },
+    "identity": { "empty": true },
+    "observability": { "empty": true },
+    "orchestration": { "components": ["docker-compose"] },
+    "registry": { "components": ["distribution-registry"] }
+  },
+  "process": [
+    "docs/airgap/blueprint.json exists and lint.py exits 0",
+    "docs/airgap/transfer-manifest.md exists",
+    "the blueprint contains a benchmark-before-production step",
+    "no deployment file was written and nothing was installed"
+  ]
+}

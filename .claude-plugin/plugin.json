@@ -1,0 +1,20 @@
+{
+  "name": "airgap-anything",
+  "description": "Agent skills that design systems for air-gapped environments. First skill: airgap-architect.",
+  "icon": "./assets/brand/icons/icon-512.png",
+  "version": "0.1.0",
+  "author": {
+    "name": "mftnakrsu"
+  },
+  "homepage": "https://github.com/mftnakrsu/airgap-anything",
+  "repository": "https://github.com/mftnakrsu/airgap-anything",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "air-gapped",
+    "on-premises",
+    "architecture",
+    "llm",
+    "sizing"
+  ]
+}

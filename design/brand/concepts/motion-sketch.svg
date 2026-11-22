@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 380" width="980" height="380" role="img" aria-labelledby="title desc">
+  <title id="title">airgap-anything: motion sketches for the three logo concepts</title>
+  <desc id="desc">A: a block rises one way through the gap in the crossbar. B: a pulse stops at one plate and a new pulse leaves the other. C: the second A turns over into the for-all sign and slides into place.</desc>
+  <style>
+    svg { --ink: #111111; --paper: #ffffff; --mute: #5f6368; }
+    @media (prefers-color-scheme: dark) {
+      svg { --ink: #f0f1f2; --paper: #0d1117; --mute: #9aa1a9; }
+    }
+    .ink { fill: var(--ink); }
+    .paper { fill: var(--paper); }
+    .label { fill: var(--mute); font: 500 15px system-ui, -apple-system, "Segoe UI", sans-serif; }
+
+    /* A: one block rises through the gap, one way */
+    .pkt { opacity: 0; animation: rise 3.6s cubic-bezier(.45, 0, .2, 1) infinite; }
+    @keyframes rise {
+      0%        { transform: translateY(236px); opacity: 0; }
+      8%        { opacity: 1; }
+      62%       { transform: translateY(96px); opacity: 1; }
+      74%, 100% { transform: translateY(90px); opacity: 0; }
+    }
+
+    /* B: the pulse never crosses; a new one is made on the far side */
+    .pul-l { opacity: 0; animation: pul-l 4s linear infinite; }
+    @keyframes pul-l {
+      0%        { transform: translateX(0); opacity: 0; }
+      4%        { opacity: 1; }
+      24%       { transform: translateX(30px); opacity: 1; }
+      30%, 100% { transform: translateX(30px); opacity: 0; }
+    }
+    .fl-l { opacity: 0; animation: fl-l 4s linear infinite; }
+    @keyframes fl-l { 0%, 26% { opacity: 0; } 33% { opacity: .6; } 42%, 100% { opacity: 0; } }
+    .fl-r { opacity: 0; animation: fl-r 4s linear infinite; }
+    @keyframes fl-r { 0%, 44% { opacity: 0; } 51% { opacity: .6; } 60%, 100% { opacity: 0; } }
+    .pul-r { opacity: 0; animation: pul-r 4s linear infinite; }
+    @keyframes pul-r {
+      0%, 58%   { transform: translateX(0); opacity: 0; }
+      62%       { opacity: 1; }
+      84%       { transform: translateX(30px); opacity: 1; }
+      90%, 100% { transform: translateX(30px); opacity: 0; }
+    }
+
+    /* C: the second A turns over into the for-all sign and slides into the nest */
+    .flip { transform-box: fill-box; transform-origin: center; animation: flip 5s cubic-bezier(.6, 0, .3, 1) infinite; }
+    @keyframes flip {
+      0%, 12%  { transform: translateX(44px) scaleY(-1); }
+      46%, 80% { transform: translateX(0) scaleY(1); }
+      100%     { transform: translateX(44px) scaleY(-1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pkt, .pul-l, .pul-r, .fl-l, .fl-r, .flip { animation: none; }
+    }
+  </style>
+
+  <rect class="paper" width="980" height="380"/>
+
+  <g transform="translate(40 24)">
+    <path class="ink" d="M108 30 H148 L240 214 H200 L128 70 L56 214 H16 Z M82 140 H112 V172 H66 Z M144 140 H174 L190 172 H144 Z"/>
+    <rect class="ink pkt" x="118" y="0" width="20" height="20"/>
+  </g>
+  <text class="label" x="168" y="340" text-anchor="middle">A · Açık kiriş</text>
+
+  <g transform="translate(362 24)">
+    <path class="ink" d="M16 112 H72 V44 H108 V212 H72 V144 H16 Z M240 112 V144 H184 V212 H148 V44 H184 V112 Z"/>
+    <rect class="paper pul-l" x="20" y="121" width="20" height="14"/>
+    <rect class="paper fl-l" x="72" y="44" width="36" height="168"/>
+    <rect class="paper fl-r" x="148" y="44" width="36" height="168"/>
+    <rect class="paper pul-r" x="188" y="121" width="20" height="14"/>
+  </g>
+  <text class="label" x="490" y="340" text-anchor="middle">B · Plakalar</text>
+
+  <g transform="translate(672 24)">
+    <path class="ink" d="M62 74 H90 L144 182 H116 L76 102 L36 182 H8 Z M52 138 H100 L111 160 H41 Z"/>
+    <g class="flip">
+      <path class="ink" d="M194 182 H166 L112 74 H140 L180 154 L220 74 H248 Z M204 118 H156 L145 96 H215 Z"/>
+    </g>
+  </g>
+  <text class="label" x="800" y="340" text-anchor="middle">C · Her şey için</text>
+</svg>

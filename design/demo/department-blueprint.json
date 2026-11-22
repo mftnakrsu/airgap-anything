@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "project": "department-llm-platform",
+  "created": "2026-11-22",
+  "language": "en",
+  "blueprint_path": "docs/airgap/blueprint.md",
+  "answers": {
+    "org.users_total": 180,
+    "org.departments": 4,
+    "org.isolation": "per_department",
+    "org.audit_required": true,
+    "org.downtime_tolerance": "planned_only",
+    "org.ops_capacity": "small_team",
+    "org.kubernetes_experience": false,
+    "workload.usage": {
+      "chat": 1.0
+    },
+    "workload.models": [
+      {
+        "name": "one very large chat model",
+        "role": "chat",
+        "params_b": 671,
+        "precision": "fp8"
+      }
+    ],
+    "hardware.gpus": [
+      {
+        "model": "unnamed 141 GB GPU",
+        "count": 8,
+        "vram_gb": 141,
+        "tdp_w": 700
+      }
+    ],
+    "existing.identity": "ad_ldap",
+    "existing.api_gateway": "none",
+    "existing.kubernetes": "none",
+    "existing.registry": "none",
+    "transfer.channel": "removable_media",
+    "transfer.cadence": "unknown"
+  },
+  "decisions": [
+    {
+      "layer": "llm-serving",
+      "components": [
+        "vllm"
+      ],
+      "existing": [],
+      "custom": [],
+      "rationale": "One 671B 8-bit chat model needs all 8 GPUs for one replica (sizing: 738.1 GB required, 1015.2 GB usable, 277.1 GB left for KV cache), so the engine must split one model across GPUs; vLLM's README lists tensor, pipeline, data, expert and context parallelism and continuous batching. Table row 4 applies (chat only, no code_assistant or rag share), so vllm is the default, not a measured winner over sglang. Concurrency is handled by continuous batching and the queue settings --max-num-seqs, --max-num-batched-tokens, --max-num-queued-reqs and --max-num-queued-tokens; sizing expects 9 to 18 requests in flight. The 0.90 GPU memory share is the sizing assumption, not an engine default (vLLM v0.34.0 documents 1.0 on CUDA and ROCm, 0.92 elsewhere). ISOLATION BETWEEN DEPARTMENTS: four departments share this one engine and one replica, and a dedicated vLLM instance per department is impossible (the model fills all 8 GPUs). vLLM's security page says it does not isolate tenants that share a server process and that prefix caching shares cached prompt prefixes between callers. The design therefore switches prefix caching off (--no-enable-prefix-caching); its throughput cost is not documented and is measured in the benchmark. The other documented route, a gateway that scopes a secret cache_salt per department, is not used because the LiteLLM entry documents no per-team request parameters, and the page itself calls cache_salt a reduction of specific risks, not an isolation boundary. Chat is text only; image inputs are not offered, because media cache keys can alias between callers (GHSA-rh6f-3x46-j33q). The engine is reachable only from the gateway on an internal network: --api-key does not protect every endpoint. Not known: whether vLLM v0.34.0 supports this model's architecture, and whether the GPUs are NVIDIA (decides the image).",
+      "alternatives_considered": [
+        "sglang",
+        "ollama"
+      ],
+      "evidence": "estimate",
+      "override": null
+    },
+    {
+      "layer": "llm-gateway",
+      "components": [
+        "litellm"
+      ],
+      "existing": [],
+      "custom": [
+        "Carrying the signed-in person from each Open WebUI instance to LiteLLM so that every request record names a person (header or key mechanism is not in the catalog)"
+      ],
+      "rationale": "Four departments need separate budgets and every request must be attributable and kept: table row 3 (audit true, isolation not none, 4 departments). LiteLLM documents teams with max_budget, budget_duration and rpm_limit, team keys that draw on the team budget, virtual keys, and per-request spend logs in PostgreSQL. Design: one LiteLLM team per department, one team key per Open WebUI instance. Open points that the catalog leaves open and the design depends on: (1) its documentation contradicts itself on whether teams, keys and budgets need a paid license, and audit logs are listed as a paid feature that is off without a license; confirm with the vendor which features run without a license and whether spend logs hold enough for the audit duty (the catalog does not say whether prompts or answers are stored). (2) If a license key is needed it must pass the local signature check before install, otherwise LiteLLM calls license.litellm.ai and the paid features switch off; the check is not stopped by offline mode. (3) Attribution to a person, not only to a department, needs the custom entry. One worker only, so valkey is not required by LiteLLM. SSO for the LiteLLM Admin UI is free up to 5 users; only the 3 operators use it. Offline: LITELLM_OFFLINE_MODE=true plus the switches in section 4 of the manifest.",
+      "alternatives_considered": [
+        "kong",
+        "no gateway (not allowed: audit and isolation require one)"
+      ],
+      "evidence": "estimate",
+      "override": null
+    },
+    {
+      "layer": "ui",
+      "components": [
+        "open-webui"
+      ],
+      "existing": [],
+      "custom": [
+        "TLS-terminating reverse proxy with hostname routing in front of the four UI instances (no catalog entry; to be chosen in a blueprint change)"
+      ],
+      "rationale": "Open WebUI is the only UI in the catalog. Four instances, one per department, each with its own data volume and its own LiteLLM team key: this keeps department chats and uploads in separate stores and gives each department its budget at the gateway using only documented LiteLLM features. Each instance runs in its single-instance default (embedded SQLite, one worker), so the multi-replica requirements (PostgreSQL, vector database, shared storage) do not apply. 180 users is above 50, so the Open WebUI name and logo stay as they are (license condition). OFFLINE_MODE=true and the telemetry switches in the manifest. Sign-in through Keycloak (OIDC).",
+      "alternatives_considered": [
+        "no other ui option in the catalog; one shared instance with groups (weaker data separation, and per-department budgets would need per-person keys)"
+      ],
+      "evidence": "estimate",
+      "override": null
+    },
+    {
+      "layer": "identity",
+      "components": [
+        "keycloak"
+      ],
+      "existing": [
+        "Active Directory (existing), federated through Keycloak's LDAP/AD provider"
+      ],
+      "custom": [],
+      "rationale": "Floor T2 (isolation per_department): Keycloak federated to the existing Active Directory; passwords are validated on the directory and never imported. One realm, AD groups per department mapped to Keycloak groups, one OIDC client per Open WebUI instance; each client admits only its department's group (to be verified). ldaps needs a truststore on the Keycloak side; the production database is the shared PostgreSQL, because the default dev-file database is for development only. One Keycloak instance is enough for planned-only downtime.",
+      "alternatives_considered": [
+        "local accounts in the UI (T1 floor, below the floor: no AD link, no person-level audit)",
+        "existing OIDC provider (none exists)",
+        "LiteLLM SSO (free only up to 5 users)"
+      ],
+      "evidence": "estimate",
+      "override": null
+    },
+    {
+      "layer": "observability",
+      "components": [
+        "prometheus",
+        "grafana"
+      ],
+      "existing": [],
+      "custom": [],
+      "rationale": "T2 floor. Prometheus scrapes vLLM's /metrics and the host; Grafana shows GPU, queue and latency panels. Prometheus storage is local and not replicated; metrics loss is acceptable and the logs that matter for audit live in LiteLLM's PostgreSQL. Grafana open-source edition: its LDAP active sync and team sync need Enterprise, so the 3 operators use local accounts or generic OAuth through Keycloak. GPU hardware metrics need an exporter that is not in the catalog (vendor unknown); the vLLM metrics come first.",
+      "alternatives_considered": [
+        "none (T1 floor, below the floor)",
+        "vLLM metrics endpoint only"
+      ],
+      "evidence": "estimate",
+      "override": null
+    },
+    {
+      "layer": "orchestration",
+      "components": [
+        "docker-compose"
+      ],
+      "existing": [],
+      "custom": [
+        "Docker Engine (outside the catalog)",
+        "GPU driver and container toolkit for the GPU vendor (vendor unknown; outside the catalog)"
+      ],
+      "rationale": "The team of three does not run Kubernetes (answer false), so at T2 the floor says docker-compose, not k3s. One server hosts everything, which is the case Compose's production page calls the easiest. Compose reserves GPUs with deploy.resources.reservations.devices; its GPU page covers NVIDIA only, so an AMD or Intel GPU needs a different route and a blueprint change. Compose has no scheduler: a failed container is restarted by the engine's restart policy, nothing moves to a second host.",
+      "alternatives_considered": [
+        "k3s (only when Kubernetes experience is true)",
+        "rke2 (T3 floor)",
+        "existing Kubernetes (none)"
+      ],
+      "evidence": "estimate",
+      "override": null
+    },
+    {
+      "layer": "state",
+      "components": [
+        "postgresql",
+        "valkey"
+      ],
+      "existing": [],
+      "custom": [],
+      "rationale": "T2 floor: postgresql and valkey. One PostgreSQL 18.7 instance with separate databases and roles for LiteLLM (keys, teams, budgets, spend logs) and Keycloak; this is the audit store, so it is backed up on a schedule and its retention period is an open question. Valkey holds Open WebUI session revocation and sign-in rate limits (the Open WebUI guide recommends a Redis-protocol store even for one instance) and would be needed by LiteLLM only if it ran several workers. No standby database: automatic failover needs tooling outside the catalog, and planned-only downtime does not demand it.",
+      "alternatives_considered": [
+        "highly available postgresql (T3)",
+        "no state layer (not possible: litellm and keycloak require postgresql)"
+      ],
+      "evidence": "estimate",
+      "override": null
+    },
+    {
+      "layer": "registry",
+      "components": [
+        "harbor"
+      ],
+      "existing": [],
+      "custom": [
+        "Docker Engine on the Harbor host (same installation as the orchestration host)"
+      ],
+      "rationale": "T2 floor: harbor or an existing registry; none exists. Images arrive on removable media, are loaded and pushed into Harbor, and the Compose files pull only from there. Harbor's offline installer needs Docker Engine and Docker Compose on its host; Compose is in the orchestration decision. Harbor ships no certificates and a default admin password (Harbor12345): set both. Trivy scanning is optional; if used, its vulnerability database has to be carried in too, and its telemetry switched off. Harbor on the one production server is lost with it, so the carried-in archive on removable media stays the recovery copy. The lighter distribution-registry is T1 only; choosing it needs an override.",
+      "alternatives_considered": [
+        "distribution-registry (T1 floor, below the floor)",
+        "existing registry (none)"
+      ],
+      "evidence": "estimate",
+      "override": null
+    }
+  ]
+}

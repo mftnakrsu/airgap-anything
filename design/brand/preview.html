@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>airgap-anything görsel önizleme</title>
+<style>
+  :root {
+    --paper: #ffffff;
+    --night: #0d1117;
+    --ink: #121417;
+    --snow: #f2f3f5;
+    --mute: #5f6368;
+    --line: #d9dce0;
+    --yellow: #ffc800;
+    --sans: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  html, body { overflow-x: clip; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.5; }
+  main { max-width: 1120px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 48px 0 12px; }
+  p { margin: 0 0 12px; color: var(--mute); }
+  .frame { border: 1px solid var(--line); border-radius: 8px; padding: 24px; background: var(--paper); }
+  .frame.dark { background: var(--night); border-color: var(--night); }
+  .frame img { display: block; max-width: 100%; height: auto; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 16px; align-items: center; }
+  .row .frame { display: grid; place-items: center; min-height: 220px; }
+  .note { border-left: 4px solid var(--yellow); padding: 4px 0 4px 16px; margin: 16px 0 0; }
+  .note li { color: var(--ink); }
+  small { color: var(--mute); display: block; margin-top: 8px; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>airgap-anything görsel önizleme</h1>
+  <p>Görseller README'de görüneceği gibi resim olarak yükleniyor; animasyonlar döngü halinde oynar. Logo, renk ve yazı tipi 21 Kasım 2026'da onaylandı.</p>
+
+  <h2>1. README başlığı, açık tema</h2>
+  <div class="frame"><img src="../../assets/brand/hero-light.svg" alt="airgap-anything başlığı, açık tema"></div>
+
+  <h2>2. README başlığı, koyu tema</h2>
+  <div class="frame dark"><img src="../../assets/brand/hero-dark.svg" alt="airgap-anything başlığı, koyu tema"></div>
+
+  <h2>3. Akış diyagramı, açık tema</h2>
+  <div class="frame"><img src="../../assets/brand/pipeline-light.svg" alt="Akış diyagramı, açık tema"></div>
+
+  <h2>4. Akış diyagramı, koyu tema</h2>
+  <div class="frame dark"><img src="../../assets/brand/pipeline-dark.svg" alt="Akış diyagramı, koyu tema"></div>
+
+  <h2>README akış diyagramı: aynı şeffaf dosya, açık ve koyu sayfada</h2>
+  <div class="frame"><img src="../../assets/brand/how-it-works.svg" alt="README akış diyagramı, açık sayfada"></div>
+  <div class="frame dark" style="margin-top:16px"><img src="../../assets/brand/how-it-works.svg" alt="README akış diyagramı, koyu sayfada"></div>
+
+  <h2>5. Sembol, simge ve yerleşimler</h2>
+  <div class="row">
+    <div><div class="frame"><img src="../../assets/brand/symbol-animated.svg" alt="Animasyonlu sembol" width="200"></div><small>Animasyonlu sembol (A, ∀ olur)</small></div>
+    <div><div class="frame"><img src="../../assets/brand/logo/icon-tile.svg" alt="Simge" width="160"></div><small>Simge ve avatar</small></div>
+    <div><div class="frame dark"><img src="../../assets/brand/icon-tile-animated.svg" alt="Animasyonlu simge" width="160"></div><small>Animasyonlu simge (README başlığı)</small></div>
+    <div><div class="frame"><img src="../../assets/brand/logo/lockup-stacked-ink.svg" alt="Dikey yerleşim" width="260"></div><small>Dikey yerleşim</small></div>
+  </div>
+
+  <h2>6. Yatay yerleşim</h2>
+  <div class="frame"><img src="../../assets/brand/logo/lockup-horizontal-ink.svg" alt="Yatay yerleşim, açık zemin"></div>
+  <div class="frame dark" style="margin-top:16px"><img src="../../assets/brand/logo/lockup-horizontal-white.svg" alt="Yatay yerleşim, koyu zemin"></div>
+
+  <h2>7. Sosyal önizleme (GitHub paylaşım görseli)</h2>
+  <div class="frame"><img src="../../assets/brand/social-preview.svg" alt="Sosyal önizleme"></div>
+
+  <h2>8. Yedekler: GIF (wiki gibi SVG oynatmayan yerler için)</h2>
+  <div class="frame"><img src="../../assets/brand/fallback/hero-light.gif" alt="Başlık, GIF"></div>
+  <div class="frame" style="margin-top:16px"><img src="../../assets/brand/fallback/pipeline-light.gif" alt="Akış diyagramı, GIF"></div>
+
+  <h2>9. Favicon ve web simgeleri</h2>
+  <div class="row">
+    <div><div class="frame"><img src="../../assets/brand/icons/favicon-16.png" alt="16 piksel" width="16"></div><small>16 piksel</small></div>
+    <div><div class="frame"><img src="../../assets/brand/icons/favicon-32.png" alt="32 piksel" width="32"></div><small>32 piksel</small></div>
+    <div><div class="frame"><img src="../../assets/brand/icons/apple-touch-icon.png" alt="180 piksel" width="120"></div><small>Uygulama simgesi</small></div>
+  </div>
+</main>
+</body>
+</html>

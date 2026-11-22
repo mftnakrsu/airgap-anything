@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 256" width="1160" height="256" role="img" aria-labelledby="title">
+  <title id="title">airgap-anything lockup C (exploration)</title>
+  <g id="symbol"><path fill="#111" d="M64 72 H90 L146 184 H120 L77 98 L34 184 H8 Z M50 140 H104 L114 160 H40 Z M192 184 H166 L110 72 H136 L179 158 L222 72 H248 Z M206 116 H152 L142 96 H216 Z"/></g>
+  <!-- EXPLORATION ONLY: live text. The wordmark must be drawn as outlines before delivery. -->
+  <g id="wordmark"><text x="296" y="158" font-family="'DejaVu Sans Mono', 'Liberation Mono', monospace" font-weight="700" font-size="92" fill="#111">airgap-anything</text></g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">airgap-anything concept C: for all</title>
+  <!-- An A and its 180-degree twin (the "for all" sign), nested so that a constant
+       20-unit diagonal channel runs between them. Point-symmetric about (128,128). -->
+  <path fill="#111" d="M64 72 H90 L146 184 H120 L77 98 L34 184 H8 Z
+                       M50 140 H104 L114 160 H40 Z
+                       M192 184 H166 L110 72 H136 L179 158 L222 72 H248 Z
+                       M206 116 H152 L142 96 H216 Z"/>
+</svg>

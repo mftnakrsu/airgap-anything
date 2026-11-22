@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 620" width="880" height="620" role="img" aria-labelledby="title desc">
+  <title id="title">airgap-architect in a terminal</title>
+  <desc id="desc">The four scripts of the airgap-architect skill run on a department blueprint: tier.py, size.py, manifest.py and lint.py. Lint ends with OK: no findings. The output is the scripts' real output, rebuilt by design/demo/build_demo.py.</desc>
+  <style>
+    text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; white-space: pre; }
+    .t { fill: #F2F3F5; } .m { fill: #9AA1A9; } .b { font-weight: 600; }
+    .cur { opacity: 0; }
+    @media (prefers-reduced-motion: no-preference) {
+      .fade, .row, .cur { animation-duration: 23.812s; animation-iteration-count: infinite; animation-timing-function: linear; }
+      .fade { animation-name: fade; }
+      @keyframes fade { 0%, 92.8607% { opacity: 1; } 94.9605%, 98.3202% { opacity: 0; } 100% { opacity: 1; } }
+      .r0 { animation-name: r0; }
+      @keyframes r0 { 0%, 2.5197% { opacity: 0; } 2.5281%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .c0 { animation-name: c0; }
+      @keyframes c0 { 0%, 2.5197% { opacity: 0; transform: translateX(0px); } 2.5281% { opacity: 1; transform: translateX(0px); animation-timing-function: steps(39, end); } 6.4505%, 7.7104% { opacity: 1; transform: translateX(292.5px); } 7.7188% { opacity: 0; transform: translateX(292.5px); } 100% { opacity: 0; transform: translateX(0px); } }
+      .r1 { animation-name: r1; }
+      @keyframes r1 { 0%, 11.49% { opacity: 0; } 11.4984%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .c1 { animation-name: c1; }
+      @keyframes c1 { 0%, 11.49% { opacity: 0; transform: translateX(0px); } 11.4984% { opacity: 1; transform: translateX(0px); animation-timing-function: steps(69, end); } 18.4445%, 19.7044% { opacity: 1; transform: translateX(517.5px); } 19.7127% { opacity: 0; transform: translateX(517.5px); } 100% { opacity: 0; transform: translateX(0px); } }
+      .r2 { animation-name: r2; }
+      @keyframes r2 { 0%, 19.9563% { opacity: 0; } 19.9647%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r3 { animation-name: r3; }
+      @keyframes r3 { 0%, 20.2083% { opacity: 0; } 20.2167%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r4 { animation-name: r4; }
+      @keyframes r4 { 0%, 20.4603% { opacity: 0; } 20.4687%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r5 { animation-name: r5; }
+      @keyframes r5 { 0%, 20.7122% { opacity: 0; } 20.7206%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r6 { animation-name: r6; }
+      @keyframes r6 { 0%, 20.9642% { opacity: 0; } 20.9726%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r7 { animation-name: r7; }
+      @keyframes r7 { 0%, 21.2162% { opacity: 0; } 21.2246%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r8 { animation-name: r8; }
+      @keyframes r8 { 0%, 21.4682% { opacity: 0; } 21.4766%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r9 { animation-name: r9; }
+      @keyframes r9 { 0%, 21.7201% { opacity: 0; } 21.7285%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r10 { animation-name: r10; }
+      @keyframes r10 { 0%, 21.9721% { opacity: 0; } 21.9805%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r11 { animation-name: r11; }
+      @keyframes r11 { 0%, 22.2241% { opacity: 0; } 22.2325%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r12 { animation-name: r12; }
+      @keyframes r12 { 0%, 22.4761% { opacity: 0; } 22.4845%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r13 { animation-name: r13; }
+      @keyframes r13 { 0%, 26.2557% { opacity: 0; } 26.2641%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .c13 { animation-name: c13; }
+      @keyframes c13 { 0%, 26.2557% { opacity: 0; transform: translateX(0px); } 26.2641% { opacity: 1; transform: translateX(0px); animation-timing-function: steps(69, end); } 33.2101%, 34.47% { opacity: 1; transform: translateX(517.5px); } 34.4784% { opacity: 0; transform: translateX(517.5px); } 100% { opacity: 0; transform: translateX(0px); } }
+      .r14 { animation-name: r14; }
+      @keyframes r14 { 0%, 34.722% { opacity: 0; } 34.7304%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r15 { animation-name: r15; }
+      @keyframes r15 { 0%, 34.974% { opacity: 0; } 34.9824%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r16 { animation-name: r16; }
+      @keyframes r16 { 0%, 35.2259% { opacity: 0; } 35.2343%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r17 { animation-name: r17; }
+      @keyframes r17 { 0%, 35.4779% { opacity: 0; } 35.4863%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r18 { animation-name: r18; }
+      @keyframes r18 { 0%, 35.7299% { opacity: 0; } 35.7383%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r19 { animation-name: r19; }
+      @keyframes r19 { 0%, 39.5095% { opacity: 0; } 39.5179%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .c19 { animation-name: c19; }
+      @keyframes c19 { 0%, 39.5095% { opacity: 0; transform: translateX(0px); } 39.5179% { opacity: 1; transform: translateX(0px); animation-timing-function: steps(73, end); } 46.8671%, 48.127% { opacity: 1; transform: translateX(547.5px); } 48.1354% { opacity: 0; transform: translateX(547.5px); } 100% { opacity: 0; transform: translateX(0px); } }
+      .r20 { animation-name: r20; }
+      @keyframes r20 { 0%, 48.379% { opacity: 0; } 48.3874%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r21 { animation-name: r21; }
+      @keyframes r21 { 0%, 52.1586% { opacity: 0; } 52.167%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .c21 { animation-name: c21; }
+      @keyframes c21 { 0%, 52.1586% { opacity: 0; transform: translateX(0px); } 52.167% { opacity: 1; transform: translateX(0px); animation-timing-function: steps(44, end); } 56.5933%, 57.8532% { opacity: 1; transform: translateX(330px); } 57.8616% { opacity: 0; transform: translateX(330px); } 100% { opacity: 0; transform: translateX(0px); } }
+      .r22 { animation-name: r22; }
+      @keyframes r22 { 0%, 58.1052% { opacity: 0; } 58.1136%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r23 { animation-name: r23; }
+      @keyframes r23 { 0%, 58.3571% { opacity: 0; } 58.3655%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r24 { animation-name: r24; }
+      @keyframes r24 { 0%, 58.6091% { opacity: 0; } 58.6175%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r25 { animation-name: r25; }
+      @keyframes r25 { 0%, 58.8611% { opacity: 0; } 58.8695%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r26 { animation-name: r26; }
+      @keyframes r26 { 0%, 59.1131% { opacity: 0; } 59.1215%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r27 { animation-name: r27; }
+      @keyframes r27 { 0%, 59.365% { opacity: 0; } 59.3734%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r28 { animation-name: r28; }
+      @keyframes r28 { 0%, 59.617% { opacity: 0; } 59.6254%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .r29 { animation-name: r29; }
+      @keyframes r29 { 0%, 63.3966% { opacity: 0; } 63.405%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+      .c29 { animation-name: c29; }
+      @keyframes c29 { 0%, 63.3966% { opacity: 0; transform: translateX(0px); } 63.405% { opacity: 1; transform: translateX(0px); animation-timing-function: steps(69, end); } 70.3511%, 71.611% { opacity: 1; transform: translateX(517.5px); } 71.6194% { opacity: 0; transform: translateX(517.5px); } 100% { opacity: 0; transform: translateX(0px); } }
+      .r30 { animation-name: r30; }
+      @keyframes r30 { 0%, 71.8629% { opacity: 0; } 71.8713%, 97.0603% { opacity: 1; } 97.0687%, 100% { opacity: 0; } }
+    }
+  </style>
+  <defs>
+    <clipPath id="win"><rect x="1" y="1" width="878" height="618" rx="10"/></clipPath>
+    <clipPath id="view"><rect x="14" y="50" width="852" height="558"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="878" height="618" rx="10" fill="#0D1117"/>
+  <g clip-path="url(#win)">
+    <rect x="0" y="0" width="880" height="36" fill="#121417"/>
+    <rect x="0" y="35" width="880" height="1" fill="#3A414A"/>
+  </g>
+  <circle cx="18" cy="18" r="4.5" fill="none" stroke="#3A414A" stroke-width="1.5"/><circle cx="34" cy="18" r="4.5" fill="none" stroke="#3A414A" stroke-width="1.5"/><circle cx="50" cy="18" r="4.5" fill="none" stroke="#3A414A" stroke-width="1.5"/>
+  <text class="m" x="440" y="22" text-anchor="middle" xml:space="preserve" style="font-size: 12px">department-llm-platform</text>
+  <rect x="1" y="1" width="878" height="618" rx="10" fill="none" stroke="#3A414A" stroke-width="1"/>
+  <g clip-path="url(#view)">
+    <g class="fade">
+      <g class="row r0"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320" y="64" xml:space="preserve"><tspan class="m">$ </tspan><tspan class="t b">skill=~/.claude/skills/airgap-architect</tspan></text></g>
+      <g class="cur c0"><rect x="35" y="50" width="293.5" height="18" fill="#0D1117"/><rect x="35" y="53" width="7.5" height="12" fill="#FFC800"/></g>
+      <g class="row r1"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515 522.5 530 537.5 545" y="82" xml:space="preserve"><tspan class="m">$ </tspan><tspan class="t b">python3 $skill/scripts/tier.py --blueprint docs/airgap/blueprint.json</tspan></text></g>
+      <g class="cur c1"><rect x="35" y="68" width="518.5" height="18" fill="#0D1117"/><rect x="35" y="71" width="7.5" height="12" fill="#FFC800"/></g>
+      <g class="row r2"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110" y="100" xml:space="preserve"><tspan class="t">Base tier: T2</tspan></text></g>
+      <g class="row r3"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140" y="118" xml:space="preserve"><tspan class="t">  llm-serving: T2</tspan></text></g>
+      <g class="row r4"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140" y="136" xml:space="preserve"><tspan class="t">  llm-gateway: T2</tspan></text></g>
+      <g class="row r5"><text x="20 27.5 35 42.5 50 57.5 65 72.5" y="154" xml:space="preserve"><tspan class="t">  ui: T2</tspan></text></g>
+      <g class="row r6"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5" y="172" xml:space="preserve"><tspan class="t">  identity: T2</tspan></text></g>
+      <g class="row r7"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155" y="190" xml:space="preserve"><tspan class="t">  observability: T2</tspan></text></g>
+      <g class="row r8"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155" y="208" xml:space="preserve"><tspan class="t">  orchestration: T2</tspan></text></g>
+      <g class="row r9"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95" y="226" xml:space="preserve"><tspan class="t">  state: T2</tspan></text></g>
+      <g class="row r10"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5" y="244" xml:space="preserve"><tspan class="t">  registry: T2</tspan></text></g>
+      <g class="row r11"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515 522.5 530 537.5 545 552.5 560 567.5 575 582.5 590 597.5 605 612.5 620 627.5 635 642.5 650" y="262" xml:space="preserve"><tspan class="t">- org.audit_required sets the llm-gateway floor to at least T2 and requires a gateway</tspan></text></g>
+      <g class="row r12"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515 522.5 530 537.5 545 552.5 560 567.5 575 582.5 590 597.5 605 612.5 620 627.5 635 642.5 650 657.5 665 672.5 680 687.5 695 702.5 710 717.5 725 732.5 740 747.5 755 762.5 770 777.5 785 792.5 800 807.5 815 822.5 830 837.5 845" y="280" xml:space="preserve"><tspan class="t">- org.isolation = per_department sets the llm-gateway and identity floors to at least T2 and requires a gateway</tspan></text></g>
+      <g class="row r13"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515 522.5 530 537.5 545" y="298" xml:space="preserve"><tspan class="m">$ </tspan><tspan class="t b">python3 $skill/scripts/size.py --blueprint docs/airgap/blueprint.json</tspan></text></g>
+      <g class="cur c13"><rect x="35" y="284" width="518.5" height="18" fill="#0D1117"/><rect x="35" y="287" width="7.5" height="12" fill="#FFC800"/></g>
+      <g class="row r14"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320" y="316" xml:space="preserve"><tspan class="t">Peak concurrency: 9-18 requests in flight</tspan></text></g>
+      <g class="row r15"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515 522.5 530 537.5" y="334" xml:space="preserve"><tspan class="t">  one very large chat model: 1 replica(s) x 8 GPU(s), KV cache unknown</tspan></text></g>
+      <g class="row r16"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515" y="352" xml:space="preserve"><tspan class="t">    note: KV-cache capacity is unknown; measure it with a benchmark</tspan></text></g>
+      <g class="row r17"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425" y="370" xml:space="preserve"><tspan class="t">Total: 8 GPU(s), 1 server(s), power 10.1 kW, fits: True</tspan></text></g>
+      <g class="row r18"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440" y="388" xml:space="preserve"><tspan class="t">Throughput is not predicted: benchmark before production.</tspan></text></g>
+      <g class="row r19"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515 522.5 530 537.5 545 552.5 560 567.5 575" y="406" xml:space="preserve"><tspan class="m">$ </tspan><tspan class="t b">python3 $skill/scripts/manifest.py --blueprint docs/airgap/blueprint.json</tspan></text></g>
+      <g class="cur c19"><rect x="35" y="392" width="548.5" height="18" fill="#0D1117"/><rect x="35" y="395" width="7.5" height="12" fill="#FFC800"/></g>
+      <g class="row r20"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5" y="424" xml:space="preserve"><tspan class="t">Wrote docs/airgap/transfer-manifest.md</tspan></text></g>
+      <g class="row r21"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5" y="442" xml:space="preserve"><tspan class="m">$ </tspan><tspan class="t b">grep '^## ' docs/airgap/transfer-manifest.md</tspan></text></g>
+      <g class="cur c21"><rect x="35" y="428" width="331" height="18" fill="#0D1117"/><rect x="35" y="431" width="7.5" height="12" fill="#FFC800"/></g>
+      <g class="row r22"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5" y="460" xml:space="preserve"><tspan class="t">## 1. Container images</tspan></text></g>
+      <g class="row r23"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170" y="478" xml:space="preserve"><tspan class="t">## 2. Model artifacts</tspan></text></g>
+      <g class="row r24"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215" y="496" xml:space="preserve"><tspan class="t">## 3. Packages and binaries</tspan></text></g>
+      <g class="row r25"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515 522.5" y="514" xml:space="preserve"><tspan class="t">## 4. Telemetry and egress settings to switch off before first start</tspan></text></g>
+      <g class="row r26"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335" y="532" xml:space="preserve"><tspan class="t">## 5. Runtime downloads to stage in advance</tspan></text></g>
+      <g class="row r27"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335" y="550" xml:space="preserve"><tspan class="t">## 6. Per-tool skills worth carrying inside</tspan></text></g>
+      <g class="row r28"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5" y="568" xml:space="preserve"><tspan class="t">## 7. Verification steps</tspan></text></g>
+      <g class="row r29"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125 132.5 140 147.5 155 162.5 170 177.5 185 192.5 200 207.5 215 222.5 230 237.5 245 252.5 260 267.5 275 282.5 290 297.5 305 312.5 320 327.5 335 342.5 350 357.5 365 372.5 380 387.5 395 402.5 410 417.5 425 432.5 440 447.5 455 462.5 470 477.5 485 492.5 500 507.5 515 522.5 530 537.5 545" y="586" xml:space="preserve"><tspan class="m">$ </tspan><tspan class="t b">python3 $skill/scripts/lint.py --blueprint docs/airgap/blueprint.json</tspan></text></g>
+      <g class="cur c29"><rect x="35" y="572" width="518.5" height="18" fill="#0D1117"/><rect x="35" y="575" width="7.5" height="12" fill="#FFC800"/></g>
+      <g class="row r30"><text x="20 27.5 35 42.5 50 57.5 65 72.5 80 87.5 95 102.5 110 117.5 125" y="604" xml:space="preserve"><tspan class="t b">OK: no findings</tspan></text></g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">airgap-anything concept A: open bar</title>
+  <!-- v2: raised 6 units for optical centring; crossbar stubs thinned from 36 to 32.
+       Letter A, flat apex, legs on a 1:2 slope, 40-unit horizontal leg width.
+       The crossbar is two stubs that stop 32 units short of each other; the air
+       between them and the counter above form an upward arrow. -->
+  <path fill="#111" d="M108 30 H148 L240 214 H200 L128 70 L56 214 H16 Z
+                       M82 140 H112 V172 H66 Z
+                       M144 140 H174 L190 172 H144 Z"/>
+</svg>

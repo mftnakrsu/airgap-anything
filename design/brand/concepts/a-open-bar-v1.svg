@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">airgap-anything concept A: open bar</title>
+  <!-- Letter A, flat apex, legs on a 1:2 slope, 40-unit horizontal leg width.
+       The crossbar is two stubs that stop 32 units short of each other. -->
+  <path fill="#111" d="M108 36 H148 L240 220 H200 L128 76 L56 220 H16 Z
+                       M82 144 H112 V180 H64 Z
+                       M144 144 H174 L192 180 H144 Z"/>
+</svg>

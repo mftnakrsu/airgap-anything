@@ -1,0 +1,48 @@
+{
+  "deterministic": {
+    "tier": {
+      "base": "T2",
+      "floors": {
+        "llm-serving": "T2",
+        "llm-gateway": "T2",
+        "ui": "T2",
+        "identity": "T2",
+        "observability": "T2",
+        "orchestration": "T2",
+        "state": "T2",
+        "registry": "T2"
+      },
+      "requirements": {
+        "gateway_non_empty": true,
+        "isolation_design_section": false,
+        "two_engine_replicas": false,
+        "kubernetes_risk_note": false
+      }
+    },
+    "sizing": {
+      "concurrency": { "low": 9, "high": 18 },
+      "models": [{ "gpus_per_replica": 8, "replicas": 1, "kv_status": "unknown" }],
+      "total_gpus": 8,
+      "servers": 1,
+      "power_kw": 10.1,
+      "fits": true
+    }
+  },
+  "decisions": {
+    "llm-serving": { "components": ["vllm"] },
+    "llm-gateway": { "components": ["litellm"] },
+    "ui": { "components": ["open-webui"] },
+    "identity": { "includes": ["keycloak"] },
+    "observability": { "components": ["prometheus", "grafana"] },
+    "orchestration": { "components": ["docker-compose"] },
+    "state": { "includes": ["postgresql", "valkey"] },
+    "registry": { "components": ["harbor"] }
+  },
+  "process": [
+    "docs/airgap/blueprint.json exists and lint.py exits 0",
+    "docs/airgap/transfer-manifest.md exists",
+    "the blueprint contains a benchmark-before-production step",
+    "the verification section lists every decision that rests on an estimate",
+    "no deployment file was written and nothing was installed"
+  ]
+}

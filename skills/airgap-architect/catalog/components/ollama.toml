@@ -1,0 +1,79 @@
+schema_version = 1
+id = "ollama"
+name = "Ollama"
+layer = "llm-serving"
+summary = "Local model runtime with a command-line tool and an HTTP server that pulls models from a registry or imports them from GGUF or Safetensors files and serves them on one host, on a GPU or on the CPU."
+tiers = ["T1", "T2"]
+requires = []
+version = "0.40.17"
+license = "MIT"
+last_verified = 2026-11-21
+
+[evidence]
+level = "docs"
+sources = [
+  "https://github.com/ollama/ollama/releases/tag/v0.40.17",
+  "https://github.com/ollama/ollama/blob/main/LICENSE",
+  "https://hub.docker.com/v2/repositories/ollama/ollama/tags?page_size=100&name=0.40.17",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/docker.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/linux.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/faq.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/context-length.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/import.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/gpu.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/macos.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/api/introduction.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/api/openai-compatibility.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/api/anthropic-compatibility.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/cloud.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/cloud/faq.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/docs/cloud/usage.mdx",
+  "https://github.com/ollama/ollama/blob/v0.40.17/envconfig/config.go",
+  "https://github.com/ollama/ollama/blob/v0.40.17/app/updater/updater.go",
+]
+verified_by = ""
+notes = "All values were read on 2026-11-21 from the pages in sources; the documentation pages are the files of the repository at tag v0.40.17 (the version documented here). Version 0.40.17 is the latest GitHub release (v0.40.17, not a prerelease) and the tags 0.40.17 and 0.40.17-rocm exist on Docker Hub; the version is written the way the image tags write it, without the leading v of the release tag. The license is MIT (repository license file). Offline behavior is documented only in part and was not run: the project's documentation has no air-gap or offline page (searched for air-gap, airgap, offline and disconnected), so the offline path in this entry is assembled from the import page, the FAQ and the Docker page and is not verified in a disconnected network. The update-check behavior of the macOS and Windows apps is taken from the source file app/updater/updater.go at the tag, not from a documentation page, and is labeled as such below."
+
+[airgap]
+images = [
+  { ref = "ollama/ollama:0.40.17", digest = "", hardware = ["nvidia", "intel", "cpu"] },
+  { ref = "ollama/ollama:0.40.17-rocm", digest = "", hardware = ["amd"] },
+]
+packages = []
+runtime_downloads = [
+  "Models: Ollama pulls models from the Internet (FAQ: 'Ollama pulls models from the Internet and may require a proxy server', using HTTPS_PROXY). A model that is not in the local model store is fetched when it is pulled or first run. Stage models in advance by importing files (next item).",
+  "Pointing Ollama at models copied in by hand: the documented route is to import files. Create a Modelfile whose FROM line names a GGUF file (FROM /path/to/file.gguf, or FROM /path/to/model-*.gguf for a split model) or a directory of Safetensors weights (FROM /path/to/safetensors/directory), then run ollama create my-model. Ollama does not quantize GGUF files on import. The model store location is set with OLLAMA_MODELS (default ~/.ollama/models on macOS, /usr/share/ollama/.ollama/models on Linux with the standard installer); on Linux the ollama user needs read and write access to that directory. The documentation does not describe copying a populated model store from another machine.",
+  "Cloud features: if the instance is signed in, cloud-hosted models and web search go to ollama.com; turn them off with OLLAMA_NO_CLOUD=1 (see telemetry list).",
+]
+license_server = false
+notes = "Offline behavior is documented only in part and was not run (see evidence.notes): there is no offline or air-gap page, and the entry rests on the import page, the FAQ and the Docker page. Default listening address is 127.0.0.1 port 11434, changed with OLLAMA_HOST. Images, one per hardware class named in the Docker page (tags checked on Docker Hub on 2026-11-21): ollama/ollama:0.40.17 is the default image, for CPU-only and NVIDIA hosts (docker run with --gpus=all and the NVIDIA Container Toolkit for NVIDIA GPUs); the Docker page (Vulkan Support) says Vulkan is bundled into the ollama/ollama image and enabled by default when the container can access the GPU devices, and the GPU page (Vulkan GPU Support) gives Linux driver instructions for Intel and AMD GPUs, so the default image is the documented route for Intel GPUs (OLLAMA_VULKAN=0 disables Vulkan, Docker page); ollama/ollama:0.40.17-rocm is for AMD GPUs through ROCm (run with --device /dev/kfd --device /dev/dri; amd64 only). The default tag is a multi-architecture manifest list (amd64 and arm64): copy the platform of the target hosts. Dropped from the list: the 0.40.17-rc0 to 0.40.17-rc4 tags and their -rocm variants (release candidates, not the release). Alternative install route without containers, not carry items: the Linux manual-install page extracts packages into /usr, and the GitHub release v0.40.17 carries ollama-linux-amd64.tar.zst (Linux x86-64), ollama-linux-amd64-rocm.tar.zst (extra package for AMD GPUs, extracted over the first), ollama-linux-arm64.tar.zst (Linux ARM64), ollama-linux-amd64-mlx.tar.zst (an MLX variant; the pages read do not describe it), ollama-linux-arm64-jetpack5.tar.zst and ollama-linux-arm64-jetpack6.tar.zst (NVIDIA Jetson), the macOS and Windows packages, install.sh and install.ps1, and sha256sum.txt, a checksum file to verify the downloads. The manual-install page gives unversioned ollama.com download URLs, so take the files from the release for a pinned version. Telemetry: the documentation names no usage-statistics feature; the local FAQ says Ollama runs locally and does not see prompts or data when run locally. Outbound calls to ollama.com come from model pulls, cloud features and the macOS and Windows update check (see lists). The standard Linux installer script (curl ... | sh) downloads from the Internet; use the manual-install packages for a disconnected host."
+
+[[airgap.telemetry]]
+what = "Update check of the macOS and Windows apps: the FAQ states that Ollama on macOS and Windows automatically downloads updates; the source at the tag requests https://ollama.com/api/update about every hour with the operating system, architecture and version (and a device ID on macOS). On Linux the documented update path is re-running the install script; no background check is documented there."
+disable = "No documented switch for the check. The app's auto-update setting (source: app/updater/updater.go, not documentation) stops the download of an update but the source still performs the check; block ollama.com for the app, or use the Linux server or the Docker image."
+
+[[airgap.telemetry]]
+what = "Ollama cloud features (cloud-hosted models and web search) send prompts to ollama.com when the instance is signed in and a cloud model or web search is used; the cloud FAQ says Ollama collects basic account information and limited usage metadata that does not include prompt or response content."
+disable = "OLLAMA_NO_CLOUD=1, or disable_ollama_cloud set to true in ~/.ollama/server.json; restart Ollama, and the log shows 'Ollama cloud disabled: true'."
+
+[choose]
+when = [
+  "No GPU is available or the host is a single workstation or small server: the Docker page gives a CPU-only run command (docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama), and the FAQ shows ollama ps reporting a model loaded 100% on CPU or split across CPU and GPU. The GPU page lists supported NVIDIA (compute capability 5.0 and newer) and AMD GPUs.",
+  "A model is available as a GGUF file or Safetensors directory and a simple single-host server with an HTTP API on port 11434 is enough: the import page documents both formats.",
+  "Clients speak the Ollama API, the OpenAI API or the Anthropic Messages API: the API pages document all three against http://localhost:11434 (/api, /v1 and the Anthropic base URL); the OpenAI and Anthropic compatibility are documented as subsets of those APIs.",
+]
+avoid_when = [
+  "Many users must be served at the same time from one GPU or one group of GPUs. The documented concurrency settings are OLLAMA_NUM_PARALLEL (maximum parallel requests per model; when unset or zero, MLX on Metal chooses a conservative default based on available memory and 'other backends default to 1', with more memory needed for more parallel requests, and the context grows by the number of parallel requests), OLLAMA_MAX_LOADED_MODELS (default 3 times the number of GPUs, or 3 for CPU inference) and OLLAMA_MAX_QUEUE (default 512; beyond it the server answers 503). Requests beyond what a model processes in parallel wait in the queue. The pages read do not mention continuous batching, and the FAQ says that a model that fits on one GPU is loaded on that GPU and otherwise spread across all GPUs.",
+]
+alternatives = ["vllm", "sglang"]
+caveats = [
+  "Engine decision table, concurrency: the FAQ documents parallel processing per loaded model (OLLAMA_NUM_PARALLEL), loading several models at once when memory allows (OLLAMA_MAX_LOADED_MODELS) and queueing (OLLAMA_MAX_QUEUE). It also says that if there is insufficient memory to load another model, new requests are queued until it can be loaded.",
+  "API: the native API is at /api, the OpenAI-compatible API at /v1 and the Anthropic-compatible API at the base URL of the server; the API page says local requests do not need an API key. The server binds 127.0.0.1 port 11434 by default; to expose it on a network set OLLAMA_HOST, and put authentication in front of it yourself.",
+  "Cloud service and plans: Ollama also runs a cloud service (cloud models, web search) at ollama.com with plans and pricing (ollama.com/pricing, referenced from the cloud usage page). It needs the Internet and an account and is not usable in an air-gapped network; this design relies only on the local server, which the documentation does not tie to a paid license. No license check was found in the documentation, hence license_server is false.",
+  "Context length: the context-length page says Ollama defaults to a context length based on VRAM (under 24 GiB 4k, 24 to 48 GiB 32k, 48 GiB or more 256k), changed with OLLAMA_CONTEXT_LENGTH or the num_ctx parameter; the FAQ still says the default is 4096 tokens, which contradicts the table, so check the value on the target host with ollama ps.",
+  "Models loaded stay in memory for 5 minutes by default (OLLAMA_KEEP_ALIVE).",
+]
+
+[[deeper_skills]]
+repo = "ScaleDockHQ/llm-skills"
+skill = "ollama"

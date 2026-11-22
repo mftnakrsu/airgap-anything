@@ -1,0 +1,72 @@
+name: triggering
+
+# Runs evals/triggering: does Claude Code pick the skill by itself, start it
+# from its command, and leave other requests alone? Every run is a set of real
+# Claude sessions (about USD 4.50 a run), so it runs only when what decides
+# triggering changes, on a release tag, or by hand. It needs a credential in
+# the repository secrets: ANTHROPIC_API_KEY, or CLAUDE_CODE_OAUTH_TOKEN from
+# `claude setup-token` (untested with plugin eval). Without one, the job
+# leaves a notice and skips the suite instead of failing.
+# See evals/README.md, "Triggering".
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "skills/airgap-architect/SKILL.md"
+      - "evals/triggering/**"
+      - ".github/workflows/triggering.yml"
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: triggering-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  triggering:
+    # A pull request from a fork gets no secrets, so the job is skipped there.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    steps:
+      - name: Look for a credential
+        id: credential
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ] || [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Triggering suite skipped: no ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN secret. Run it by hand as evals/README.md describes."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v7
+        if: steps.credential.outputs.found == 'true'
+      - uses: actions/setup-node@v7
+        if: steps.credential.outputs.found == 'true'
+        with:
+          node-version: "22"
+      - name: Install Claude Code
+        if: steps.credential.outputs.found == 'true'
+        run: npm install -g @anthropic-ai/claude-code@2.1.330
+      # Threshold 0.8: a case with two graders survives one miss in three runs;
+      # a skip case, with one grader, fails on a single false start.
+      - name: Triggering suite
+        if: steps.credential.outputs.found == 'true'
+        run: >
+          claude plugin eval . --eval-dir evals/triggering
+          --runs 3 --ablation none -j 3
+          --model claude-opus-5-5 --judge-model claude-haiku-5-5
+          --trust-plugin --no-publish --max-cost-usd 6 --threshold 0.8
+          --json triggering.json
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.credential.outputs.found == 'true'
+        with:
+          name: triggering
+          path: triggering.json
+          if-no-files-found: ignore

@@ -1,0 +1,39 @@
+---
+title: airgap-anything
+description: Design any system for air-gapped environments. An agent skill that interviews you, then writes the blueprint, GPU sizing and the list of what to carry in.
+template: splash
+hero:
+  tagline: Design any system for air-gapped environments. An agent skill that interviews you, then writes the blueprint, GPU sizing and the list of what to carry in.
+  image:
+    file: ../../assets/icon-animated.svg
+  actions:
+    - text: Install
+      link: /start/install/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/mftnakrsu/airgap-anything
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<div class="figure"><img src="/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the agent inside builds the system without internet." /></div>
+
+Install it once, then ask your agent in your own words, for example *"Design an air-gapped LLM platform for my organization."* Claude Code picks the skill by itself; you can also start it with `/airgap-anything:airgap-architect`.
+
+<CardGrid>
+  <Card title="Interviews you" icon="comment">
+    One question at a time, in your language: people, departments, privacy, models, hardware, how files get in. It skips what your files already answer.
+  </Card>
+  <Card title="Sizes the hardware" icon="setting">
+    Scripts compute the tier, the GPU count, servers and power. Nothing is worked out from memory.
+  </Card>
+  <Card title="Lists what to carry in" icon="document">
+    Container images, models, packages, settings to switch off, and what each tool would try to download.
+  </Card>
+  <Card title="Checks itself" icon="approve-check">
+    A linter checks the blueprint against the catalog and the scripts before you approve it.
+  </Card>
+</CardGrid>
