@@ -145,6 +145,7 @@ class ReadmeTest(unittest.TestCase):
         self.owner = json.loads(manifest.read_text(encoding="utf-8"))["author"]["name"]
 
     def test_it_documents_the_three_install_paths(self):
+        self.assertIn(f"/plugin install airgap-anything --marketplace {self.owner}/airgap-anything", self.text)
         self.assertIn(f"/plugin marketplace add {self.owner}/airgap-anything", self.text)
         self.assertIn("/plugin install airgap-anything@airgap-anything-marketplace", self.text)
         self.assertIn(f"npx skills add {self.owner}/airgap-anything", self.text)
