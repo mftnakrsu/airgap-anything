@@ -110,7 +110,7 @@ No two rows may share a name: lint reports `C1` when a model or alias of one row
 
 ## Decision tables
 
-The tables in `plugins/airgap-anything/skills/airgap-architect/references/layers/` carry one evidence label per row. A row becomes `docs` only when official documentation supports the whole step from its condition to its choice (a threshold the design spec picked is never documented, so such a row stays `estimate`); put the URL in the Basis column.
+The tables in `plugins/airgap-anything/skills/airgap-architect/references/layers/` carry one evidence label per row. A row becomes `docs` only when official documentation supports the whole step from its condition to its choice (a threshold this project picked is never documented, so such a row stays `estimate`); put the URL in the Basis column.
 
 ## The README demo
 
@@ -129,7 +129,7 @@ Both must pass. Warnings (codes that start with W) do not fail the build.
 
 ## The documentation site
 
-The site in `docs-site/` shows every catalog entry, the GPU table, the interview questions, the scripts, the lint codes, this guide and a worked example. Those pages are generated from the files they describe, so after you change a catalog entry, a GPU row, the design spec, `references/interview.md`, the demo blueprint, the README's Install section or this file, run:
+The site in `docs-site/` shows every catalog entry, the GPU table, the interview questions, the scripts, the lint codes, this guide and a worked example. Those pages are generated from the files they describe, so after you change a catalog entry, a GPU row, `docs/reference.md`, `references/interview.md`, the demo blueprint, the README's Install section or this file, run:
 
 ```bash
 python3 docs-site/scripts/generate_reference.py

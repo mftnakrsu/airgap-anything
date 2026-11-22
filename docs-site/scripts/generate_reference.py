@@ -4,7 +4,7 @@ Nothing in docs-site/src/content/docs/reference/ is written by hand, and neither
 example page, the contributing page or the images the site shares with the README. The catalog
 pages come from plugins/airgap-anything/skills/airgap-architect/catalog/, the GPU page from catalog/gpus.toml, the
 interview questions from references/interview.md, the install page from the README, the scripts, lint-code and blueprint.json
-pages from the design spec, the contributing page from CONTRIBUTING.md, and the example from
+pages from docs/reference.md, the contributing page from CONTRIBUTING.md, and the example from
 design/demo/department-blueprint.json with tier.py and size.py run on it.
 tests/test_docs_site.py fails when a file differs from what this script writes, so a change to
 a source must be followed by:
@@ -28,7 +28,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILL = REPO_ROOT / "plugins" / "airgap-anything" / "skills" / "airgap-architect"
 CATALOG = SKILL / "catalog"
-SPEC = REPO_ROOT / "docs" / "superpowers" / "specs" / "2026-11-20-airgap-architect-design.md"
+REFERENCE = REPO_ROOT / "docs" / "reference.md"
 SITE = REPO_ROOT / "docs-site"
 DOCS = SITE / "src" / "content" / "docs"
 OUT = DOCS / "reference"
@@ -66,11 +66,11 @@ def _frontmatter(title: str, description: str, extra: str = "") -> str:
     return f'---\ntitle: "{title}"\ndescription: "{description}"\n{extra}---\n\n'
 
 
-def _spec_section(number: int) -> str:
-    text = SPEC.read_text(encoding="utf-8")
-    match = re.search(rf"^## {number}\. .*?\n(.*?)(?=^## \d+\. )", text, re.S | re.M)
+def _reference_section(number: int) -> str:
+    text = REFERENCE.read_text(encoding="utf-8")
+    match = re.search(rf"^## {number}\. .*?\n(.*?)(?=^## \d+\. |\Z)", text, re.S | re.M)
     if not match:
-        raise SystemExit(f"section {number} not found in {SPEC}")
+        raise SystemExit(f"section {number} not found in {REFERENCE}")
     return match.group(1).strip() + "\n"
 
 
@@ -83,11 +83,11 @@ def _table_after(section: str, label: str) -> str:
 
 # ---------------------------------------------------------------- pages from the spec
 def scripts_page() -> str:
-    section = _spec_section(12)
+    section = _reference_section(1)
     body = section.split("\nLint errors:", 1)[0].rstrip() + "\n"
     return (
         _frontmatter("Scripts", "The four standard-library scripts that compute the tier and sizing, write the manifest and check the blueprint.")
-        + _banner(SPEC)
+        + _banner(REFERENCE)
         + "The agent runs these scripts during a design; you do not need to. They are documented here for review, "
         "debugging and contributors. Each script also prints its options with `--help`.\n\n"
         + body
@@ -96,10 +96,10 @@ def scripts_page() -> str:
 
 
 def lint_page() -> str:
-    section = _spec_section(12)
+    section = _reference_section(1)
     out = (
         _frontmatter("Lint codes", "Every error, warning and note that lint.py reports, and what each one checks.")
-        + _banner(SPEC)
+        + _banner(REFERENCE)
         + "`lint.py` exits 1 when it finds an error. Warnings and notes are reported but do not change the exit code.\n\n"
         + "## Errors\n\n" + _table_after(section, "Lint errors:")
         + "\n## Warnings\n\n" + _table_after(section, "Lint warnings:")
@@ -111,8 +111,8 @@ def lint_page() -> str:
 def blueprint_page() -> str:
     return (
         _frontmatter("blueprint.json", "The state file of a design: answers, tier, sizing and one decision per layer.")
-        + _banner(SPEC)
-        + _spec_section(13)
+        + _banner(REFERENCE)
+        + _reference_section(2)
     )
 
 
