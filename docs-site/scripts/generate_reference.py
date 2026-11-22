@@ -159,7 +159,11 @@ def component_page(entry: dict, order: int) -> str:
     else:
         out += "No container images.\n\n"
     if airgap.get("packages"):
-        out += "Packages:\n\n" + _list(airgap["packages"])
+        out += "Packages:\n\n| File | Architecture | Publisher checksums |\n|---|---|---|\n"
+        for package in airgap["packages"]:
+            checksums = f"[checksum file]({package['checksums']})" if package.get("checksums") else "none published"
+            out += f"| [`{package['file']}`]({package['url']}) | {package['arch']} | {checksums} |\n"
+        out += "\n"
     if airgap.get("runtime_downloads"):
         out += "### Downloads at run time\n\nWhat the software tries to fetch while it runs, and how to stage it instead.\n\n" + _list(airgap["runtime_downloads"])
     out += "### License server\n\n" + (

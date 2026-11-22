@@ -294,3 +294,13 @@ notes = "No existing infrastructure is assumed."
 value = "removable_media"
 evidence = "estimate"
 notes = "The most restrictive common transfer channel."
+
+[defaults.hardware.cpu_arch]
+value = "amd64"
+evidence = "estimate"
+notes = "Taken as the most common server architecture (design spec 2026-11-22, section 6.1); not sourced. A wrong value gives the wrong package files, so the blueprint lists it among the assumptions."
+
+[defaults.inside.operator]
+value = "people"
+evidence = "estimate"
+notes = "A runbook for people works whether or not an agent appears later, so this default cannot leave the inside without instructions (design spec 2026-11-22, section 6.1)."

@@ -1,4 +1,4 @@
-"""Blueprint lint: errors E1-E11, warnings W1-W3 and note N1 of the design spec."""
+"""Blueprint lint: errors E1-E11, warnings W1-W4 and note N1 of the design specs."""
 from __future__ import annotations
 
 import re
@@ -19,6 +19,8 @@ from .catalog import Catalog, is_stale
 from .constants import (
     AGENT_BLOCK_END,
     AGENT_BLOCK_START,
+    AGENT_OPERATORS,
+    AGENT_RULES_MARKER,
     ISOLATION_MARKER,
     LAYERS,
     SECTION_MARKERS,
@@ -29,7 +31,12 @@ from .constants import (
 from .findings import SEVERITIES, Finding
 from .sizing import SizingInputError, compute_sizing
 from .tiering import compute_tier
-from .transfer import MANIFEST_FILENAME, read_manifest_digest
+from .transfer import (
+    MANIFEST_FILENAME,
+    MANIFEST_JSON_FILENAME,
+    read_manifest_digest,
+    read_manifest_json_digest,
+)
 
 
 def split_sections(text: str) -> tuple[dict[str, str], list[str]]:
@@ -94,12 +101,14 @@ def lint_blueprint(
     manifest_text: str | None,
     agents_text: str | None,
     today: date,
+    manifest_json_text: str | None = None,
 ) -> list[Finding]:
     return _lint(
         blueprint=blueprint,
         catalog=catalog,
         blueprint_text=blueprint_text,
         manifest_text=manifest_text,
+        manifest_json_text=manifest_json_text,
         agents_text=agents_text,
         today=today,
         unreadable={},
@@ -112,12 +121,14 @@ def _lint(
     catalog: Catalog,
     blueprint_text: str | None,
     manifest_text: str | None,
+    manifest_json_text: str | None,
     agents_text: str | None,
     today: date,
     unreadable: dict[str, str],
 ) -> list[Finding]:
-    """The lint run. `unreadable` maps "blueprint", "manifest" or "agents" to the reason
-    that file could not be read; such a file is reported instead of "not found"."""
+    """The lint run. `unreadable` maps "blueprint", "manifest", "manifest_json" or
+    "agents" to the reason that file could not be read; such a file is reported
+    instead of "not found"."""
     findings: list[Finding] = []
     rules = catalog.rules
 
@@ -259,15 +270,18 @@ def _lint(
                 Finding("E7", f"marker '{section_marker(ISOLATION_MARKER)}' is missing")
             )
 
-    # E8: transfer manifest exists and matches the decisions.
-    if "manifest" in unreadable:
-        findings.append(
-            Finding("E8", f"{MANIFEST_FILENAME} cannot be read: {unreadable['manifest']}")
-        )
-    elif manifest_text is None:
-        findings.append(Finding("E8", f"{MANIFEST_FILENAME} not found; run manifest.py"))
-    elif read_manifest_digest(manifest_text) != inputs_digest(blueprint):
-        findings.append(Finding("E8", f"{MANIFEST_FILENAME} is stale; run manifest.py again"))
+    # E8: both transfer manifest files exist and match the decisions.
+    digest = inputs_digest(blueprint)
+    for key, name, text, reader in (
+        ("manifest", MANIFEST_FILENAME, manifest_text, read_manifest_digest),
+        ("manifest_json", MANIFEST_JSON_FILENAME, manifest_json_text, read_manifest_json_digest),
+    ):
+        if key in unreadable:
+            findings.append(Finding("E8", f"{name} cannot be read: {unreadable[key]}"))
+        elif text is None:
+            findings.append(Finding("E8", f"{name} not found; run manifest.py"))
+        elif reader(text) != digest:
+            findings.append(Finding("E8", f"{name} is stale; run manifest.py again"))
 
     # E9: estimate-backed decisions are listed for verification.
     verification_text = sections.get("verification")
@@ -373,6 +387,19 @@ def _lint(
     ):
         findings.append(Finding("W3", "the agent instruction block is missing from AGENTS.md"))
 
+    # W4: an agent works inside, so the block carries the rules for it.
+    operator = resolved.get("inside.operator")
+    if operator in AGENT_OPERATORS and agents_text is not None:
+        start, end = agents_text.find(AGENT_BLOCK_START), agents_text.find(AGENT_BLOCK_END)
+        if 0 <= start < end and AGENT_RULES_MARKER not in agents_text[start:end]:
+            findings.append(
+                Finding(
+                    "W4",
+                    f"inside.operator is {operator}: the agent instruction block lacks the "
+                    "section 'Rules for an agent inside the network'",
+                )
+            )
+
     # N1: every override in effect is reported.
     for decision in decisions:
         if has_override(decision):
@@ -408,6 +435,7 @@ def lint_project(
     texts: dict[str, str | None] = {"blueprint": None}
     sources = {
         "manifest": blueprint_path.parent / MANIFEST_FILENAME,
+        "manifest_json": blueprint_path.parent / MANIFEST_JSON_FILENAME,
         "agents": project_root / "AGENTS.md",
     }
     if isinstance(relative, str) and relative.strip():
@@ -421,6 +449,7 @@ def lint_project(
         catalog=catalog,
         blueprint_text=texts["blueprint"],
         manifest_text=texts["manifest"],
+        manifest_json_text=texts["manifest_json"],
         agents_text=texts["agents"],
         today=today,
         unreadable=unreadable,

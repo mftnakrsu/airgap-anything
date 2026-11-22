@@ -6,11 +6,13 @@
   "org.downtime_tolerance": "accepted",
   "org.ops_capacity": "part_time_one",
   "org.kubernetes_experience": false,
+  "inside.operator": "unknown",
   "workload.usage": { "chat": 1.0 },
   "workload.models": [
     { "name": "lab-8b", "role": "chat", "params_b": 8, "precision": "fp8" }
   ],
   "hardware.gpus": [{ "model": "generic-24gb", "count": 1, "vram_gb": 24 }],
+  "hardware.cpu_arch": "unknown",
   "existing.identity": "none",
   "existing.api_gateway": "none",
   "existing.kubernetes": "none",

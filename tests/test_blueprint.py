@@ -249,6 +249,20 @@ class DigestTest(unittest.TestCase):
         self.data["decisions"][0]["benchmark"] = ["beta-engine", "gamma-engine"]
         self.assertNotEqual(with_benchmark, inputs_digest(self.data))
 
+    def test_digest_changes_with_cpu_arch(self):
+        before = inputs_digest(self.data)
+        self.data["answers"]["hardware.cpu_arch"] = "amd64"
+        amd64 = inputs_digest(self.data)
+        self.assertNotEqual(before, amd64)
+        self.data["answers"]["hardware.cpu_arch"] = "arm64"
+        self.assertNotEqual(amd64, inputs_digest(self.data))
+
+    def test_digest_ignores_other_answers(self):
+        before = inputs_digest(self.data)
+        self.data["answers"]["inside.operator"] = "local_agent"
+        self.data["answers"]["transfer.channel"] = "data_diode"
+        self.assertEqual(before, inputs_digest(self.data))
+
     def test_digest_ignores_other_keys(self):
         before = inputs_digest(self.data)
         self.data["project"] = "renamed"

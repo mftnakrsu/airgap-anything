@@ -17,7 +17,7 @@ description: "Every error, warning and note that lint.py reports, and what each 
 | E5 | No escalator is violated without an override |
 | E6 | `tier` and `sizing` equal a fresh computation from `answers` |
 | E7 | The blueprint file has all template sections, names every chosen component with its version, and has an "Isolation design" subsection when `org.isolation = multi_level` |
-| E8 | The transfer manifest exists and its recorded digest matches the current `decisions`, `workload.models` and `hardware.gpus` |
+| E8 | Both transfer manifest files, `transfer-manifest.md` and `transfer-manifest.json`, exist and their recorded digest matches the current `decisions`, `workload.models`, `hardware.gpus` and `hardware.cpu_arch` |
 | E9 | Every decision labeled `estimate` appears in the blueprint's verification section, and so does every component in a decision's `benchmark` list |
 | E10 | `sizing.fits` is true, or an override explains how the gap is closed |
 | E11 | Everything listed in a chosen component's `requires` is itself chosen or named in `existing` |
@@ -29,6 +29,7 @@ description: "Every error, warning and note that lint.py reports, and what each 
 | W1 | A catalog entry used by the blueprint was last verified more than 180 days ago |
 | W2 | A required answer is "unknown" and a default was used |
 | W3 | The agent instruction block is missing from `AGENTS.md` |
+| W4 | `inside.operator` is `local_agent` or `people_then_agent` and the agent instruction block lacks the section "Rules for an agent inside the network" |
 
 ## Notes
 

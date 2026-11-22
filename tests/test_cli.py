@@ -11,7 +11,7 @@ from pathlib import Path
 from tests import SCRIPTS_DIR, projects, support
 from airgap_lib.blueprint import load_blueprint, save_blueprint
 from airgap_lib.catalog import load_catalog
-from airgap_lib.transfer import MANIFEST_FILENAME
+from airgap_lib.transfer import MANIFEST_FILENAME, MANIFEST_JSON_FILENAME
 
 
 class CliTestCase(unittest.TestCase):
@@ -78,6 +78,11 @@ class PipelineTest(CliTestCase):
         manifest = self.with_blueprint("manifest.py", "--date", "2026-11-20")
         self.assertEqual(manifest.returncode, 0, manifest.stderr)
         self.assertTrue((self.blueprint.parent / MANIFEST_FILENAME).is_file())
+        self.assertTrue((self.blueprint.parent / MANIFEST_JSON_FILENAME).is_file())
+        self.assertEqual(
+            manifest.stdout.splitlines(),
+            [f"Wrote {self.blueprint.parent / MANIFEST_FILENAME}", f"Wrote {self.blueprint.parent / MANIFEST_JSON_FILENAME}"],
+        )
 
         catalog, _ = load_catalog(self.catalog_dir)
         (self.blueprint.parent / "blueprint.md").write_text(
@@ -250,6 +255,7 @@ class ManifestCliTest(CliTestCase):
         result = self.with_blueprint("manifest.py", "--out", str(target))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(target.is_file())
+        self.assertTrue((target.parent / MANIFEST_JSON_FILENAME).is_file())
 
     def test_answers_that_are_not_an_object_exit_2_as_in_tier_and_size(self):
         for value in (["chat"], "chat", 5, [], None):

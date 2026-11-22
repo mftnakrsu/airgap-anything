@@ -50,7 +50,9 @@ Inputs (users, usage shares, the context per group when `workload.context_tokens
 <!-- airgap:section transfer -->
 ## 6. Air-gap transfer plan
 
-How artifacts enter the network (`transfer.channel`, `transfer.cadence`), who carries them, where they land first, and how they are checked. Link to `docs/airgap/transfer-manifest.md` for the list itself. The manifest's `Hardware:` line must match the design's GPUs; when it says unknown, carry only the image rows for the hardware. Package files are for linux/amd64 hosts: on arm64 hosts, carry the files that the entries' notes name instead. Name the telemetry settings that must be off before first start.
+How artifacts enter the network (`transfer.channel`, `transfer.cadence`), who carries them, where they land first, and how they are checked. Link to `docs/airgap/transfer-manifest.md` for the list itself. The manifest's `Hardware:` line must match the design's GPUs; when it says unknown, carry only the image rows for the hardware. Its `Platform:` line must match `hardware.cpu_arch`. Name the telemetry settings that must be off before first start.
+
+Who carries out the steps inside the network (`inside.operator`) and what they receive: for `people`, the runbook `INSIDE.md`; for `local_agent`, the agent rules `AGENTS-INSIDE.md`; for `people_then_agent`, both, the runbook for the first day and the rules once the agent runs. Every step inside works without internet and without an LLM. Name `airgap-transfer` as the next step: it turns the manifest into a checked bundle, the inside scripts and these instructions.
 
 <!-- airgap:section data-flow -->
 ## 7. Data flow
@@ -60,7 +62,7 @@ The path of one request from the user to the model and back, naming each compone
 <!-- airgap:section operations -->
 ## 8. Failure modes and operations
 
-What happens when each component fails and how it is noticed. Backups of state. How upgrades are carried in and applied without internet access.
+What happens when each component fails and how it is noticed. Backups of state. How upgrades are carried in and applied without internet access, and who applies them (`inside.operator`): people following a runbook, or the agent inside under the rules in `AGENTS.md`.
 
 <!-- airgap:section verification -->
 ## 9. Verification plan

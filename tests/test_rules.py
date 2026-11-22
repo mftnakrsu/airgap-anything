@@ -45,6 +45,8 @@ class ShippedRulesTest(unittest.TestCase):
         self.assertEqual(self.rules.default_answer("org.audit_required")["value"], True)
         self.assertEqual(self.rules.default_answer("workload.usage")["value"], {"chat": 1.0})
         self.assertIsNone(self.rules.default_answer("org.users_total"))
+        self.assertEqual(self.rules.default_answer("hardware.cpu_arch")["value"], "amd64")
+        self.assertEqual(self.rules.default_answer("inside.operator")["value"], "people")
 
     def test_four_escalators(self):
         self.assertEqual(

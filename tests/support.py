@@ -29,7 +29,7 @@ last_verified = 2026-11-20
 def component(component_id: str, layer: str, **overrides) -> dict:
     """A valid synthetic component entry. Dict overrides merge into sub-tables."""
     entry = {
-        "schema_version": 1,
+        "schema_version": 2,
         "id": component_id,
         "name": component_id.title(),
         "layer": layer,
@@ -69,6 +69,16 @@ def component(component_id: str, layer: str, **overrides) -> dict:
         else:
             entry[key] = value
     return entry
+
+
+def package(file: str, arch: str = "amd64", checksums: str = "") -> dict:
+    """A valid synthetic package row, downloaded from example.test."""
+    return {
+        "file": file,
+        "arch": arch,
+        "url": f"https://downloads.example.test/{file}",
+        "checksums": checksums,
+    }
 
 
 def fixture_components() -> list[dict]:
@@ -158,10 +168,12 @@ def base_answers(**overrides) -> dict:
             {"name": "example-70b", "role": "chat", "params_b": 70, "precision": "fp8"}
         ],
         "hardware.gpus": [{"model": "TG141", "count": 8}],
+        "hardware.cpu_arch": "amd64",
         "existing.identity": "ad_ldap",
         "existing.api_gateway": "none",
         "existing.kubernetes": "none",
         "transfer.channel": "removable_media",
+        "inside.operator": "people",
     }
     answers.update(overrides)
     return answers

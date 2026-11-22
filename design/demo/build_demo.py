@@ -37,6 +37,8 @@ from airgap_lib.catalog import default_catalog_dir, load_catalog  # noqa: E402
 from airgap_lib.constants import (  # noqa: E402
     AGENT_BLOCK_END,
     AGENT_BLOCK_START,
+    AGENT_OPERATORS,
+    AGENT_RULES_MARKER,
     SECTION_MARKERS,
     section_marker,
 )
@@ -152,10 +154,16 @@ def blueprint_markdown(blueprint: dict, versions: dict[str, str]) -> str:
     return "\n".join(lines)
 
 
-def agents_text(blueprint_path: str) -> str:
+def agents_text(blueprint_path: str, operator: str) -> str:
+    """The block of references/agents-snippet.md, with the inside-agent rules when
+    `operator` names an agent, as the skill's step 7 writes it."""
     snippet = (SKILL_DIR / "references" / "agents-snippet.md").read_text(encoding="utf-8")
     start, end = snippet.index(AGENT_BLOCK_START), snippet.index(AGENT_BLOCK_END)
-    return snippet[start : end + len(AGENT_BLOCK_END)].replace("BLUEPRINT_PATH", blueprint_path) + "\n"
+    block = snippet[start:end]
+    if operator in AGENT_OPERATORS:
+        rules_at = snippet.index(AGENT_RULES_MARKER)
+        block += snippet[rules_at : snippet.index("```", rules_at)]
+    return (block + AGENT_BLOCK_END).replace("BLUEPRINT_PATH", blueprint_path) + "\n"
 
 
 def capture() -> list[dict]:
@@ -172,7 +180,10 @@ def capture() -> list[dict]:
         blueprint_file = project / blueprint["blueprint_path"]
         blueprint_file.parent.mkdir(parents=True, exist_ok=True)
         blueprint_file.write_text(blueprint_markdown(blueprint, versions), encoding="utf-8")
-        (project / "AGENTS.md").write_text(agents_text(blueprint["blueprint_path"]), encoding="utf-8")
+        operator = blueprint["answers"].get("inside.operator", "people")
+        (project / "AGENTS.md").write_text(
+            agents_text(blueprint["blueprint_path"], operator), encoding="utf-8"
+        )
 
         env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", NO_COLOR="1")
         private = [str(Path.home()), tmp, Path(tmp).name]

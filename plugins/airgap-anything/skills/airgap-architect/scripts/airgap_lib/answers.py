@@ -5,7 +5,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from .constants import (
+    CPU_ARCHES,
     GPU_VENDORS,
+    INSIDE_OPERATORS,
     INTERACTIVE_USAGE,
     MODEL_ROLES,
     SIZE_CLASSES,
@@ -32,12 +34,14 @@ QUESTIONS = (
     Question("org.downtime_tolerance", "enum", True, ("accepted", "planned_only", "none")),
     Question("org.ops_capacity", "enum", True, ("part_time_one", "small_team", "platform_team")),
     Question("org.kubernetes_experience", "bool", True),
+    Question("inside.operator", "enum", True, INSIDE_OPERATORS),
     Question("workload.usage", "usage", True),
     Question("workload.models", "models", True),
     Question("workload.context_tokens", "contexts", False),
     Question("hardware.gpus", "gpus", True),
     Question("hardware.ram_gb", "number", False),
     Question("hardware.power_budget_kw", "number", False),
+    Question("hardware.cpu_arch", "enum", True, CPU_ARCHES),
     Question("existing.identity", "enum", True, ("none", "ad_ldap", "oidc")),
     Question("existing.api_gateway", "enum", True, ("none", "kong", "other")),
     Question("existing.kubernetes", "enum", True, ("none", "kubernetes", "openshift")),

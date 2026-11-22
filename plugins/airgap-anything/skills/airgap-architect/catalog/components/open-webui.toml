@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 id = "open-webui"
 name = "Open WebUI"
 layer = "ui"

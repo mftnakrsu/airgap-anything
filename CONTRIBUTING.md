@@ -28,7 +28,7 @@ An entry carries one label for the whole entry. Use `docs` only when the version
    | `version` | The latest stable release on the project's release page. That is the highest stable version, which is not always the release GitHub marks as latest: a project that patches an older line can publish that patch after a newer release. An exact version, never `latest`. When other entries list this component in `requires` and their documentation names the versions they support, pin the newest release that all of them support, and say why in `airgap.notes`. |
    | `license` | The SPDX identifier of the repository's license file. If the project has paid editions, say in `choose.caveats` which features need them. |
    | `airgap.images` | One row per image the official installation documentation names for a hardware class, with the tag of that exact version. Leave `digest` empty unless the publisher documents it. `hardware` lists the classes the image is for, drawn from `nvidia`, `amd`, `intel` and `cpu`; leave it out when the image is for any hardware. The transfer manifest lists only the rows that match the hardware in the blueprint. Do not list aliases of the same image (the same digest under another tag) or images that are only needed to build. |
-   | `airgap.packages` | Binaries, archives or packages the official offline or air-gap installation needs, named exactly as the release names them; the transfer manifest lists each one as something to carry. Name the files for linux/amd64 (x86_64) hosts and give the files for other architectures in `airgap.notes`. When the entry lists container images, list here only what the image route needs; other install routes (wheels, OS packages, tarballs) go into `airgap.notes`. |
+   | `airgap.packages` | One table per file that the official offline or air-gap installation needs: `file` exactly as the release names it; `arch`, one of `amd64`, `arm64` or `any` (scripts and archives that run on either); `url`, the download URL as the release page or the official documentation gives it, also recorded in `evidence.sources`; and `checksums`, the URL of the publisher's checksum file that lists this file, or `""` when the publisher has none (an md5 list counts). Give rows for `amd64` and, where the release publishes them, for `arm64`; the transfer manifest lists the rows for the blueprint's `hardware.cpu_arch` and the `any` rows. When the entry lists container images, list here only what the image route needs; other install routes (wheels, OS packages, tarballs) go into `airgap.notes`. Lint reports `C5` for a row without `file`, `arch` or `url`, or with another `arch`, and `C6` when `url` or a non-empty `checksums` is not a full `https://` URL. |
    | `airgap.runtime_downloads` | What the software fetches while it runs: models, plugins, update checks. |
    | `airgap.telemetry` | Each telemetry, analytics or update-check feature the documentation describes, with the documented setting that turns it off. If the documentation says nothing, leave the list empty and say so in `airgap.notes`. |
    | `airgap.license_server` | `true` when any license check needs network access. |
@@ -45,7 +45,7 @@ An entry carries one label for the whole entry. Use `docs` only when the version
 ### Template
 
 ```toml
-schema_version = 1
+schema_version = 2
 id = "<component id>"
 name = "<display name>"
 layer = "<llm-serving | llm-gateway | ui | identity | observability | orchestration | state | registry>"
@@ -64,7 +64,7 @@ notes = ""
 
 [airgap]
 images = [{ ref = "<registry/repository:tag>", digest = "" }]
-packages = []
+packages = [{ file = "<file name>", arch = "<amd64 | arm64 | any>", url = "<URL>", checksums = "" }]
 runtime_downloads = []
 telemetry = [{ what = "<what is sent>", disable = "<documented setting>" }]
 license_server = false

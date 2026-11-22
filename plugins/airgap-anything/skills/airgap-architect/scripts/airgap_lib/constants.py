@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 1  # blueprint.json
+COMPONENT_SCHEMA_VERSION = 2  # catalog component entries
 
 TIERS = ("T1", "T2", "T3")
 LAYERS = (
@@ -29,6 +30,13 @@ SIZE_CLASSES = ("S", "M", "L", "XL")
 GPU_VENDORS = ("nvidia", "amd", "intel")
 HARDWARE_CLASSES = GPU_VENDORS + ("cpu",)
 
+# CPU architectures of the servers inside, and who works inside the network.
+CPU_ARCHES = ("amd64", "arm64")
+INSIDE_OPERATORS = ("people", "local_agent", "people_then_agent")
+AGENT_OPERATORS = ("local_agent", "people_then_agent")
+# What a package row of a catalog entry is built for; "any" is architecture-free.
+PACKAGE_ARCHES = CPU_ARCHES + ("any",)
+
 # Requirements an escalator in rules.toml may switch on.
 ESCALATOR_REQUIREMENTS = (
     "gateway_non_empty",
@@ -53,6 +61,8 @@ SECTION_MARKERS = (
 ISOLATION_MARKER = "isolation-design"
 AGENT_BLOCK_START = "<!-- airgap-architect:start -->"
 AGENT_BLOCK_END = "<!-- airgap-architect:end -->"
+# Opens the section "Rules for an agent inside the network" within the block.
+AGENT_RULES_MARKER = "<!-- airgap-architect:inside-agent -->"
 
 UNKNOWN = "unknown"
 

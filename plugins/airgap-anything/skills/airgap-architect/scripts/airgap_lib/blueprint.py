@@ -68,10 +68,12 @@ def save_blueprint(path: Path, data: dict) -> None:
 
 def inputs_digest(data: dict) -> str:
     """Digest of what the transfer manifest is generated from."""
+    answers = data.get("answers") or {}
     payload = {
         "decisions": data.get("decisions", []),
-        "models": (data.get("answers") or {}).get("workload.models", []),
-        "hardware": (data.get("answers") or {}).get("hardware.gpus", []),
+        "models": answers.get("workload.models", []),
+        "hardware": answers.get("hardware.gpus", []),
+        "cpu_arch": answers.get("hardware.cpu_arch"),
     }
     canonical = json.dumps(
         payload,

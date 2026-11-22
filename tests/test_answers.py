@@ -15,8 +15,33 @@ class ResolveAnswersTest(unittest.TestCase):
         return resolve_answers(answers, self.rules, needed)[2]
 
     def test_question_table_matches_the_spec(self):
-        self.assertEqual(len(QUESTIONS), 19)
-        self.assertEqual(len(REQUIRED_IDS), 14)
+        self.assertEqual(len(QUESTIONS), 21)
+        self.assertEqual(len(REQUIRED_IDS), 16)
+
+    def test_cpu_arch_and_inside_operator_take_their_choices(self):
+        for key, good, bad in (
+            ("hardware.cpu_arch", ("amd64", "arm64"), "x86_64"),
+            ("inside.operator", ("people", "local_agent", "people_then_agent"), "robots"),
+        ):
+            for value in good:
+                with self.subTest(key=key, value=value):
+                    self.assertEqual(self.problems(support.base_answers(**{key: value})), [])
+            self.assertEqual(
+                self.problems(support.base_answers(**{key: bad})),
+                [f"{key}: must be one of " + ", ".join(good)],
+            )
+
+    def test_unknown_cpu_arch_and_operator_take_the_safe_defaults(self):
+        answers = support.base_answers(**{"hardware.cpu_arch": "unknown", "inside.operator": "unknown"})
+        resolved, assumptions, problems = resolve_answers(answers, self.rules)
+        self.assertEqual(problems, [])
+        self.assertEqual(resolved["hardware.cpu_arch"], "amd64")
+        self.assertEqual(resolved["inside.operator"], "people")
+        self.assertEqual(
+            sorted(item["id"] for item in assumptions),
+            ["answers.hardware.cpu_arch", "answers.inside.operator"],
+        )
+        self.assertTrue(all(item["evidence"] == "estimate" for item in assumptions))
 
     def test_complete_answers_have_no_problems(self):
         resolved, assumptions, problems = resolve_answers(support.base_answers(), self.rules)
