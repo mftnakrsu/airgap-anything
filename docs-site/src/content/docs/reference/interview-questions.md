@@ -15,19 +15,23 @@ The agent asks these one at a time, in your language, and skips every question t
 | 5 | `org.downtime_tolerance` | How much downtime is acceptable? | `accepted`, `planned_only`, `none` |
 | 6 | `org.ops_capacity` | Who will operate the system? | `part_time_one`, `small_team`, `platform_team` |
 | 7 | `org.kubernetes_experience` | Does the operating team run Kubernetes today? | `true` or `false` |
-| 8 | `workload.usage` | What will people use it for, in rough shares? | map of `chat`, `code_assistant`, `rag`, `batch` to shares that sum to 1 |
-| 9 | `workload.models` | Which model or models will be served? | list, see below |
-| 10 | `workload.context_tokens` | How long is a typical request of each group, prompt and history together, in tokens? Ask it when the groups differ. Optional. | map of `chat`, `code_assistant`, `rag` to a whole number of tokens, see below |
-| 11 | `hardware.gpus` | Which GPUs exist or will be bought? | list, see below; `[]` when there is no GPU |
-| 12 | `hardware.ram_gb` | How much system RAM does the server have? Ask only when there is no GPU. | number |
-| 13 | `hardware.power_budget_kw` | How much power is available for this system? Optional. | number |
-| 14 | `existing.identity` | Is there an identity provider already? | `none`, `ad_ldap`, `oidc` |
-| 15 | `existing.api_gateway` | Is there an API gateway already? | `none`, `kong`, `other` |
-| 16 | `existing.kubernetes` | Is there a cluster platform already? | `none`, `kubernetes`, `openshift` |
-| 17 | `existing.registry` | Is there an artifact registry already? Optional. | `none`, `harbor`, `nexus`, `artifactory`, `other` |
-| 18 | `transfer.channel` | How do files enter the network? | `removable_media`, `data_diode`, `staging_host`, `other` |
-| 19 | `transfer.cadence` | How often can updates be carried in? Optional. | `ad_hoc`, `monthly`, `quarterly` |
+| 8 | `inside.operator` | Inside the network, who will carry out the installation and later work? | `people` (no LLM inside), `local_agent` (an agent on a local model already runs inside), `people_then_agent` (people on the first day, then an agent on this platform's model) |
+| 9 | `workload.usage` | What will people use it for, in rough shares? | map of `chat`, `code_assistant`, `rag`, `batch` to shares that sum to 1 |
+| 10 | `workload.models` | Which model or models will be served? | list, see below |
+| 11 | `workload.context_tokens` | How long is a typical request of each group, prompt and history together, in tokens? Ask it when the groups differ. Optional. | map of `chat`, `code_assistant`, `rag` to a whole number of tokens, see below |
+| 12 | `hardware.gpus` | Which GPUs exist or will be bought? | list, see below; `[]` when there is no GPU |
+| 13 | `hardware.ram_gb` | How much system RAM does the server have? Ask only when there is no GPU. | number |
+| 14 | `hardware.power_budget_kw` | How much power is available for this system? Optional. | number |
+| 15 | `hardware.cpu_arch` | Which CPU architecture do the servers inside the network have? | `amd64` or `arm64` |
+| 16 | `existing.identity` | Is there an identity provider already? | `none`, `ad_ldap`, `oidc` |
+| 17 | `existing.api_gateway` | Is there an API gateway already? | `none`, `kong`, `other` |
+| 18 | `existing.kubernetes` | Is there a cluster platform already? | `none`, `kubernetes`, `openshift` |
+| 19 | `existing.registry` | Is there an artifact registry already? Optional. | `none`, `harbor`, `nexus`, `artifactory`, `other` |
+| 20 | `transfer.channel` | How do files enter the network? | `removable_media`, `data_diode`, `staging_host`, `other` |
+| 21 | `transfer.cadence` | How often can updates be carried in? Optional. | `ad_hoc`, `monthly`, `quarterly` |
 
 Usage types: `chat` is conversation in a chat window. `code_assistant` covers agentic coding tools, which keep a request in flight most of the time; people who only use inline completion in an editor are counted under `chat`. That is a deliberate overestimate, not a sourced placement: the notes of `sizing.code_assistant.duty_low` and `sizing.code_assistant.duty_high` in `catalog/rules.toml` show that inline completion keeps a request in flight only a few percent of the time, far below `code_assistant` and far below the duty of `chat`. `rag` is question answering over documents. `batch` is unattended jobs.
+
+`inside.operator`: when the answer is `local_agent` or `people_then_agent` and that agent will run on this platform's model, say so when you ask `workload.usage`, and count the agent's users under `code_assistant`: an agentic tool keeps a request in flight most of the time. `hardware.cpu_arch` decides which package files the transfer manifest lists (its `Platform:` line); "unknown" gives `amd64`, recorded as an assumption.
 
 The formats of `workload.models`, `workload.context_tokens` and `hardware.gpus` are in [`plugins/airgap-anything/skills/airgap-architect/references/interview.md`](https://github.com/mftnakrsu/airgap-anything/blob/main/plugins/airgap-anything/skills/airgap-architect/references/interview.md).

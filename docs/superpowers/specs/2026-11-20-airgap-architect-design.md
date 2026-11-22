@@ -159,12 +159,14 @@ Questions:
 | `org.downtime_tolerance` | How much downtime is acceptable | `accepted`, `planned_only`, `none` | yes |
 | `org.ops_capacity` | Who operates the system | `part_time_one`, `small_team`, `platform_team` | yes |
 | `org.kubernetes_experience` | Whether the operating team runs Kubernetes today | boolean | yes |
+| `inside.operator` | Who carries out the installation and later work inside the network | `people`, `local_agent`, `people_then_agent` | yes |
 | `workload.usage` | Share of each usage type: `chat`, `code_assistant`, `rag`, `batch` | map of shares summing to 1 | yes |
 | `workload.models` | Models to serve: role, parameter count and precision, or weight size; optional context length and architecture numbers | list | yes |
 | `workload.context_tokens` | Typical context length per user group: `chat`, `code_assistant`, `rag` | map of group to tokens | no |
 | `hardware.gpus` | GPUs that exist or will be bought: model, count, optional VRAM and vendor (`nvidia`, `amd`, `intel`) | list, may be empty | yes |
 | `hardware.ram_gb` | System RAM, asked only when there is no GPU | number | conditional |
 | `hardware.power_budget_kw` | Power available for the system | number | no |
+| `hardware.cpu_arch` | CPU architecture of the servers inside the network | `amd64`, `arm64` | yes |
 | `existing.identity` | Existing identity provider | `none`, `ad_ldap`, `oidc` | yes |
 | `existing.api_gateway` | Existing API gateway | `none`, `kong`, `other` | yes |
 | `existing.kubernetes` | Existing cluster platform | `none`, `kubernetes`, `openshift` | yes |

@@ -158,10 +158,12 @@ def base_answers(**overrides) -> dict:
             {"name": "example-70b", "role": "chat", "params_b": 70, "precision": "fp8"}
         ],
         "hardware.gpus": [{"model": "TG141", "count": 8}],
+        "hardware.cpu_arch": "amd64",
         "existing.identity": "ad_ldap",
         "existing.api_gateway": "none",
         "existing.kubernetes": "none",
         "transfer.channel": "removable_media",
+        "inside.operator": "people",
     }
     answers.update(overrides)
     return answers

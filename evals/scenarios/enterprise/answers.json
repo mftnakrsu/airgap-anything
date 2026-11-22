@@ -6,6 +6,7 @@
   "org.downtime_tolerance": "none",
   "org.ops_capacity": "platform_team",
   "org.kubernetes_experience": true,
+  "inside.operator": "unknown",
   "workload.usage": { "chat": 0.7, "code_assistant": 0.2, "rag": 0.1 },
   "workload.models": [
     {
@@ -20,6 +21,7 @@
   "hardware.gpus": [
     { "model": "generic-141gb", "count": 24, "vram_gb": 141, "tdp_w": 700 }
   ],
+  "hardware.cpu_arch": "unknown",
   "existing.identity": "ad_ldap",
   "existing.api_gateway": "kong",
   "existing.kubernetes": "openshift",

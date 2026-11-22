@@ -17,9 +17,11 @@ This is the example behind the recording in the README. The answers are what an 
 | `org.downtime_tolerance` | planned_only |
 | `org.ops_capacity` | small_team |
 | `org.kubernetes_experience` | false |
+| `inside.operator` | people_then_agent |
 | `workload.usage` | {"chat": 1.0} |
 | `workload.models` | [{"name": "one very large chat model", "role": "chat", "params_b": 671, "precision": "fp8"}] |
 | `hardware.gpus` | [{"model": "unnamed 141 GB GPU", "count": 8, "vram_gb": 141, "tdp_w": 700}] |
+| `hardware.cpu_arch` | amd64 |
 | `existing.identity` | ad_ldap |
 | `existing.api_gateway` | none |
 | `existing.kubernetes` | none |

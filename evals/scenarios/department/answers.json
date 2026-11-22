@@ -6,6 +6,7 @@
   "org.downtime_tolerance": "planned_only",
   "org.ops_capacity": "small_team",
   "org.kubernetes_experience": false,
+  "inside.operator": "unknown",
   "workload.usage": { "chat": 1.0 },
   "workload.models": [
     { "name": "division-671b", "role": "chat", "params_b": 671, "precision": "fp8" }
@@ -13,6 +14,7 @@
   "hardware.gpus": [
     { "model": "generic-141gb", "count": 8, "vram_gb": 141, "tdp_w": 700 }
   ],
+  "hardware.cpu_arch": "unknown",
   "existing.identity": "ad_ldap",
   "existing.api_gateway": "none",
   "existing.kubernetes": "none",

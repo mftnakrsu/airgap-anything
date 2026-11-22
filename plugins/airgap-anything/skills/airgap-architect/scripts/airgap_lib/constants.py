@@ -29,6 +29,11 @@ SIZE_CLASSES = ("S", "M", "L", "XL")
 GPU_VENDORS = ("nvidia", "amd", "intel")
 HARDWARE_CLASSES = GPU_VENDORS + ("cpu",)
 
+# CPU architectures of the servers inside, and who works inside the network.
+CPU_ARCHES = ("amd64", "arm64")
+INSIDE_OPERATORS = ("people", "local_agent", "people_then_agent")
+AGENT_OPERATORS = ("local_agent", "people_then_agent")
+
 # Requirements an escalator in rules.toml may switch on.
 ESCALATOR_REQUIREMENTS = (
     "gateway_non_empty",

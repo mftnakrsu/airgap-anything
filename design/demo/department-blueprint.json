@@ -12,6 +12,7 @@
     "org.downtime_tolerance": "planned_only",
     "org.ops_capacity": "small_team",
     "org.kubernetes_experience": false,
+    "inside.operator": "people_then_agent",
     "workload.usage": {
       "chat": 1.0
     },
@@ -31,6 +32,7 @@
         "tdp_w": 700
       }
     ],
+    "hardware.cpu_arch": "amd64",
     "existing.identity": "ad_ldap",
     "existing.api_gateway": "none",
     "existing.kubernetes": "none",
