@@ -26,7 +26,7 @@ npx skills add mftnakrsu/airgap-anything -g
 On a connected machine, in a clone of this repository:
 
 ```bash
-git archive --format=tar.gz --prefix=airgap-architect/ -o airgap-architect.tar.gz HEAD:skills/airgap-architect
+git archive --format=tar.gz --prefix=airgap-architect/ -o airgap-architect.tar.gz HEAD:plugins/airgap-anything/skills/airgap-architect
 sha256sum airgap-architect.tar.gz > airgap-architect.tar.gz.sha256
 ```
 

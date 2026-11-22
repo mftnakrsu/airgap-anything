@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Size GPUs, servers and power and write sizing and assumptions to blueprint.json."""
 from airgap_lib import cli
 from airgap_lib.answers import resolve_answers

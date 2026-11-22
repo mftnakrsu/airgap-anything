@@ -82,37 +82,40 @@ airgap-anything/
 ├── LICENSE
 ├── CONTRIBUTING.md                     how to add or verify a catalog entry
 ├── .claude-plugin/
-│   ├── plugin.json
-│   └── marketplace.json
-├── skills/airgap-architect/
-│   ├── SKILL.md                        process, about 150 lines
-│   ├── references/
-│   │   ├── interview.md                questions, order, defaults
-│   │   ├── tiers.md                    tier model explained for the model
-│   │   ├── sizing.md                   how to read size.py output
-│   │   ├── layers/
-│   │   │   ├── llm-serving.md          decision table
-│   │   │   ├── llm-gateway.md          decision table
-│   │   │   └── supporting-defaults.md  fixed defaults per tier
-│   │   ├── blueprint-template.md
-│   │   └── agents-snippet.md
-│   ├── catalog/
-│   │   ├── rules.toml                  thresholds, escalators, sizing defaults
-│   │   ├── gpus.toml                   GPU table
-│   │   └── components/*.toml           one file per component
-│   └── scripts/
-│       ├── tier.py
-│       ├── size.py
-│       ├── manifest.py
-│       ├── lint.py
-│       └── airgap_lib/                 shared code: catalog loading, schema, rules, math
+│   └── marketplace.json                lists the plugin folder below
+├── plugins/airgap-anything/            the plugin folder: all that an install gets
+│   ├── .claude-plugin/
+│   │   ├── plugin.json
+│   │   └── icon.png
+│   └── skills/airgap-architect/
+│       ├── SKILL.md                    process, about 150 lines
+│       ├── references/
+│       │   ├── interview.md            questions, order, defaults
+│       │   ├── tiers.md                tier model explained for the model
+│       │   ├── sizing.md               how to read size.py output
+│       │   ├── layers/
+│       │   │   ├── llm-serving.md      decision table
+│       │   │   ├── llm-gateway.md      decision table
+│       │   │   └── supporting-defaults.md  fixed defaults per tier
+│       │   ├── blueprint-template.md
+│       │   └── agents-snippet.md
+│       ├── catalog/
+│       │   ├── rules.toml              thresholds, escalators, sizing defaults
+│       │   ├── gpus.toml               GPU table
+│       │   └── components/*.toml       one file per component
+│       └── scripts/
+│           ├── tier.py
+│           ├── size.py
+│           ├── manifest.py
+│           ├── lint.py
+│           └── airgap_lib/             shared code: catalog loading, schema, rules, math
 ├── tests/                              unittest suites and fixtures
 ├── evals/scenarios/                    lab, department, enterprise
 ├── docs/superpowers/specs/             this spec
 └── .github/workflows/ci.yml
 ```
 
-Everything an installed skill needs lives under `skills/airgap-architect/`, because skill installers copy only that folder.
+Everything an installed skill needs lives under `plugins/airgap-anything/skills/airgap-architect/`, because skill installers copy only that folder. The plugin folder `plugins/airgap-anything/` holds only the manifest, the icon, the skill and the triggering suite: a plugin install gets that folder alone, and Anthropic's directory checks every file in it (moved there from the repository root on 2026-11-22).
 
 ### 6.2 Pipeline
 
@@ -544,7 +547,7 @@ CI runs on Python 3.11 and on the newest stable Python.
 
 - Claude Code: `/plugin marketplace add <owner>/airgap-anything`, then `/plugin install airgap-anything@airgap-anything-marketplace`.
 - Other agents: `npx skills add <owner>/airgap-anything`.
-- Offline: the README documents copying `skills/airgap-architect/` from a release archive with a SHA-256 checksum.
+- Offline: the README documents copying `plugins/airgap-anything/skills/airgap-architect/` from a release archive with a SHA-256 checksum.
 - Versioning: semantic versioning for the plugin; integer `schema_version` for the catalog and for `blueprint.json`.
 - Manifests name the repository owner by GitHub handle. An email address is included only if the owner chooses to.
 

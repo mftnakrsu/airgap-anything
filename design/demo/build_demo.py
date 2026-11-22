@@ -26,7 +26,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-SKILL_DIR = REPO_ROOT / "skills" / "airgap-architect"
+SKILL_DIR = REPO_ROOT / "plugins" / "airgap-anything" / "skills" / "airgap-architect"
 SCRIPTS_DIR = SKILL_DIR / "scripts"
 INPUT = REPO_ROOT / "design" / "demo" / "department-blueprint.json"
 OUT_DIR = REPO_ROOT / "assets" / "demo"

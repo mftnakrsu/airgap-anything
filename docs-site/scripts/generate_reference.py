@@ -2,7 +2,7 @@
 
 Nothing in docs-site/src/content/docs/reference/ is written by hand, and neither are the
 example page, the contributing page or the images the site shares with the README. The catalog
-pages come from skills/airgap-architect/catalog/, the GPU page from catalog/gpus.toml, the
+pages come from plugins/airgap-anything/skills/airgap-architect/catalog/, the GPU page from catalog/gpus.toml, the
 interview questions from references/interview.md, the install page from the README, the scripts, lint-code and blueprint.json
 pages from the design spec, the contributing page from CONTRIBUTING.md, and the example from
 design/demo/department-blueprint.json with tier.py and size.py run on it.
@@ -26,7 +26,7 @@ import tomllib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SKILL = REPO_ROOT / "skills" / "airgap-architect"
+SKILL = REPO_ROOT / "plugins" / "airgap-anything" / "skills" / "airgap-architect"
 CATALOG = SKILL / "catalog"
 SPEC = REPO_ROOT / "docs" / "superpowers" / "specs" / "2026-11-20-airgap-architect-design.md"
 SITE = REPO_ROOT / "docs-site"

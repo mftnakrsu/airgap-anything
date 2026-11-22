@@ -10,7 +10,9 @@ An open-source Agent Skill project. The first skill, `airgap-architect`, designs
 - Design spec: `docs/superpowers/specs/2026-11-20-airgap-architect-design.md`.
 - Implementation plan: `docs/superpowers/plans/2026-11-20-airgap-architect.md`.
 
-This file is for agents that work on the repository. People who install the skill never load it: the plugin loader does not read a `CLAUDE.md` at the plugin root, and the other install routes copy only `skills/airgap-architect/`. Anything the skill must do belongs in `skills/airgap-architect/SKILL.md` or its reference files.
+This file is for agents that work on the repository. People who install the skill never load it: a plugin install gets only the plugin folder, `plugins/airgap-anything/`, and the other install routes copy only `plugins/airgap-anything/skills/airgap-architect/`. Anything the skill must do belongs in that folder's `SKILL.md` or its reference files.
+
+The repository root holds the marketplace (`.claude-plugin/marketplace.json`), which lists `plugins/airgap-anything/`. Keep that folder to what an install needs: the plugin manifest and icon, the skill, and the triggering suite (`claude plugin eval` reads suites only inside the plugin). Anthropic's directory checks every file in it; `tests/test_packaging.py` enforces its rules.
 
 ## Commands
 
@@ -19,12 +21,13 @@ From the repository root. CI runs the tests on Python 3.11 and on the newest Pyt
 ```bash
 python3.11 -m unittest discover -s tests -t .
 python3 -m unittest discover -s tests -t .
-python3 skills/airgap-architect/scripts/lint.py --catalog-only
+python3 plugins/airgap-anything/skills/airgap-architect/scripts/lint.py --catalog-only
+claude plugin validate plugins/airgap-anything --profile directory
 python3 design/demo/build_demo.py
 python3 docs-site/scripts/generate_reference.py
 ```
 
-`build_demo.py` rebuilds the README demo in `assets/demo/`. `generate_reference.py` rewrites the generated pages of the documentation site (`docs-site/`, Astro Starlight, Node.js 24: `npm ci && npm run build`). The brand rebuild is described in `design/brand/README.md`; it needs `fontTools`, `Pillow` and Chrome.
+`build_demo.py` rebuilds the README demo in `assets/demo/`. `generate_reference.py` rewrites the generated pages of the documentation site (`docs-site/`, Astro Starlight, Node.js 24: `npm ci && npm run build`). The brand rebuild is described in `design/brand/README.md`; it needs `fontTools`, `Pillow` and Chrome. `claude plugin validate --profile directory` runs the part of the directory's checks that Claude Code knows; the developer portal runs more.
 
 ## Rules that come from the spec
 
@@ -40,6 +43,7 @@ python3 docs-site/scripts/generate_reference.py
 - What `SKILL.md` makes the agent do: rerun the evaluation protocol in `evals/README.md`, including the five pressure runs, and record the results under `evals/results/`.
 - The `description` in `SKILL.md`: rerun the triggering suite (`evals/README.md`, "Triggering"); it decides whether Claude Code picks the skill by itself.
 - A catalog entry, a GPU row, the spec, `references/interview.md`, the demo blueprint, the README's Install section or `CONTRIBUTING.md`: run `docs-site/scripts/generate_reference.py` and commit its output; `tests/test_docs_site.py` checks it.
+- The brand icon: copy `assets/brand/icons/icon-512.png` to `plugins/airgap-anything/.claude-plugin/icon.png`; a test checks they are the same file. The directory keeps the icon of the first submission.
 - Generated files: never edit `assets/brand/` or `assets/demo/` by hand, nor the pages under `docs-site/src/content/docs/reference/`, `example/`, `start/install.md` and `project/contributing.md`. Change the tools in `design/brand/tools/`, or what `design/demo/build_demo.py` runs, and rebuild.
 
 ## Working agreements

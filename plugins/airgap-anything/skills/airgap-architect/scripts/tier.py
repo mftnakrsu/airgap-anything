@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Compute the base tier and per-layer floors and write them to blueprint.json."""
 from airgap_lib import cli
 from airgap_lib.answers import resolve_answers

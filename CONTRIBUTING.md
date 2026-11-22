@@ -20,7 +20,7 @@ An entry carries one label for the whole entry. Use `docs` only when the version
 
 ## Adding or updating a component
 
-1. Copy the template below to `skills/airgap-architect/catalog/components/`. The file name is the component ID plus `.toml`. An ID is lower-case words of letters and digits joined by single hyphens (the pattern `[a-z0-9]+(-[a-z0-9]+)*`, for example `distribution-registry`); lint reports `C1` for any other ID and `C2` when the ID and the file name differ.
+1. Copy the template below to `plugins/airgap-anything/skills/airgap-architect/catalog/components/`. The file name is the component ID plus `.toml`. An ID is lower-case words of letters and digits joined by single hyphens (the pattern `[a-z0-9]+(-[a-z0-9]+)*`, for example `distribution-registry`); lint reports `C1` for any other ID and `C2` when the ID and the file name differ.
 2. Fill it from the project's official sources. Record every URL you used in `evidence.sources`.
 
    | Field | Where the value comes from |
@@ -96,17 +96,17 @@ Keep the URLs in `sources`.
 
 ## GPU rows
 
-`skills/airgap-architect/catalog/gpus.toml` has one `[[gpu]]` row per model. Start a new row from the commented row template at the top of that file (lines 4 to 13), which lists every field. Memory and power come from the vendor's specification page; record the URL in `sources`. Leave `tdp_w` out when the vendor does not publish it. `vendor` is required and is one of `nvidia`, `amd` or `intel`; the transfer manifest uses it to choose the image variant when the user gives a model but no vendor.
+`plugins/airgap-anything/skills/airgap-architect/catalog/gpus.toml` has one `[[gpu]]` row per model. Start a new row from the commented row template at the top of that file (lines 4 to 13), which lists every field. Memory and power come from the vendor's specification page; record the URL in `sources`. Leave `tdp_w` out when the vendor does not publish it. `vendor` is required and is one of `nvidia`, `amd` or `intel`; the transfer manifest uses it to choose the image variant when the user gives a model but no vendor.
 
 No two rows may share a name: lint reports `C1` when a model or alias of one row matches a model or alias of another once case and punctuation are ignored. Give each variant its own name, for example `A100 40GB` and `A100 80GB`, and leave out a bare `A100` that would fit both.
 
 ## Thresholds and defaults
 
-`skills/airgap-architect/catalog/rules.toml` holds the tier thresholds, the escalators, the sizing defaults and the defaults for "unknown" answers. Most are estimates. To replace one, change `value`, set `evidence` to `field` or `docs`, and fill `verified_by` or `sources`. Tests pin the starting values, so update the affected tests in the same pull request and say why the number changed.
+`plugins/airgap-anything/skills/airgap-architect/catalog/rules.toml` holds the tier thresholds, the escalators, the sizing defaults and the defaults for "unknown" answers. Most are estimates. To replace one, change `value`, set `evidence` to `field` or `docs`, and fill `verified_by` or `sources`. Tests pin the starting values, so update the affected tests in the same pull request and say why the number changed.
 
 ## Decision tables
 
-The tables in `skills/airgap-architect/references/layers/` carry one evidence label per row. A row becomes `docs` only when official documentation supports the whole step from its condition to its choice (a threshold the design spec picked is never documented, so such a row stays `estimate`); put the URL in the Basis column.
+The tables in `plugins/airgap-anything/skills/airgap-architect/references/layers/` carry one evidence label per row. A row becomes `docs` only when official documentation supports the whole step from its condition to its choice (a threshold the design spec picked is never documented, so such a row stays `estimate`); put the URL in the Basis column.
 
 ## The README demo
 
@@ -118,7 +118,7 @@ Python 3.11 or newer, no packages to install.
 
 ```bash
 python3 -m unittest discover -s tests -t . -v
-python3 skills/airgap-architect/scripts/lint.py --catalog-only
+python3 plugins/airgap-anything/skills/airgap-architect/scripts/lint.py --catalog-only
 ```
 
 Both must pass. Warnings (codes that start with W) do not fail the build.
