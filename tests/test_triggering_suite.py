@@ -1,4 +1,4 @@
-"""Shape of evals/triggering, the `claude plugin eval` suite that checks Claude Code picks the skill.
+"""Shape of plugins/airgap-anything/evals/triggering, the `claude plugin eval` suite that checks Claude Code picks the skill.
 
 Running the suite needs a model and costs money; these checks only keep its cases well formed.
 """
@@ -6,9 +6,9 @@ Running the suite needs a model and costs money; these checks only keep its case
 import re
 import unittest
 
-from tests import REPO_ROOT
+from tests import PLUGIN_DIR, REPO_ROOT
 
-SUITE = REPO_ROOT / "evals" / "triggering"
+SUITE = PLUGIN_DIR / "evals" / "triggering"
 SKILL_MATCH = r"""'"skill"\s*:\s*"(?:[\w-]+:)?airgap-architect"'"""
 
 
@@ -72,7 +72,7 @@ class TriggeringWorkflowTest(unittest.TestCase):
         self.assertIn("github.event.pull_request.head.repo.full_name == github.repository", self.text)
 
     def test_it_runs_only_when_triggering_can_change(self):
-        for path in ("skills/airgap-architect/SKILL.md", "evals/triggering/**", ".github/workflows/triggering.yml"):
+        for path in ("plugins/airgap-anything/skills/airgap-architect/SKILL.md", "plugins/airgap-anything/evals/triggering/**", ".github/workflows/triggering.yml"):
             self.assertIn(f'- "{path}"', self.text)
         self.assertIn("workflow_dispatch", self.text)
 
@@ -85,7 +85,7 @@ class TriggeringWorkflowTest(unittest.TestCase):
             self.assertIn("steps.credential.outputs.found == 'true'", step)
 
     def test_every_run_has_a_ceiling_and_stays_local(self):
-        for flag in ("--eval-dir evals/triggering", "--max-cost-usd", "--no-publish", "--threshold", "--json"):
+        for flag in ("claude plugin eval plugins/airgap-anything --eval-dir evals/triggering", "--max-cost-usd", "--no-publish", "--threshold", "--json"):
             self.assertIn(flag, self.text)
 
 if __name__ == "__main__":

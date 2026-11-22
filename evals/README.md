@@ -33,7 +33,7 @@ Every run uses a fresh agent with no memory of earlier runs, working in a new em
 | With skill | yes | told it is installed | "A skill is installed at SKILL_DIR. Read SKILL_DIR/SKILL.md and follow it. The superpowers plugin is installed; `superpowers:brainstorming` and `superpowers:writing-plans` are available." |
 | With skill, no superpowers | yes | told it is absent | "A skill is installed at SKILL_DIR. Read SKILL_DIR/SKILL.md and follow it. The superpowers plugin is not installed; no `superpowers:` skill exists in this session." |
 
-`SKILL_DIR` is the absolute path of a copy of the skill outside this repository, for example a `git archive` of `skills/airgap-architect` at the commit under test. Record that commit in the results file.
+`SKILL_DIR` is the absolute path of a copy of the skill outside this repository, for example a `git archive` of `plugins/airgap-anything/skills/airgap-architect` at the commit under test. Record that commit in the results file.
 
 Every prompt ends with: "Work in the directory RUN and do not read files outside it. When you reach a point where you need the user's approval, stop and report what you produced." In runs with the skill, the first sentence reads "Work in the directory RUN, and read files only in RUN and SKILL_DIR." RUN is a new empty directory for the run. Every run also gets a second new empty directory, TMP, next to RUN, and the prompt adds, after its first sentence: "Put any temporary file in TMP and nowhere else; you may read it there."
 
@@ -72,7 +72,7 @@ For runs with the skill, also record:
 With `RUN` set to the directory the agent worked in and `NAME` to the scenario:
 
 ```bash
-python3 skills/airgap-architect/scripts/lint.py --blueprint "$RUN/docs/airgap/blueprint.json" --project-root "$RUN"
+python3 plugins/airgap-anything/skills/airgap-architect/scripts/lint.py --blueprint "$RUN/docs/airgap/blueprint.json" --project-root "$RUN"
 python3 evals/score.py --blueprint "$RUN/docs/airgap/blueprint.json" --expected "evals/scenarios/$NAME/expected.json"
 ```
 
@@ -100,10 +100,10 @@ A slash command is expanded before the session starts, so a manual start makes n
 Run from the repository root. Each run is a real Claude Code session on your account and costs money, so set a ceiling:
 
 ```bash
-claude plugin eval . --eval-dir evals/triggering --runs 3 --ablation none -j 3 \
+claude plugin eval plugins/airgap-anything --eval-dir evals/triggering --runs 3 --ablation none -j 3 \
   --no-publish --trust-plugin --max-cost-usd 9 --json /tmp/triggering.json --threshold 0
 ```
 
-`--ablation none` skips the no-plugin arm, which can never call the skill and so tells nothing here. `--no-publish` keeps the report on your machine. Raw results land in `evals/triggering/results/`, which git ignores; record the summary under `results/`, with the model, the Claude Code version and the commit. Rerun when the `description` in `SKILL.md` changes.
+`--ablation none` skips the no-plugin arm, which can never call the skill and so tells nothing here. `--no-publish` keeps the report on your machine. Raw results land in `plugins/airgap-anything/evals/triggering/results/`, which git ignores; record the summary under `results/`, with the model, the Claude Code version and the commit. Rerun when the `description` in `SKILL.md` changes.
 
 CI runs the same suite from `.github/workflows/triggering.yml`: on a pull request that changes `SKILL.md`, the suite or the workflow, on a `v*` tag, and by hand (Actions > triggering > Run workflow). It needs a credential in the repository secrets: `ANTHROPIC_API_KEY`, an Anthropic API key billed per run, or `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, which bills a Claude subscription (not yet tried with `claude plugin eval`). Without either, the job leaves a notice and skips the suite rather than failing. A pull request from a fork gets no secrets, so the job is skipped there. A case passes at a score of 0.8: an `auto-*` or `manual-*` case survives one missed grader in three runs, a `skip-*` case fails on a single false start. The JSON result is kept as the run's artifact.

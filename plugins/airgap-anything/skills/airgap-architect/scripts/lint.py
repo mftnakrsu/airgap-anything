@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Check a blueprint against the catalog, or check the catalog alone."""
 from datetime import date
 from pathlib import Path

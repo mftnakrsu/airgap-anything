@@ -6,7 +6,7 @@ import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from tests import REPO_ROOT
+from tests import PLUGIN_DIR, REPO_ROOT
 
 
 def _length(value, whole):
@@ -141,7 +141,7 @@ def _load_builder(name):
 class ReadmeTest(unittest.TestCase):
     def setUp(self):
         self.text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-        manifest = REPO_ROOT / ".claude-plugin" / "plugin.json"
+        manifest = PLUGIN_DIR / ".claude-plugin" / "plugin.json"
         self.owner = json.loads(manifest.read_text(encoding="utf-8"))["author"]["name"]
 
     def test_it_documents_the_three_install_paths(self):

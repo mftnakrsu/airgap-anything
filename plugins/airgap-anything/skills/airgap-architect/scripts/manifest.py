@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Generate transfer-manifest.md from the decisions in blueprint.json."""
 from datetime import date
 from pathlib import Path
