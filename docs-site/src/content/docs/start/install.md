@@ -8,6 +8,14 @@ Install it once; after that you only ask (see [Use](/start/quick-start/)). The s
 
 ## Claude Code
 
+In a Claude Code session:
+
+```
+/plugin install airgap-anything --marketplace mftnakrsu/airgap-anything
+```
+
+Claude Code asks you to confirm the new marketplace, then lets you choose where to install. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
+
 ```
 /plugin marketplace add mftnakrsu/airgap-anything
 /plugin install airgap-anything@airgap-anything-marketplace

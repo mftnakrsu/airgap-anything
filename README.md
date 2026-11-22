@@ -39,6 +39,14 @@ Install it once; after that you only ask (see [Use](#use)). The skill needs Pyth
 
 ### Claude Code
 
+In a Claude Code session:
+
+```
+/plugin install airgap-anything --marketplace mftnakrsu/airgap-anything
+```
+
+Claude Code asks you to confirm the new marketplace, then lets you choose where to install. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
+
 ```
 /plugin marketplace add mftnakrsu/airgap-anything
 /plugin install airgap-anything@airgap-anything-marketplace
@@ -166,7 +174,13 @@ Tasarım internete bağlı bir makinede yapılır. Ağın içine blueprint dosya
 
 Sürüm 0.1, temel akışı ve LLM platformu katmanını kapsar.
 
-**Kurulum.** Bir kez kurarsınız; sonrasında yalnızca sorarsınız. Claude Code'da:
+**Kurulum.** Bir kez kurarsınız; sonrasında yalnızca sorarsınız. Claude Code oturumunda:
+
+```
+/plugin install airgap-anything --marketplace mftnakrsu/airgap-anything
+```
+
+Bu biçim Claude Code 2.1.275 veya üstünü ister. Daha eski sürümlerde önce marketplace'i ekleyin:
 
 ```
 /plugin marketplace add mftnakrsu/airgap-anything
