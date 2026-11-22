@@ -116,7 +116,16 @@ def render_manifest(blueprint: dict, catalog: Catalog, generated: str) -> str:
                 ]
             )
         for package in airgap.get("packages", []):
-            packages.append([label, entry["version"], package])
+            packages.append(
+                [
+                    label,
+                    entry["version"],
+                    package["file"],
+                    package["arch"],
+                    package["url"],
+                    package.get("checksums", ""),
+                ]
+            )
         for item in airgap.get("telemetry", []):
             telemetry.append([label, item["what"], item["disable"]])
         for download in airgap.get("runtime_downloads", []):
@@ -124,7 +133,7 @@ def render_manifest(blueprint: dict, catalog: Catalog, generated: str) -> str:
         for skill in entry.get("deeper_skills", []):
             skills.append([label, skill["repo"], skill["skill"]])
     for name in custom:
-        packages.append([f"custom: {name}", "", "enumerate artifacts manually"])
+        packages.append([f"custom: {name}", "", "enumerate artifacts manually", "", "", ""])
 
     model_rows = [
         [
@@ -163,7 +172,7 @@ def render_manifest(blueprint: dict, catalog: Catalog, generated: str) -> str:
     lines += ["## 2. Model artifacts", ""]
     lines += _table(["Model", "Role", "Files to carry", "SHA-256"], model_rows)
     lines += ["## 3. Packages and binaries", ""]
-    lines += _table(["Component", "Version", "Artifact"], packages)
+    lines += _table(["Component", "Version", "File", "Arch", "URL", "Checksums"], packages)
     lines += ["## 4. Telemetry and egress settings to switch off before first start", ""]
     lines += _table(["Component", "What", "Setting"], telemetry)
     lines += ["## 5. Runtime downloads to stage in advance", ""]

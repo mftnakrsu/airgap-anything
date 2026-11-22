@@ -286,9 +286,76 @@ class ComponentValidationTest(unittest.TestCase):
         self.assertEqual(codes(findings), ["C1"])
         self.assertEqual(findings[0].message, "x: unknown key 'airgap.images[0].arch'")
 
-    def test_packages_take_no_hardware_key(self):
-        entry = support.component("x", "ui", airgap={"packages": [{"name": "a", "hardware": ["cpu"]}]})
-        self.assertIn("C1", codes(self.check(entry)))
+    def package_findings(self, *rows):
+        return self.check(support.component("x", "ui", airgap={"packages": list(rows)}))
+
+    def test_package_rows_are_accepted(self):
+        rows = (
+            support.package("x-1.0-amd64.tgz"),
+            support.package("x-1.0-arm64.tgz", "arm64", "https://downloads.example.test/SHA256SUMS"),
+            support.package("install.sh", "any"),
+        )
+        self.assertEqual(self.package_findings(*rows), [])
+
+    def test_packages_must_be_tables(self):
+        for packages in (["x-1.0-amd64.tgz"], "x.tgz", [support.package("a"), "b"]):
+            with self.subTest(packages=packages):
+                findings = self.check(support.component("x", "ui", airgap={"packages": packages}))
+                self.assertEqual(codes(findings), ["C1"])
+                self.assertEqual(
+                    findings[0].message,
+                    "x: airgap.packages must be a list of { file, arch, url, checksums } tables",
+                )
+
+    def test_unknown_package_key_is_c1(self):
+        row = dict(support.package("a"), hardware=["cpu"])
+        findings = self.package_findings(row)
+        self.assertEqual(codes(findings), ["C1"])
+        self.assertEqual(findings[0].message, "x: airgap.packages[0]: unknown key 'hardware'")
+
+    def test_c5_missing_fields(self):
+        row = support.package("a")
+        for key in ("file", "arch", "url"):
+            for value in (None, "", "  ", 3):
+                with self.subTest(key=key, value=value):
+                    broken = dict(row)
+                    if value is None:
+                        del broken[key]
+                    else:
+                        broken[key] = value
+                    findings = self.package_findings(broken)
+                    self.assertEqual(codes(findings), ["C5"])
+                    self.assertEqual(findings[0].message, f"x: airgap.packages[0] lacks {key}")
+
+    def test_c5_arch_outside_the_three_values(self):
+        findings = self.package_findings(support.package("a", "x86_64"))
+        self.assertEqual(codes(findings), ["C5"])
+        self.assertEqual(
+            findings[0].message, "x: airgap.packages[0].arch must be one of amd64, arm64, any"
+        )
+
+    def test_c6_url_must_be_full_https(self):
+        for url in ("http://downloads.example.test/a", "downloads.example.test/a", "https://localhost/a", "https://a b.test/x"):
+            with self.subTest(url=url):
+                findings = self.package_findings(dict(support.package("a"), url=url))
+                self.assertEqual(codes(findings), ["C6"])
+                self.assertEqual(findings[0].message, "x: airgap.packages[0].url must be a full https:// URL")
+
+    def test_c6_checksums_url_or_empty(self):
+        self.assertEqual(self.package_findings(support.package("a", checksums="")), [])
+        for checksums in ("md5sum", "ftp://downloads.example.test/md5sum", 5):
+            with self.subTest(checksums=checksums):
+                findings = self.package_findings(dict(support.package("a"), checksums=checksums))
+                self.assertEqual(codes(findings), ["C6"])
+                self.assertEqual(
+                    findings[0].message,
+                    "x: airgap.packages[0].checksums must be a full https:// URL or empty",
+                )
+
+    def test_schema_version_must_be_2(self):
+        findings = self.check(support.component("x", "ui", schema_version=1))
+        self.assertEqual(codes(findings), ["C1"])
+        self.assertEqual(findings[0].message, "x: schema_version must be 2")
 
     def test_unknown_layer_and_tier(self):
         self.assertIn("C1", codes(self.check(support.component("x", "no-such-layer"))))

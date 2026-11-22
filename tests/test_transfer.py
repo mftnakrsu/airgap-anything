@@ -37,7 +37,7 @@ class ManifestTest(unittest.TestCase):
                 "images": [
                     {"ref": "registry.example.test/synthetic/alpha-engine:1.2.3", "digest": "sha256:abc"}
                 ],
-                "packages": ["alpha-cli 1.2.3 binary"],
+                "packages": [support.package("alpha-cli-1.2.3-amd64", checksums="https://downloads.example.test/SHA256SUMS")],
                 "runtime_downloads": ["model weights"],
                 "telemetry": [{"what": "usage statistics", "disable": "ALPHA_TELEMETRY=0"}],
             },
@@ -74,7 +74,12 @@ class ManifestTest(unittest.TestCase):
 
     def test_other_tables_are_filled_from_the_catalog(self):
         self.assertIn("| example-70b | chat | weights, tokenizer and configuration files |  |", self.text)
-        self.assertIn("| alpha-engine | 1.2.3 | alpha-cli 1.2.3 binary |", self.text)
+        self.assertIn(
+            "| alpha-engine | 1.2.3 | alpha-cli-1.2.3-amd64 | amd64 "
+            "| https://downloads.example.test/alpha-cli-1.2.3-amd64 "
+            "| https://downloads.example.test/SHA256SUMS |",
+            self.text,
+        )
         self.assertIn("| alpha-engine | usage statistics | ALPHA_TELEMETRY=0 |", self.text)
         self.assertIn("| alpha-engine | model weights |", self.text)
         self.assertIn("| alpha-engine | example/skills | alpha-deployment |", self.text)
@@ -87,7 +92,7 @@ class ManifestTest(unittest.TestCase):
     def test_custom_components_are_listed_for_manual_work(self):
         self.blueprint["decisions"][2]["custom"] = ["in-house portal"]
         text = render_manifest(self.blueprint, self.catalog, "2026-11-20")
-        self.assertIn("| custom: in-house portal |  | enumerate artifacts manually |", text)
+        self.assertIn("| custom: in-house portal |  | enumerate artifacts manually |  |  |  |", text)
 
     def test_without_benchmark_nothing_is_marked(self):
         self.assertNotIn("benchmark only", self.text)
@@ -127,7 +132,7 @@ class BenchmarkManifestTest(unittest.TestCase):
                     {"ref": "registry.example.test/synthetic/beta-nv:1", "hardware": ["nvidia"]},
                     {"ref": "registry.example.test/synthetic/beta-intel:1", "hardware": ["intel"]},
                 ],
-                "packages": ["beta-cli binary"],
+                "packages": [support.package("beta-cli")],
                 "runtime_downloads": ["tokenizer data"],
                 "telemetry": [{"what": "beta usage ping", "disable": "BETA_PING=0"}],
             },
@@ -151,7 +156,7 @@ class BenchmarkManifestTest(unittest.TestCase):
             "| nvidia | ",
             text,
         )
-        self.assertIn(f"| {self.MARK} | 1.2.3 | beta-cli binary |", text)
+        self.assertIn(f"| {self.MARK} | 1.2.3 | beta-cli | amd64 | ", text)
         self.assertIn(f"| {self.MARK} | beta usage ping | BETA_PING=0 |", text)
         self.assertIn(f"| {self.MARK} | tokenizer data |", text)
         self.assertIn(f"| {self.MARK} | example/skills | beta-deployment |", text)

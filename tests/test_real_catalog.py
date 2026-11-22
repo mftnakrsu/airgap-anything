@@ -24,6 +24,10 @@ V1_COMPONENTS = {
     "distribution-registry": "registry",
 }
 
+# The entries with packages (design spec 2026-11-22, section 7).
+PACKAGE_COMPONENTS = ("docker-compose", "harbor", "k3s", "rke2")
+NO_ARM64 = "The release publishes no arm64 files."
+
 
 class ShippedCatalogTest(unittest.TestCase):
     @classmethod
@@ -38,6 +42,25 @@ class ShippedCatalogTest(unittest.TestCase):
     def test_the_sixteen_v1_components_are_present_in_their_layers(self):
         layers = {cid: entry["layer"] for cid, entry in self.catalog.components.items()}
         self.assertEqual(layers, V1_COMPONENTS)
+
+    def test_every_package_url_is_a_recorded_source(self):
+        for cid, entry in self.catalog.components.items():
+            sources = set(entry["evidence"]["sources"])
+            for package in entry["airgap"].get("packages", []):
+                with self.subTest(component=cid, file=package["file"]):
+                    self.assertIn(package["url"], sources)
+                    if package["checksums"]:
+                        self.assertIn(package["checksums"], sources)
+
+    def test_package_entries_carry_both_architectures(self):
+        # An entry without arm64 rows says so in airgap.notes, in these words.
+        for cid in PACKAGE_COMPONENTS:
+            entry = self.catalog.components[cid]
+            arches = {package["arch"] for package in entry["airgap"]["packages"]}
+            with self.subTest(component=cid):
+                self.assertIn("amd64", arches)
+                if NO_ARM64 not in entry["airgap"].get("notes", ""):
+                    self.assertIn("arm64", arches)
 
     def test_gpu_rows_come_from_vendor_pages(self):
         self.assertGreaterEqual(len(self.catalog.gpus), 1)

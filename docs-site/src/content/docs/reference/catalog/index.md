@@ -47,7 +47,7 @@ The skill chooses only from this catalog, so every version and license in a blue
 
 | Component | Version | Tiers | License | Evidence | Last verified |
 |---|---|---|---|---|---|
-| [Docker Compose](/reference/catalog/docker-compose/) | `v5.8.0` | T1, T2 | Apache-2.0 | `docs` | 2026-11-21 |
+| [Docker Compose](/reference/catalog/docker-compose/) | `v5.8.0` | T1, T2 | Apache-2.0 | `docs` | 2026-11-22 |
 | [K3s](/reference/catalog/k3s/) | `v1.37.2+k3s1` | T1, T2 | Apache-2.0 | `docs` | 2026-11-22 |
 | [RKE2](/reference/catalog/rke2/) | `v1.37.2+rke2r1` | T1, T2, T3 | Apache-2.0 | `docs` | 2026-11-22 |
 

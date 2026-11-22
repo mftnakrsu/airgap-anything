@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 1  # blueprint.json
+COMPONENT_SCHEMA_VERSION = 2  # catalog component entries
 
 TIERS = ("T1", "T2", "T3")
 LAYERS = (
@@ -33,6 +34,8 @@ HARDWARE_CLASSES = GPU_VENDORS + ("cpu",)
 CPU_ARCHES = ("amd64", "arm64")
 INSIDE_OPERATORS = ("people", "local_agent", "people_then_agent")
 AGENT_OPERATORS = ("local_agent", "people_then_agent")
+# What a package row of a catalog entry is built for; "any" is architecture-free.
+PACKAGE_ARCHES = CPU_ARCHES + ("any",)
 
 # Requirements an escalator in rules.toml may switch on.
 ESCALATOR_REQUIREMENTS = (

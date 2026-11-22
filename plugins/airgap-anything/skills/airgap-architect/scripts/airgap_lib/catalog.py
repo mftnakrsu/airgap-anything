@@ -8,13 +8,21 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 
-from .constants import GPU_VENDORS, HARDWARE_CLASSES, LAYERS, SCHEMA_VERSION, TIERS
+from .constants import (
+    COMPONENT_SCHEMA_VERSION,
+    GPU_VENDORS,
+    HARDWARE_CLASSES,
+    LAYERS,
+    PACKAGE_ARCHES,
+    TIERS,
+)
 from .evidence import evidence_problems
 from .findings import Finding
 from .rules import Rules, load_rules, validate_rules
 
 _ID_PATTERN = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 _PLACEHOLDER = re.compile(r"<[^<>]+>")
+_HTTPS_URL = re.compile(r"https://[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+(:[0-9]+)?(/\S*)?")
 
 _TOP_KEYS = {
     "schema_version", "id", "name", "layer", "summary", "tiers", "requires",
@@ -28,6 +36,7 @@ _AIRGAP_KEYS = {
 }
 _CHOOSE_KEYS = {"when", "avoid_when", "alternatives", "caveats"}
 _IMAGE_KEYS = {"ref", "digest", "hardware"}
+_PACKAGE_KEYS = {"file", "arch", "url", "checksums"}
 _GPU_KEYS = {
     "model", "aliases", "vendor", "vram_gb", "tdp_w", "evidence", "sources",
     "verified_by", "notes", "last_verified",
@@ -132,8 +141,8 @@ def validate_component(entry: dict, known_ids: set[str]) -> list[Finding]:
 
     for key in sorted(set(entry) - _TOP_KEYS):
         c1(f"unknown key '{key}'")
-    if entry.get("schema_version") != SCHEMA_VERSION:
-        c1(f"schema_version must be {SCHEMA_VERSION}")
+    if entry.get("schema_version") != COMPONENT_SCHEMA_VERSION:
+        c1(f"schema_version must be {COMPONENT_SCHEMA_VERSION}")
     if not isinstance(entry.get("id"), str) or not _ID_PATTERN.fullmatch(entry["id"]):
         c1("id must be lower-case words joined by hyphens")
     for key in ("name", "summary", "license", "version"):
@@ -201,9 +210,9 @@ def validate_component(entry: dict, known_ids: set[str]) -> list[Finding]:
                     f"airgap.images[{index}].hardware must be a non-empty list of: "
                     + ", ".join(HARDWARE_CLASSES)
                 )
-        for key in ("packages", "runtime_downloads"):
-            if not _strings(airgap.get(key)):
-                c1(f"airgap.{key} must be a list of strings")
+        findings += _package_findings(name, airgap.get("packages"))
+        if not _strings(airgap.get("runtime_downloads")):
+            c1("airgap.runtime_downloads must be a list of strings")
         telemetry = airgap.get("telemetry")
         if not isinstance(telemetry, list) or any(
             not isinstance(item, dict)
@@ -246,6 +255,46 @@ def validate_component(entry: dict, known_ids: set[str]) -> list[Finding]:
         if isinstance(reference, str) and reference not in known_ids:
             findings.append(
                 Finding("C3", f"{name}: refers to unknown component '{reference}'")
+            )
+    return findings
+
+
+def is_https_url(value) -> bool:
+    """A full https:// URL: a host with a dot, no spaces."""
+    return isinstance(value, str) and _HTTPS_URL.fullmatch(value) is not None
+
+
+def _package_findings(name: str, packages) -> list[Finding]:
+    """C1 for the shape of airgap.packages, C5 for missing fields, C6 for URLs."""
+    if not isinstance(packages, list) or any(not isinstance(row, dict) for row in packages):
+        return [
+            Finding(
+                "C1",
+                f"{name}: airgap.packages must be a list of {{ file, arch, url, checksums }} tables",
+            )
+        ]
+    findings: list[Finding] = []
+    for index, row in enumerate(packages):
+        where = f"{name}: airgap.packages[{index}]"
+        for key in sorted(set(row) - _PACKAGE_KEYS):
+            findings.append(Finding("C1", f"{where}: unknown key '{key}'"))
+        missing = [
+            key
+            for key in ("file", "arch", "url")
+            if not isinstance(row.get(key), str) or not row[key].strip()
+        ]
+        if missing:
+            findings.append(Finding("C5", f"{where} lacks " + ", ".join(missing)))
+        if isinstance(row.get("arch"), str) and row["arch"].strip() and row["arch"] not in PACKAGE_ARCHES:
+            findings.append(
+                Finding("C5", f"{where}.arch must be one of " + ", ".join(PACKAGE_ARCHES))
+            )
+        if "url" not in missing and not is_https_url(row["url"]):
+            findings.append(Finding("C6", f"{where}.url must be a full https:// URL"))
+        checksums = row.get("checksums", "")
+        if not isinstance(checksums, str) or (checksums and not is_https_url(checksums)):
+            findings.append(
+                Finding("C6", f"{where}.checksums must be a full https:// URL or empty")
             )
     return findings
 
