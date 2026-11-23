@@ -48,4 +48,4 @@ Sizes are decimal gigabytes (1 GB = 10^9 bytes).
 
 `item` is the item's name, exactly. An added item's `path` starts with `manual/`; a `not_needed` item needs a `reason`.
 
-This is the only way a file the manifest does not name gets into the bundle, and only the user decides it: an OS package, a whole repository instead of the parts the manifest lists, a release's extra files. Give each such item a name and `status: added`. `pack.py` refuses to pack while an item is not settled.
+This is the only way a file the manifest does not name gets into the bundle, and only the user decides it, for example for an OS package. Give each such item a name and `status: added`. `pack.py` refuses to pack while an item is not settled.

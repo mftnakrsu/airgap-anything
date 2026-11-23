@@ -36,7 +36,7 @@ The checksum list is not optional. Writing down that the checksums were skipped 
 
 ## Only the plan's items
 
-Every image reference, model repository and commit, URL and file name `fetch.sh` uses comes from `transfer-manifest.json` and `transfer.json`, at the manifest's version. Fetch nothing beside them yourself: no file from a branch such as `main` when the manifest pins a release, no whole repository for the parts the manifest lists, no extra files of a release. A file the manifest does not name goes in only as a manual item the user adds (`references/questions.md`, "Manual items").
+Every image reference, model repository and commit, URL and file name `fetch.sh` uses comes from `transfer-manifest.json` and `transfer.json`, at the manifest's version. Fetch nothing beside them yourself: no file from a branch such as `main` when the manifest pins a release. A file the manifest does not name goes in only as a manual item the user adds (`references/questions.md`, "Manual items").
 
 ## What it does
 

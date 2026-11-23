@@ -30,7 +30,7 @@ An image ID that differs stops `load.sh`, unless the engine uses the containerd 
 | Code | Meaning | A person or an agent |
 |---|---|---|
 | 0 | Done | Goes on |
-| 1 | Missing, damaged or not loaded | Stops and reports the message and `MISSING.txt` |
+| 1 | Missing, damaged or not loaded | Stops and reports the message, and after `verify.sh` the contents of `MISSING.txt` (`load.sh` writes none) |
 | 2 | Wrong arguments, or the folder is not a bundle | Fixes the command line, nothing else |
 
 ## Rules for an agent inside

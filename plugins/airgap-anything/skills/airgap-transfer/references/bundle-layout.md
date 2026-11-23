@@ -31,7 +31,7 @@ Files and folders whose names start with a dot inside an item folder are not car
 
 ## check.py
 
-Exit 0 clean (warnings allowed), 1 findings, 2 unreadable or missing input, 3 Python older than 3.11. `--deep` recomputes every hash; `--format json` prints the findings as JSON.
+Exit 0 clean (warnings allowed), 1 findings, 2 unreadable, missing or invalid input (an answer that does not fit, an incomplete `bundle.json`), 3 Python older than 3.11. `--deep` recomputes every hash; `--format json` prints the findings as JSON.
 
 | Code | Check |
 |---|---|
