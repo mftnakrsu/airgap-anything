@@ -3,7 +3,7 @@ import re
 import subprocess
 import unittest
 
-from tests import PLUGIN_DIR, REPO_ROOT, SKILL_DIR
+from tests import PLUGIN_DIR, REPO_ROOT, SKILL_DIRS
 
 
 def marketplace():
@@ -38,9 +38,13 @@ class ManifestTest(unittest.TestCase):
                            if "node_modules" not in p.parts)
         self.assertEqual(manifests, ["plugins/airgap-anything/.claude-plugin/plugin.json"])
 
-    def test_the_skill_is_where_installers_look(self):
-        self.assertTrue((SKILL_DIR / "SKILL.md").is_file())
-        self.assertEqual(SKILL_DIR.parent, PLUGIN_DIR / "skills")
+    def test_the_skills_are_where_installers_look(self):
+        for skill_dir in SKILL_DIRS:
+            with self.subTest(skill=skill_dir.name):
+                self.assertTrue((skill_dir / "SKILL.md").is_file())
+                self.assertEqual(skill_dir.parent, PLUGIN_DIR / "skills")
+        found = sorted(p.name for p in (PLUGIN_DIR / "skills").iterdir() if p.is_dir())
+        self.assertEqual(found, sorted(skill_dir.name for skill_dir in SKILL_DIRS))
 
     def test_the_icon_is_a_square_png_the_listing_accepts(self):
         # claude plugin validate: a square PNG or JPEG of 512 to 2048 px a side, under 2 MB.

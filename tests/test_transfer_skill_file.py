@@ -2,16 +2,53 @@ import re
 import unittest
 
 from tests import TRANSFER_DIR, TRANSFER_SCRIPTS_DIR
-from tests.test_skill_file import read
+from tests.test_skill_file import MAX_DESCRIPTION_CHARS, MAX_NAME_CHARS, frontmatter, read
 from transfer_lib.constants import CHANNELS, FILESYSTEMS
 from transfer_lib.questions import QUESTION_IDS
 from transfer_lib.tools import COMMANDS
 
 REFERENCES = TRANSFER_DIR / "references"
+MAX_SKILL_LINES = 150
+SCRIPTS = ("plan.py", "pack.py", "check.py")
 
 
 def table_rows(text):
     return [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in text.splitlines() if line.strip().startswith("|")]
+
+
+class TransferSkillFileTest(unittest.TestCase):
+    def setUp(self):
+        self.text = read(TRANSFER_DIR / "SKILL.md")
+
+    def test_frontmatter(self):
+        pairs = frontmatter(self.text)
+        self.assertEqual(set(pairs), {"name", "description"})
+        self.assertEqual(pairs["name"], "airgap-transfer")
+        self.assertEqual(pairs["name"], TRANSFER_DIR.name)
+        self.assertLessEqual(len(pairs["name"]), MAX_NAME_CHARS)
+        self.assertTrue(pairs["description"].startswith("Use when"))
+        self.assertLessEqual(len(pairs["description"]), MAX_DESCRIPTION_CHARS)
+        self.assertIn("transfer-manifest.json", pairs["description"])
+
+    def test_it_stays_under_150_lines(self):
+        self.assertLessEqual(len(self.text.splitlines()), MAX_SKILL_LINES)
+
+    def test_references_named_and_present(self):
+        named = set(re.findall(r"`(references/[\w./-]+\.md)`", self.text))
+        files = {path.relative_to(TRANSFER_DIR).as_posix() for path in REFERENCES.glob("*.md")}
+        self.assertEqual(named, files)
+        self.assertEqual(files, {f"references/{n}.md" for n in ("questions", "channels", "fetch", "inside", "bundle-layout")})
+
+    def test_scripts_named(self):
+        for script in SCRIPTS:
+            self.assertIn(f'"${{CLAUDE_SKILL_DIR}}/scripts/{script}"', self.text)
+            self.assertTrue((TRANSFER_SCRIPTS_DIR / script).is_file())
+
+    def test_the_six_rules(self):
+        rules = self.text.split("## Rules", 1)[1].split("## ", 1)[0]
+        for phrase in ("approval", "transfer-manifest.json", "No token", "check.py", "internet or an LLM", "docs/airgap/"):
+            self.assertIn(phrase, rules)
+        self.assertEqual(len(re.findall(r"^\d\. ", rules, re.M)), 6)
 
 
 class TransferReferencesTest(unittest.TestCase):
