@@ -45,7 +45,7 @@ python3 evals/transfer_fixture.py --scenario department --out "$(mktemp -d)" --f
 - What either `SKILL.md` makes the agent do: rerun that skill's protocol in `evals/README.md` (architect: 'Runs'; transfer: 'airgap-transfer'), including the five pressure runs, and record the results under `evals/results/`.
 - A command line in `transfer_lib/tools.py`: read it from the tool's documentation, record the URL in `source` and in `references/fetch.md`, and run `tests/test_fetch_script.py`.
 - The `description` in either `SKILL.md`: rerun the triggering suite (`evals/README.md`, "Triggering"); it decides whether Claude Code picks the skill by itself.
-- A catalog entry, a GPU row, `docs/reference.md`, `references/interview.md`, the demo blueprint, the README's Install section or `CONTRIBUTING.md`: run `docs-site/scripts/generate_reference.py` and commit its output; `tests/test_docs_site.py` checks it.
+- A catalog entry, a GPU row, `docs/reference.md`, `references/interview.md`, airgap-transfer's `SKILL.md` or its `references/`, the demo blueprint, the README's Install section or `CONTRIBUTING.md`: run `docs-site/scripts/generate_reference.py` and commit its output; `tests/test_docs_site.py` checks it.
 - The brand icon: copy `assets/brand/icons/icon-512.png` to `plugins/airgap-anything/.claude-plugin/icon.png`; a test checks they are the same file. The directory keeps the icon of the first submission.
 - Generated files: never edit `assets/brand/` or `assets/demo/` by hand, nor the pages under `docs-site/src/content/docs/reference/`, `example/`, `start/install.md` and `project/contributing.md`. Change the tools in `design/brand/tools/`, or what `design/demo/build_demo.py` runs, and rebuild.
 

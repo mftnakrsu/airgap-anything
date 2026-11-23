@@ -38,7 +38,7 @@ STEPS = [
     ("SCRIPT", "7  Lint", "checks the files"),
     ("YOU", "8  Hand-off", "after you approve"),
 ]
-BUILD_LINES = ("No internet.", "It follows the", "blueprint and the", "files carried in.")
+BUILD_LINES = ("No internet.", "People or an agent", "follow the runbook", "and the files", "carried in.")
 
 WIDTH, HEIGHT = 1000, 352
 CARD_W, CARD_H, GAP, LEFT = 156, 84, 20, 40
@@ -49,7 +49,7 @@ BUILD_X, BUILD_Y, BUILD_W, BUILD_H = 780, 100, 180, 204
 TITLE = "How airgap-architect works"
 DESC = (
     "Eight steps on a connected workstation, done by the model, the scripts and you; "
-    "the files cross the air gap and the agent inside builds without internet."
+    "the files cross the air gap, and the people or the agent inside build the system without internet."
 )
 
 
@@ -122,7 +122,7 @@ def render():
     )
     out.append(
         f'<text x="{BUILD_X + 16}" y="{BUILD_Y + 28}" font-family="{MONO}" font-size="10" font-weight="600" '
-        f'letter-spacing="0.12em" fill="{SUBTLE}">THE AGENT INSIDE</text>'
+        f'letter-spacing="0.12em" fill="{SUBTLE}">INSIDE THE NETWORK</text>'
     )
     out.append(f'<text x="{BUILD_X + 16}" y="{BUILD_Y + 56}" font-family="{SANS}" font-size="17" font-weight="600" fill="{INK}">Build</text>')
     for k, line in enumerate(BUILD_LINES):

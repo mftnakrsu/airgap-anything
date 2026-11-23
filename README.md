@@ -24,7 +24,7 @@
 Version 0.1 covers the core pipeline and the LLM platform layer. See [Scope](#scope).
 
 <p align="center">
-  <img src="assets/brand/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the agent inside builds the system without internet." width="880">
+  <img src="assets/brand/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the people or the agent inside build the system without internet." width="880">
 </p>
 
 ## Why
