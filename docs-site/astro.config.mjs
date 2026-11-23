@@ -34,6 +34,7 @@ export default defineConfig({
             'reference/blueprint-json',
             'reference/gpus',
             { label: 'Catalog', collapsed: true, items: [{ autogenerate: { directory: 'reference/catalog' } }] },
+            { label: 'airgap-transfer', items: [{ autogenerate: { directory: 'reference/transfer' } }] },
           ],
         },
         { label: 'Project', items: ['project/contributing', 'project/testing'] },

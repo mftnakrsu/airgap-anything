@@ -3,9 +3,9 @@ title: How it works
 description: The eight steps of a design, and who does each one, the model, the scripts or you.
 ---
 
-<div class="figure"><img src="/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the agent inside builds the system without internet." /></div>
+<div class="figure"><img src="/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the people or the agent inside build the system without internet." /></div>
 
-The design is made outside the air-gapped network, on a machine with internet access. The files it produces cross the gap together with everything they list, and an agent inside builds the system from them.
+The design is made outside the air-gapped network, on a machine with internet access. The files it produces cross the gap together with everything they list, and the people or the agent inside build the system from them, without internet.
 
 | # | Step | Who |
 |---|---|---|

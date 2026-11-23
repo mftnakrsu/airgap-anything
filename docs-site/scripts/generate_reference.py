@@ -4,7 +4,8 @@ Nothing in docs-site/src/content/docs/reference/ is written by hand, and neither
 example page, the contributing page or the images the site shares with the README. The catalog
 pages come from plugins/airgap-anything/skills/airgap-architect/catalog/, the GPU page from catalog/gpus.toml, the
 interview questions from references/interview.md, the install page from the README, the scripts, lint-code and blueprint.json
-pages from docs/reference.md, the contributing page from CONTRIBUTING.md, and the example from
+pages from docs/reference.md, the airgap-transfer pages from that skill's SKILL.md and references/,
+the contributing page from CONTRIBUTING.md, and the example from
 design/demo/department-blueprint.json with tier.py and size.py run on it.
 tests/test_docs_site.py fails when a file differs from what this script writes, so a change to
 a source must be followed by:
@@ -28,6 +29,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILL = REPO_ROOT / "plugins" / "airgap-anything" / "skills" / "airgap-architect"
 CATALOG = SKILL / "catalog"
+TRANSFER = REPO_ROOT / "plugins" / "airgap-anything" / "skills" / "airgap-transfer"
 REFERENCE = REPO_ROOT / "docs" / "reference.md"
 SITE = REPO_ROOT / "docs-site"
 DOCS = SITE / "src" / "content" / "docs"
@@ -79,6 +81,44 @@ def _table_after(section: str, label: str) -> str:
     if not match:
         raise SystemExit(f"no table after '{label}'")
     return match.group(1)
+
+
+# ---------------------------------------------------------------- airgap-transfer pages
+# One page per reference file of airgap-transfer: (file stem, title, description).
+TRANSFER_PAGES = [
+    ("questions", "Transfer questions", "The questions airgap-transfer asks before it plans a bundle, and how each answer is stored."),
+    ("channels", "Channels", "How splitting and sending order change with removable media, a data diode, a staging host or another channel."),
+    ("fetch", "fetch.sh", "What the fetch script does on the connected side, the approval rule, and the tools and command lines it uses."),
+    ("bundle-layout", "Bundle layout and check codes", "The folders and files of a bundle, and the B and BW codes of check.py."),
+    ("inside", "Inside the network", "The runbook, the rules for an inside agent, and the verify.sh and load.sh steps."),
+]
+
+
+def transfer_index() -> str:
+    """The pipeline and exit codes of airgap-transfer, from its SKILL.md."""
+    source = TRANSFER / "SKILL.md"
+    text = source.read_text(encoding="utf-8")
+    match = re.search(r"^## The pipeline\n\n[^\n]*\n\n((?:\|[^\n]*\n)+)", text, re.M)
+    codes = re.search(r"^(\| Exit code \|[^\n]*\n(?:\|[^\n]*\n)+)", text, re.M)
+    if not match or not codes:
+        raise SystemExit(f"no pipeline or exit-code table in {source}")
+    pipeline = re.sub(r"`references/([\w-]+)\.md`", r"[\1](/reference/transfer/\1/)", match.group(1))
+    links = "".join(f"- [{title}](/reference/transfer/{stem}/): {_text(description)}\n" for stem, title, description in TRANSFER_PAGES)
+    return (
+        _frontmatter("airgap-transfer", "The steps, scripts and exit codes of the skill that turns a transfer manifest into a verified bundle.",
+                     "sidebar:\n  order: 0\n")
+        + _banner(source)
+        + "`airgap-transfer` reads `docs/airgap/transfer-manifest.json`, which `airgap-architect` writes, and builds a bundle "
+        "that checks itself. [Carrying it in](/guides/carrying-it-in/) walks through one transfer.\n\n"
+        + "## Steps\n\n" + pipeline + "\n## Exit codes\n\n" + codes.group(1) + "\n## Pages\n\n" + links
+    )
+
+
+def transfer_page(stem: str, title: str, description: str, order: int) -> str:
+    source = TRANSFER / "references" / f"{stem}.md"
+    text = source.read_text(encoding="utf-8")
+    body = text.split("\n", 1)[1].lstrip("\n") if text.startswith("# ") else text
+    return _frontmatter(title, description, f"sidebar:\n  order: {order}\n") + _banner(source) + _absolute_links(body)
 
 
 # ---------------------------------------------------------------- pages from the spec
@@ -349,6 +389,9 @@ def pages() -> dict[Path, str]:
     }
     for order, entry in enumerate(entries, start=1):
         result[OUT / "catalog" / f"{entry['id']}.md"] = component_page(entry, order)
+    result[OUT / "transfer" / "index.md"] = transfer_index()
+    for order, (stem, title, description) in enumerate(TRANSFER_PAGES, start=1):
+        result[OUT / "transfer" / f"{stem}.md"] = transfer_page(stem, title, description, order)
     return result
 
 
