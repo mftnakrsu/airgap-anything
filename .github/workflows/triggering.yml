@@ -2,7 +2,7 @@ name: triggering
 
 # Runs plugins/airgap-anything/evals/triggering: does Claude Code pick the skill by itself, start it
 # from its command, and leave other requests alone? Every run is a set of real
-# Claude sessions (about USD 4.50 a run), so it runs only when what decides
+# Claude sessions (about USD 6.50 a run with 12 cases, scaled from USD 4.34 for 8), so it runs only when what decides
 # triggering changes, on a release tag, or by hand. It needs a credential in
 # the repository secrets: ANTHROPIC_API_KEY, or CLAUDE_CODE_OAUTH_TOKEN from
 # `claude setup-token` (untested with plugin eval). Without one, the job
@@ -14,6 +14,7 @@ on:
   pull_request:
     paths:
       - "plugins/airgap-anything/skills/airgap-architect/SKILL.md"
+      - "plugins/airgap-anything/skills/airgap-transfer/SKILL.md"
       - "plugins/airgap-anything/evals/triggering/**"
       - ".github/workflows/triggering.yml"
   push:
@@ -62,7 +63,7 @@ jobs:
           claude plugin eval plugins/airgap-anything --eval-dir evals/triggering
           --runs 3 --ablation none -j 3
           --model claude-opus-5-5 --judge-model claude-haiku-5-5
-          --trust-plugin --no-publish --max-cost-usd 6 --threshold 0.8
+          --trust-plugin --no-publish --max-cost-usd 10 --threshold 0.8
           --json triggering.json
       - uses: actions/upload-artifact@v7
         if: always() && steps.credential.outputs.found == 'true'

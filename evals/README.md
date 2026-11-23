@@ -130,16 +130,19 @@ The runs above tell the agent to read `SKILL.md`, so they do not show whether Cl
 | Cases | The message | Passes when |
 |---|---|---|
 | `auto-*` | A natural request in English or Turkish that does not name the skill | Claude calls the Skill tool for `airgap-architect`, and its reply starts the interview instead of answering from memory |
+| `auto-*` for `airgap-transfer` | A request to prepare, carry or check a bundle for a design that has a transfer manifest | Claude calls the Skill tool for `airgap-transfer`, and its reply starts the transfer (or, inside, points to `verify.sh`) |
 | `manual-*` | `/airgap-anything:airgap-architect` and a request | The skill's instructions load (the agent reads its `references/`), and the reply starts the interview |
 | `skip-*` | A request the skill must leave alone, including a near miss ("what does air-gapped mean") | Claude does not call the skill |
 
 A slash command is expanded before the session starts, so a manual start makes no Skill tool call; the manual case looks for the skill's own files in the session trace instead.
 
+Cross-negative graders keep the skills apart: `auto-tr-tasima-listesi` must not start `airgap-transfer`, and `skip-en-docker-save` starts neither.
+
 Run from the repository root. Each run is a real Claude Code session on your account and costs money, so set a ceiling:
 
 ```bash
 claude plugin eval plugins/airgap-anything --eval-dir evals/triggering --runs 3 --ablation none -j 3 \
-  --no-publish --trust-plugin --max-cost-usd 9 --json /tmp/triggering.json --threshold 0
+  --no-publish --trust-plugin --max-cost-usd 14 --json /tmp/triggering.json --threshold 0
 ```
 
 `--ablation none` skips the no-plugin arm, which can never call the skill and so tells nothing here. `--no-publish` keeps the report on your machine. Raw results land in `plugins/airgap-anything/evals/triggering/results/`, which git ignores; record the summary under `evals/results/`, with the model, the Claude Code version and the commit. Rerun when the `description` in `SKILL.md` changes.
