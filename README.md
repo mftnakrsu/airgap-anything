@@ -21,10 +21,10 @@
 
 `airgap-anything` is a home for agent skills that design systems for networks without internet access. Its first skill, `airgap-architect`, interviews you about your organization and writes a blueprint: one component per layer, GPU sizing, the reason for each choice, and the list of everything that has to be carried into the network.
 
-Version 0.1 covers the core pipeline and the LLM platform layer. See [Scope](#scope).
+Version 0.2 covers the core pipeline and the LLM platform layer, and adds a second skill, `airgap-transfer`, that prepares what the blueprint lists for the trip into the network. See [Scope](#scope).
 
 <p align="center">
-  <img src="assets/brand/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the agent inside builds the system without internet." width="880">
+  <img src="assets/brand/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the people or the agent inside build the system without internet." width="880">
 </p>
 
 ## Why
@@ -32,6 +32,15 @@ Version 0.1 covers the core pipeline and the LLM platform layer. See [Scope](#sc
 Architecture skills usually assume internet access and hosted services. Skills for air-gapped work usually explain one tool at a time. `airgap-architect` is the layer above: one interview, one blueprint for the whole stack, written for a network where nothing can be looked up or downloaded.
 
 It decides; it does not operate. For the details of running each tool, catalog entries point to existing per-tool skills.
+
+## Skills
+
+| Skill | What it does | Where it runs |
+|---|---|---|
+| `airgap-architect` | Interviews you and writes the blueprint, GPU sizing, the agent block and the transfer manifest (`transfer-manifest.md` and `.json`) | A connected workstation |
+| `airgap-transfer` | Turns the transfer manifest into a bundle that checks itself: a fetch script, checksums, a split across media, an inventory, and `verify.sh`, `load.sh` and a runbook or agent rules for the inside | A connected workstation; its two shell scripts run inside |
+
+Inside the network nothing needs internet or an LLM. The architect interview asks who works inside: people, an agent on a local model, or people first and an agent later. The bundle carries a runbook for people, rules for an agent, or both.
 
 ## Install
 
@@ -45,7 +54,7 @@ In a Claude Code session:
 /plugin install airgap-anything --marketplace mftnakrsu/airgap-anything
 ```
 
-Claude Code asks you to confirm the new marketplace, then lets you choose where to install. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
+Claude Code asks you to confirm the new marketplace, then lets you choose where to install. The plugin carries both skills. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
 
 ```
 /plugin marketplace add mftnakrsu/airgap-anything
@@ -58,6 +67,8 @@ Claude Code asks you to confirm the new marketplace, then lets you choose where 
 npx skills add mftnakrsu/airgap-anything -g
 ```
 
+This installs both skills. To install one, add the option `--skill`, for example `npx skills add mftnakrsu/airgap-anything -g --skill airgap-transfer`.
+
 `-g` installs it for your user, so every project has it; without `-g` it goes into the current project only. Add `-a` and an agent ID to choose the agent, for example `-a codex`, `-a cursor`, `-a opencode` or `-a gemini-cli`. The [skills CLI](https://github.com/vercel-labs/skills) supports Claude Code, Codex, Cursor, OpenCode and 75 more agents; its [agent list](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) has the IDs. This route needs Node.js 22.20 or newer. `npx skills update` updates the skill later.
 
 ### Without internet
@@ -65,15 +76,18 @@ npx skills add mftnakrsu/airgap-anything -g
 On a connected machine, in a clone of this repository:
 
 ```bash
-git archive --format=tar.gz --prefix=airgap-architect/ -o airgap-architect.tar.gz HEAD:plugins/airgap-anything/skills/airgap-architect
-sha256sum airgap-architect.tar.gz > airgap-architect.tar.gz.sha256
+for skill in airgap-architect airgap-transfer; do
+  git archive --format=tar.gz --prefix=$skill/ -o $skill.tar.gz HEAD:plugins/airgap-anything/skills/$skill
+  sha256sum $skill.tar.gz > $skill.tar.gz.sha256
+done
 ```
 
-Carry both files in, then:
+Carry the four files in, then:
 
 ```bash
-sha256sum -c airgap-architect.tar.gz.sha256
-mkdir -p ~/.claude/skills && tar -xzf airgap-architect.tar.gz -C ~/.claude/skills/
+for skill in airgap-architect airgap-transfer; do
+  sha256sum -c $skill.tar.gz.sha256 && mkdir -p ~/.claude/skills && tar -xzf $skill.tar.gz -C ~/.claude/skills/
+done
 ```
 
 `~/.claude/skills/` is where Claude Code keeps personal skills. Use your agent's own skills directory if it differs.
@@ -84,7 +98,7 @@ Ask your agent, in your own words, on a machine with internet access:
 
 > Design an air-gapped LLM platform for my organization.
 
-You do not need to name the skill. Claude Code picks it when a request is about designing, planning or sizing a system for an air-gapped, offline or on-premises network, and leaves other requests alone; [a test](evals/results/2026-11-22-triggering.md) checks this in English and Turkish. In Claude Code you can also start it directly: with `/airgap-anything:airgap-architect` after the plugin install, or with `/airgap-architect` when it is installed as a personal or project skill (the `npx skills` and offline routes).
+You do not need to name the skill. Claude Code picks it when a request is about designing, planning or sizing a system for an air-gapped, offline or on-premises network, and leaves other requests alone; [a test](evals/results/2026-11-23-triggering.md) checks this in English and Turkish. In Claude Code you can also start it directly: with `/airgap-anything:airgap-architect` after the plugin install, or with `/airgap-architect` when it is installed as a personal or project skill (the `npx skills` and offline routes).
 
 The skill then works through these steps:
 
@@ -99,17 +113,42 @@ The skill then works through these steps:
 | 7 | Consistency check | `lint.py` |
 | 8 | Your approval, then hand-off to an implementation plan | you |
 
+### Carrying it in
+
+Once the blueprint is approved, ask in your own words, for example "prepare everything in the transfer manifest for our USB disks". `airgap-transfer` then works through these steps:
+
+| # | Step | Who |
+|---|---|---|
+| 1 | A few questions: where to build the bundle, where each model comes from, the medium or the channel's file limit | the agent |
+| 2 | The plan and `fetch.sh` | `plan.py` |
+| 3 | Your approval, then the download | you, or the agent after you approve |
+| 4 | Manual items: add files or mark them not needed | you |
+| 5 | Checksums, volumes, inventory, runbook or agent rules, inside scripts | `pack.py` |
+| 6 | Bundle check | `check.py` |
+| 7 | One medium at a time, read back | `pack.py --write-volume` |
+
+Inside, on any host with a POSIX shell and coreutils:
+
+```bash
+sh verify.sh /srv/airgap-bundle
+sh load.sh /srv/airgap-bundle /srv/models
+```
+
+`verify.sh` joins split files and checks every SHA-256; when something is missing or damaged it writes `MISSING.txt` with what to bring next time.
+
 ## What you get
 
 ```
 your-project/
 ├── docs/airgap/blueprint.json          answers, tier, sizing, decisions
 ├── docs/airgap/transfer-manifest.md    images, models, packages and settings to carry in
+├── docs/airgap/transfer-manifest.json  the manifest as JSON, for airgap-transfer
+├── docs/airgap/transfer.json           the transfer's answers and plan
 ├── docs/airgap/blueprint.md            the blueprint (under docs/superpowers/specs/ with superpowers)
 └── AGENTS.md                           instructions for the agent that builds it inside the network
 ```
 
-These files travel into the network together with the artifacts the manifest lists. The agent inside follows them without internet access.
+These files travel into the network together with the artifacts the manifest lists. Inside, people follow the bundle's `INSIDE.md`, an agent follows `AGENTS-INSIDE.md` and `AGENTS.md`, and nobody needs internet access.
 
 ## Tiers and sizing are separate
 
@@ -139,13 +178,14 @@ A decision inherits the weakest label among its inputs. Every decision that rest
 
 ## Scope
 
-In version 0.1:
+In version 0.2:
 
 - Decision tables for the inference engine and the LLM gateway.
 - Fixed per-tier defaults for UI, identity, observability, orchestration, state stores and artifact registry.
 - Sizing from organization answers, a transfer manifest, and lint.
+- `airgap-transfer`: a plan and fetch script from the transfer manifest, a checked bundle split across media, and `verify.sh` and `load.sh` for the inside.
 
-Not in version 0.1:
+Not in version 0.2:
 
 - Deployment files such as Docker Compose or Helm.
 - A recommendation of which model to run.
@@ -170,9 +210,9 @@ MIT. See [LICENSE](LICENSE).
 
 `airgap-anything`, internete kapalı (air-gapped) ağlarda çalışacak sistemleri tasarlayan agent skill'lerini bir araya getirir. İlk skill olan `airgap-architect`, kurumunuzla kısa bir görüşme yapar ve bir blueprint yazar: her katman için tek bir bileşen, GPU, sunucu ve güç hesabı, her seçimin gerekçesi ve ağın içine taşınması gereken her şeyin listesi.
 
-Tasarım internete bağlı bir makinede yapılır. Ağın içine blueprint dosyaları ile manifestin listelediği imajlar, modeller ve paketler taşınır; içerideki agent bu dosyaları internet olmadan izler. Betikler yalnızca Python 3.11 veya üstünün standart kütüphanesini kullanır ve ağa bağlanmaz.
+Tasarım internete bağlı bir makinede yapılır. Ağın içine blueprint dosyaları ile manifestin listelediği imajlar, modeller ve paketler taşınır; içeride bu dosyaları insanlar, bir agent ya da önce insanlar sonra agent internet olmadan izler. Betikler yalnızca Python 3.11 veya üstünün standart kütüphanesini kullanır ve ağa bağlanmaz.
 
-Sürüm 0.1, temel akışı ve LLM platformu katmanını kapsar.
+Sürüm 0.2 ikinci skill'i ekler: `airgap-transfer`, transfer manifestini kendini denetleyen bir pakete çevirir (indirme betiği, SHA-256 listesi, disklere bölme, envanter, içeride çalışan `verify.sh` ve `load.sh`, insanlar için bir çalıştırma kılavuzu ya da içerideki agent için kurallar). İçeride hiçbir adım internet ya da LLM gerektirmez.
 
 **Kurulum.** Bir kez kurarsınız; sonrasında yalnızca sorarsınız. Claude Code oturumunda:
 

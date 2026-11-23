@@ -14,7 +14,7 @@ In a Claude Code session:
 /plugin install airgap-anything --marketplace mftnakrsu/airgap-anything
 ```
 
-Claude Code asks you to confirm the new marketplace, then lets you choose where to install. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
+Claude Code asks you to confirm the new marketplace, then lets you choose where to install. The plugin carries both skills. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
 
 ```
 /plugin marketplace add mftnakrsu/airgap-anything
@@ -27,6 +27,8 @@ Claude Code asks you to confirm the new marketplace, then lets you choose where 
 npx skills add mftnakrsu/airgap-anything -g
 ```
 
+This installs both skills. To install one, add the option `--skill`, for example `npx skills add mftnakrsu/airgap-anything -g --skill airgap-transfer`.
+
 `-g` installs it for your user, so every project has it; without `-g` it goes into the current project only. Add `-a` and an agent ID to choose the agent, for example `-a codex`, `-a cursor`, `-a opencode` or `-a gemini-cli`. The [skills CLI](https://github.com/vercel-labs/skills) supports Claude Code, Codex, Cursor, OpenCode and 75 more agents; its [agent list](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) has the IDs. This route needs Node.js 22.20 or newer. `npx skills update` updates the skill later.
 
 ## Without internet
@@ -34,15 +36,18 @@ npx skills add mftnakrsu/airgap-anything -g
 On a connected machine, in a clone of this repository:
 
 ```bash
-git archive --format=tar.gz --prefix=airgap-architect/ -o airgap-architect.tar.gz HEAD:plugins/airgap-anything/skills/airgap-architect
-sha256sum airgap-architect.tar.gz > airgap-architect.tar.gz.sha256
+for skill in airgap-architect airgap-transfer; do
+  git archive --format=tar.gz --prefix=$skill/ -o $skill.tar.gz HEAD:plugins/airgap-anything/skills/$skill
+  sha256sum $skill.tar.gz > $skill.tar.gz.sha256
+done
 ```
 
-Carry both files in, then:
+Carry the four files in, then:
 
 ```bash
-sha256sum -c airgap-architect.tar.gz.sha256
-mkdir -p ~/.claude/skills && tar -xzf airgap-architect.tar.gz -C ~/.claude/skills/
+for skill in airgap-architect airgap-transfer; do
+  sha256sum -c $skill.tar.gz.sha256 && mkdir -p ~/.claude/skills && tar -xzf $skill.tar.gz -C ~/.claude/skills/
+done
 ```
 
 `~/.claude/skills/` is where Claude Code keeps personal skills. Use your agent's own skills directory if it differs.

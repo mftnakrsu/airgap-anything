@@ -1,0 +1,12 @@
+{
+  "bundle.path": "BUNDLE",
+  "models": {
+    "company-70b": {
+      "source": "huggingface",
+      "repo": "example-org/company-70b",
+      "revision": "0123456789abcdef0123456789abcdef01234567"
+    }
+  },
+  "channel.max_file_gb": 10,
+  "include_benchmark": true
+}

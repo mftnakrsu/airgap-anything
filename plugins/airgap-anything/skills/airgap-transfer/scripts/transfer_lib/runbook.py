@@ -70,16 +70,28 @@ def steps(bundle_data: dict, manifest: dict) -> list[dict]:
                     "for it: install it as its own files describe, and ask a person when they do not.",
                 }
             )
-    settings = [f"{row['component']}: {row['disable']} ({row['what']})" for row in manifest.get("telemetry", [])]
-    result.append(
-        {
-            "title": "Switch off telemetry before the first start",
-            "commands": [],
-            "expected": "Set each of these, as section 4 of the transfer manifest lists them: "
-            + ("; ".join(settings) if settings else "none listed") + ".",
-        }
-    )
     return result
+
+
+def settings(manifest: dict) -> list[str]:
+    """The telemetry settings of section 4 of the transfer manifest, as `component: setting (what)`.
+
+    They go into the deployment files before the first start; they are not steps, since no
+    command applies them."""
+    return [f"{row['component']}: {row['disable']} ({row['what']})" for row in manifest.get("telemetry", [])]
+
+
+def _settings_lines(manifest: dict, for_agent: bool) -> list[str]:
+    rows = settings(manifest)
+    if for_agent:
+        intro = ("These are settings, not commands. A person, or the implementation plan of the blueprint, writes "
+                 "them into the deployment files before any service starts. You must not invent commands to apply "
+                 "them; ask a person when they are not in the deployment files yet.")
+    else:
+        intro = ("Write each of these into the deployment files before any service starts, as section 4 of the "
+                 "transfer manifest lists them.")
+    return ["", "## Settings to apply before the first start", "", intro, ""] + (
+        [f"- {row}" for row in rows] if rows else ["None listed."])
 
 
 def _not_carried(bundle_data: dict) -> list[str]:
@@ -113,6 +125,7 @@ def render_runbook(bundle_data: dict, manifest: dict) -> str:
         "## Steps",
     ]
     lines += _step_lines(bundle_data, manifest)
+    lines += _settings_lines(manifest, for_agent=False)
     lines += [
         "",
         "## After these steps",
@@ -140,6 +153,7 @@ def render_agent_rules(bundle_data: dict, manifest: dict) -> str:
         "## Steps",
     ]
     lines += _step_lines(bundle_data, manifest)
+    lines += _settings_lines(manifest, for_agent=True)
     lines += _not_carried(bundle_data)
     return "\n".join(lines) + "\n"
 

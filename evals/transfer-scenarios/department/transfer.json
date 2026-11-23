@@ -1,0 +1,12 @@
+{
+  "bundle.path": "BUNDLE",
+  "models": {
+    "division-671b": {
+      "source": "huggingface",
+      "repo": "example-org/division-671b",
+      "revision": "0123456789abcdef0123456789abcdef01234567"
+    }
+  },
+  "medium.capacity_gb": 1000,
+  "medium.filesystem": "exfat"
+}

@@ -1,0 +1,1 @@
+The transfer plan is fetched into BUNDLE and the manual items are settled in docs/airgap/transfer.json. Pack the bundle, check it, and write it into MEDIA, the folder of the staging host. Inside, an agent on our local model does the installation; tell us what it gets and what it runs first.

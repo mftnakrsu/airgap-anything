@@ -1,0 +1,1 @@
+Our platform design is approved; docs/airgap/ has the blueprint and the transfer manifest. Everything lands first on a staging host where it is scanned, and the host takes files of at most 10 GB. Carry the benchmark engine too. Build the bundle in BUNDLE. The model company-70b is example-org/company-70b on Hugging Face at commit 0123456789abcdef0123456789abcdef01234567.

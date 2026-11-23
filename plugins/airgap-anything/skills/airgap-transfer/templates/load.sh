@@ -103,6 +103,6 @@ if [ -d models ]; then
 fi
 
 echo "load.sh: OK. Packages are in $DIR/packages and manual items in $DIR/manual, where they stay."
-echo "Next: install the registry from its package if it is not running, push the loaded images to it,"
-echo "switch off the telemetry settings of section 4 of the transfer manifest, stage the runtime"
-echo "downloads, and continue with the implementation plan."
+echo "Next: install the registry from its package if it is not running, push the loaded images to it"
+echo "(the settings listed in INSIDE.md / AGENTS-INSIDE.md go into the deployment files before any"
+echo "service starts), stage the runtime downloads, and continue with the implementation plan."

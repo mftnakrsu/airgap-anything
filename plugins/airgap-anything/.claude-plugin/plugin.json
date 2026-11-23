@@ -1,8 +1,8 @@
 {
   "name": "airgap-anything",
-  "description": "Agent skills that design systems for air-gapped environments. First skill: airgap-architect.",
+  "description": "Agent skills for air-gapped environments: airgap-architect designs the system and lists what to carry in; airgap-transfer packs that list into a bundle that checks itself inside.",
   "icon": "./.claude-plugin/icon.png",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "mftnakrsu"
   },

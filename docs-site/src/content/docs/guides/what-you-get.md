@@ -1,17 +1,19 @@
 ---
 title: What you get
-description: The four files a design leaves in your project, and what is in each.
+description: The files a design and a transfer leave in your project, and what is in each.
 ---
 
 ```
 your-project/
 ├── docs/airgap/blueprint.json          answers, tier, sizing, decisions
 ├── docs/airgap/transfer-manifest.md    images, models, packages and settings to carry in
+├── docs/airgap/transfer-manifest.json  the manifest as JSON, for airgap-transfer
+├── docs/airgap/transfer.json           the transfer's answers and plan
 ├── docs/airgap/blueprint.md            the blueprint (under docs/superpowers/specs/ with superpowers)
 └── AGENTS.md                           instructions for the agent that builds it inside the network
 ```
 
-These files travel into the network together with the artifacts the manifest lists.
+These files travel into the network together with the artifacts the manifest lists. Inside, people follow the bundle's `INSIDE.md`, an agent follows `AGENTS-INSIDE.md` and `AGENTS.md`, and nobody needs internet access.
 
 ## `blueprint.json`
 

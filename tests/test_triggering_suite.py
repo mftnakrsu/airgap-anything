@@ -9,7 +9,19 @@ import unittest
 from tests import PLUGIN_DIR, REPO_ROOT
 
 SUITE = PLUGIN_DIR / "evals" / "triggering"
-SKILL_MATCH = r"""'"skill"\s*:\s*"(?:[\w-]+:)?airgap-architect"'"""
+
+
+def skill_match(skill):
+    return rf"""'"skill"\s*:\s*"(?:[\w-]+:)?{skill}"'"""
+
+
+# Grader files that check a Skill call, and the skill each one names. The architect names
+# are the ones of the first suite; the transfer ones carry the skill's name.
+POSITIVE = {"fires.md": "airgap-architect", "fires-transfer.md": "airgap-transfer"}
+NEGATIVE = {"does-not-fire.md": "airgap-architect", "does-not-fire-transfer.md": "airgap-transfer"}
+# The reply each skill's auto case is graded on.
+STARTS = {"airgap-architect": "starts-the-interview.md", "airgap-transfer": "starts-the-transfer.md"}
+TRANSFER_CASES = {"auto-en-build-bundle", "auto-tr-usb-hazirla", "auto-en-verify-inside", "skip-en-docker-save"}
 
 
 def frontmatter(path):
@@ -27,10 +39,14 @@ class TriggeringSuiteTest(unittest.TestCase):
     def setUp(self):
         self.cases = sorted(p for p in SUITE.iterdir() if p.is_dir() and p.name != "results")
 
+    def graders(self, case):
+        return {path.name: frontmatter(path) for path in (case / "graders").glob("*.md")}
+
     def test_every_kind_of_case_is_there(self):
         names = [case.name for case in self.cases]
         for prefix in ("auto-en-", "auto-tr-", "manual-", "skip-en-", "skip-tr-"):
             self.assertTrue(any(name.startswith(prefix) for name in names), prefix)
+        self.assertTrue(TRANSFER_CASES <= set(names))
 
     def test_every_session_can_call_the_skill(self):
         for case in self.cases:
@@ -38,27 +54,47 @@ class TriggeringSuiteTest(unittest.TestCase):
                 tools = frontmatter(case / "prompt.md")["allowed_tools"]
                 self.assertIn("Skill", re.findall(r"\w+", tools))
 
+    def test_every_skill_check_names_its_skill(self):
+        for case in self.cases:
+            for name, grader in self.graders(case).items():
+                if grader.get("type") == "tool_used" and grader.get("tool") == "Skill":
+                    with self.subTest(case=case.name, grader=name):
+                        skill = {**POSITIVE, **NEGATIVE}[name]
+                        self.assertEqual(grader["input_match"], skill_match(skill))
+                        if name in NEGATIVE:
+                            self.assertEqual((grader["min"], grader["max"]), ("0", "0"))
+                        else:
+                            self.assertNotIn("max", grader)
+
     def test_each_case_checks_the_right_thing(self):
         for case in self.cases:
-            graders = {path.name: frontmatter(path) for path in (case / "graders").glob("*.md")}
+            graders = self.graders(case)
+            positive = [POSITIVE[name] for name in graders if name in POSITIVE]
+            negative = [NEGATIVE[name] for name in graders if name in NEGATIVE]
             with self.subTest(case=case.name):
-                skill_checks = [g for g in graders.values() if g.get("type") == "tool_used" and g.get("tool") == "Skill"]
                 if case.name.startswith("skip-"):
-                    self.assertEqual(len(skill_checks), 1)
-                    self.assertEqual(skill_checks[0]["input_match"], SKILL_MATCH)
-                    self.assertEqual((skill_checks[0]["min"], skill_checks[0]["max"]), ("0", "0"))
+                    self.assertEqual(positive, [])
+                    self.assertIn("airgap-architect", negative)
                 elif case.name.startswith("auto-"):
-                    self.assertEqual(len(skill_checks), 1)
-                    self.assertEqual(skill_checks[0]["input_match"], SKILL_MATCH)
-                    self.assertNotIn("max", skill_checks[0])
-                    self.assertIn("starts-the-interview.md", graders)
+                    self.assertEqual(len(positive), 1)
+                    self.assertIn(STARTS[positive[0]], graders)
+                    self.assertNotIn(positive[0], negative)
                 else:
                     # A slash command is expanded before the session, so no Skill call is made.
-                    self.assertEqual(skill_checks, [])
+                    self.assertEqual(positive, [])
                     self.assertEqual(graders["loads-the-skill.md"]["target"], "trace")
                     self.assertIn("starts-the-interview.md", graders)
                     prompt = (case / "prompt.md").read_text(encoding="utf-8")
                     self.assertIn("/airgap-anything:airgap-architect ", prompt)
+
+    def test_the_two_skills_are_kept_apart(self):
+        # The architect case about what to carry must not start airgap-transfer, and a plain
+        # Docker question starts neither skill.
+        self.assertIn("does-not-fire-transfer.md", self.graders(SUITE / "auto-tr-tasima-listesi"))
+        self.assertEqual(
+            sorted(NEGATIVE[name] for name in self.graders(SUITE / "skip-en-docker-save") if name in NEGATIVE),
+            ["airgap-architect", "airgap-transfer"],
+        )
 
 
 class TriggeringWorkflowTest(unittest.TestCase):
@@ -72,7 +108,12 @@ class TriggeringWorkflowTest(unittest.TestCase):
         self.assertIn("github.event.pull_request.head.repo.full_name == github.repository", self.text)
 
     def test_it_runs_only_when_triggering_can_change(self):
-        for path in ("plugins/airgap-anything/skills/airgap-architect/SKILL.md", "plugins/airgap-anything/evals/triggering/**", ".github/workflows/triggering.yml"):
+        for path in (
+            "plugins/airgap-anything/skills/airgap-architect/SKILL.md",
+            "plugins/airgap-anything/skills/airgap-transfer/SKILL.md",
+            "plugins/airgap-anything/evals/triggering/**",
+            ".github/workflows/triggering.yml",
+        ):
             self.assertIn(f'- "{path}"', self.text)
         self.assertIn("workflow_dispatch", self.text)
 

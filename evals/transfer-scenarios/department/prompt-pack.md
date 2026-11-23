@@ -1,0 +1,1 @@
+Everything in our transfer plan is fetched into BUNDLE, and docs/airgap/transfer.json records the manual items as settled. Pack the bundle, check it, and write it for carrying in, one folder per USB disk under MEDIA (MEDIA/1, MEDIA/2 and so on). Then tell us what the people inside do first.
