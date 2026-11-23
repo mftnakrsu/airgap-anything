@@ -1,29 +1,27 @@
 """File size limits, splitting and the volume plan (design spec section 8.5)."""
 from __future__ import annotations
 
-from .constants import FAT32_MAX_FILE_BYTES, FILE_LIMIT_CHANNELS, GB, MEDIUM_CHANNELS, PART_SUFFIX, VOLUME_RESERVE
+from .constants import FAT32_MAX_FILE_BYTES, FILE_LIMIT_CHANNELS, MEDIUM_CHANNELS, PART_SUFFIX, VOLUME_RESERVE, size_bytes
 from .hashing import part_count
 
-
-def _number(value) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+MAX_PARTS = 999  # PART_SUFFIX has three digits
 
 
 def max_file_bytes(channel: str, answers: dict) -> int | None:
     """The largest single file the channel takes; None when it has no limit."""
     if channel in MEDIUM_CHANNELS and answers.get("medium.filesystem") == "fat32":
         return FAT32_MAX_FILE_BYTES
-    if channel in FILE_LIMIT_CHANNELS and _number(answers.get("channel.max_file_gb")):
-        return int(answers["channel.max_file_gb"] * GB)
+    if channel in FILE_LIMIT_CHANNELS:
+        return size_bytes(answers.get("channel.max_file_gb"))
     return None
 
 
 def volume_capacity(channel: str, answers: dict) -> int | None:
     """Bytes of data one volume holds: the medium minus the reserve; None for one volume."""
-    capacity = answers.get("medium.capacity_gb")
-    if channel in MEDIUM_CHANNELS and _number(capacity):
-        return int(capacity * GB * (1 - VOLUME_RESERVE))
-    return None
+    capacity = size_bytes(answers.get("medium.capacity_gb")) if channel in MEDIUM_CHANNELS else None
+    if capacity is None:
+        return None
+    return capacity * (100 - round(VOLUME_RESERVE * 100)) // 100
 
 
 def part_size(channel: str, answers: dict) -> int | None:
@@ -42,10 +40,13 @@ def units_of(files: list[dict], size_limit: int | None) -> list[dict]:
 
     `files` holds {path, size, parts}, where `parts` are the SHA-256 of each part.
     Each unit is {path, size, sha256, of}: `of` is the original path for a part, else None.
+    Raises ValueError when a file would need more than MAX_PARTS parts.
     """
     units = []
     for entry in files:
         count = part_count(entry["size"], size_limit)
+        if count > MAX_PARTS:
+            raise ValueError(f"{entry['path']}: would be cut into {count} parts; at most {MAX_PARTS} are possible")
         if not count:
             units.append({"path": entry["path"], "size": entry["size"], "sha256": entry["sha256"], "of": None})
             continue

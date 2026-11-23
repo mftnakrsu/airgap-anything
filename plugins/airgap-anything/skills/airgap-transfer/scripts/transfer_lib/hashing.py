@@ -7,11 +7,18 @@ from pathlib import Path
 CHUNK = 1024 * 1024
 
 
+def _check(part_size: int | None) -> None:
+    if part_size is not None and part_size <= 0:
+        raise ValueError(f"part size must be above 0, not {part_size}")
+
+
 def hash_file(path: Path, part_size: int | None = None) -> tuple[str, list[str]]:
     """(SHA-256 of the whole file, SHA-256 of each part of `part_size` bytes).
 
     The list of parts is empty when `part_size` is None or the file is not larger.
+    Raises ValueError when `part_size` is 0 or less.
     """
+    _check(part_size)
     whole = hashlib.sha256()
     parts: list[str] = []
     size = Path(path).stat().st_size
@@ -39,6 +46,7 @@ def hash_file(path: Path, part_size: int | None = None) -> tuple[str, list[str]]
 
 def part_count(size: int, part_size: int | None) -> int:
     """How many parts a file of `size` bytes is cut into; 0 when it is not split."""
+    _check(part_size)
     if part_size is None or size <= part_size:
         return 0
     return -(-size // part_size)

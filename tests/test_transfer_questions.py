@@ -93,13 +93,24 @@ class AnswerProblemsTest(unittest.TestCase):
 
     def test_medium_answers(self):
         self.assertEqual(self.problems(**{"medium.capacity_gb": 0}),
-                         ["medium.capacity_gb: must be a number of gigabytes above 0"])
+                         ["medium.capacity_gb: must be a number of gigabytes above 0 and at most 1000000"])
         self.assertEqual(self.problems(**{"medium.filesystem": "hfs"}),
                          ["medium.filesystem: must be one of fat32, exfat, ntfs, ext4, other"])
         self.assertEqual(self.problems("other", **{"medium.capacity_gb": "none", "medium.filesystem": None}), [])
+
+    def test_sizes_that_cannot_be_bytes_are_problems(self):
+        for value in (1e999, float("nan"), 1e300, 10**400, 1_000_001, 1e-12, True):
+            with self.subTest(value=value):
+                self.assertEqual(self.problems(**{"medium.capacity_gb": value}),
+                                 ["medium.capacity_gb: must be a number of gigabytes above 0 and at most 1000000"])
+                self.assertEqual(
+                    self.problems("data_diode", **{"channel.max_file_gb": value}),
+                    ["channel.max_file_gb: must be a number of gigabytes above 0 and at most 1000000, or 'none'"],
+                )
+        self.assertEqual(self.problems(**{"medium.capacity_gb": 1_000_000}), [])
 
     def test_file_limit_answers(self):
         for value in (4, 0.5, "none"):
             self.assertEqual(self.problems("data_diode", **{"channel.max_file_gb": value}), [])
         self.assertEqual(self.problems("staging_host", **{"channel.max_file_gb": -1}),
-                         ["channel.max_file_gb: must be a number of gigabytes above 0, or 'none'"])
+                         ["channel.max_file_gb: must be a number of gigabytes above 0 and at most 1000000, or 'none'"])

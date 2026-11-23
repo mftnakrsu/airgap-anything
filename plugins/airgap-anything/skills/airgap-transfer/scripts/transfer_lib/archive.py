@@ -48,7 +48,7 @@ def read_image_archive(path: Path) -> dict:
         if not isinstance(config, dict):
             raise TypeError("the image config is not a JSON object")
         tags = list(manifest[0].get("RepoTags") or [])
-    except (tarfile.TarError, KeyError, AttributeError, TypeError, ValueError, OSError) as error:
+    except (tarfile.TarError, KeyError, AttributeError, TypeError, ValueError, OSError, RecursionError) as error:
         raise ArchiveError(f"{path.name}: not an image archive docker load reads ({error})") from None
     return {
         "id": "sha256:" + hashlib.sha256(config_bytes).hexdigest(),
