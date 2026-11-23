@@ -38,13 +38,14 @@ Compared with `2026-11-22-triggering.md` (the 8 cases that existed then):
 
 What it shows:
 
-- **Two skills side by side do not steal each other's requests.** Every `airgap-architect` request still called `airgap-architect` (15 of 15 runs across five cases, counting the manual one by its files), and none called `airgap-transfer`. Every transfer request (`auto-en-build-bundle`, `auto-en-verify-inside`, `auto-tr-usb-hazirla`, 9 of 9 runs) called `airgap-transfer`, including the Turkish one and the one that starts inside the network.
+- **Each request called the skill it was meant for.** Every `airgap-architect` request called `airgap-architect` (15 of 15 runs across five cases, counting the manual one by its files). Only one of these cases checks the other skill: in `auto-tr-tasima-listesi`, `airgap-transfer` was not called (3 of 3). Every transfer request (`auto-en-build-bundle`, `auto-en-verify-inside`, `auto-tr-usb-hazirla`, 9 of 9 runs) called `airgap-transfer`, including the Turkish one and the one that starts inside the network; these cases have no grader on `airgap-architect`.
 - **The carry-in list stays with the architect.** `auto-tr-tasima-listesi` asks for the list of things to carry in before any manifest exists. All three runs called `airgap-architect`, none called `airgap-transfer`.
-- **No false starts.** The two unrelated requests, the near miss about the term, and the new near miss (`docker save` between two machines on one network) never called either skill, in 12 of 12 runs.
+- **No false starts of `airgap-architect`.** The two unrelated requests, the near miss about the term, and the new near miss (`docker save` between two machines on one network) never called `airgap-architect`, in 12 of 12 runs. Only `skip-en-docker-save` also checks `airgap-transfer`: it called neither skill (3 of 3). The other three skip cases are graded on `airgap-architect` only.
 - **Manual start works.** The slash command is expanded before the session, so no Skill tool call appears; the first tool call reads the skill's `references/` files.
 
 Caveats:
 
+- Double fires were not measured. The three transfer `auto-*` cases have no grader that fails when `airgap-architect` is also called, and three of the four architect `auto-*` cases, the manual case and three of the four skip cases check only one skill. The recorded JSON and report hold only each grader's own verdict, so they cannot show whether the other skill was called. Cross-negative graders on every case need a new (paid) run.
 - One model (unrecorded) and three runs per case. A case passes at 0.8 by design, so a single missed grader in three runs does not fail it; both misses above are of that kind and both are judge verdicts on the wording of the first reply, not missed or wrong skill calls.
 - The sessions could not write files or run commands (`allowed_tools`), and the eval folder is empty, so the manifest that three transfer prompts mention does not exist. The runs stop at the first reply. What the skills do after that is covered by the scenario runs in `2026-11-22-with-skill.md`, `2026-11-23-with-skill.md`, `2026-11-23-transfer-baseline.md` and `2026-11-23-transfer-with-skill.md`.
 - The LLM judge is the only thing that failed a run. Its three votes agreed in one case (3 FAIL) and split 2 to 1 in the other.

@@ -28,7 +28,7 @@ Both are written in English. When the blueprint's `language` is another, transla
 4. Manual items: one step each in the runbook, with the folder that holds their files.
 5. Then: install the registry from its package if it is not running, push the images to it, stage the runtime downloads, and continue with the implementation plan.
 
-The telemetry settings that section 4 of the transfer manifest lists are not a step: no command applies them. Both files list them under "Settings to apply before the first start", for a person or the implementation plan to write into the deployment files before any service starts; `AGENTS-INSIDE.md` tells the agent not to invent commands for them.
+The telemetry settings that section 4 of the transfer manifest lists are not a step: no command applies them. Each file lists them under "Settings to apply before the first start", for a person or the implementation plan to write into the deployment files before any service starts; `AGENTS-INSIDE.md` tells the agent not to invent commands for them.
 
 An image ID that differs stops `load.sh`, unless the engine uses the containerd image store, which reports another ID; there it is a note. A person, not an agent, decides whether to run `load.sh` again with `AIRGAP_SKIP_IMAGE_ID_CHECK=1`; `verify.sh` has already checked every byte.
 

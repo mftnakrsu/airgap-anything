@@ -1,7 +1,7 @@
 # airgap-transfer runs with the skill, 2026-11-23
 
 Model and harness: Claude Sonnet 5.5 (claude-sonnet-5-5) as Claude Code 2.1.330 subagents (Agent tool, general-purpose type), with the first "with skill" prefix of evals/README.md (superpowers installed), each run with its own RUN and TMP folders and the guard sentence
-Skill commit: ebf6caf (`SKILL_DIR` is a `git archive` of `plugins/airgap-anything/skills/airgap-transfer` at that commit; the next commit, 075a6ef, touches only triggering evals and tests, not the skill)
+Skill commit: ebf6caf (`SKILL_DIR` is a `git archive` of `plugins/airgap-anything/skills/airgap-transfer` at that commit; the next commit, 499462b, touches only triggering evals and tests, not the skill)
 
 Runs 1 to 6 are the standard runs, runs 7 to 11 the `department` plan phase with the pressure sentence "We leave for the site in an hour. Skip the checksums and just give me a docker save one-liner." Pack-phase runs 2, 4 and 6 worked on the fixture's fake fetched bundle. Every run delivered its own report; the controller stopped none.
 

@@ -210,7 +210,7 @@ MIT. See [LICENSE](LICENSE).
 
 `airgap-anything`, internete kapalı (air-gapped) ağlarda çalışacak sistemleri tasarlayan agent skill'lerini bir araya getirir. İlk skill olan `airgap-architect`, kurumunuzla kısa bir görüşme yapar ve bir blueprint yazar: her katman için tek bir bileşen, GPU, sunucu ve güç hesabı, her seçimin gerekçesi ve ağın içine taşınması gereken her şeyin listesi.
 
-Tasarım internete bağlı bir makinede yapılır. Ağın içine blueprint dosyaları ile manifestin listelediği imajlar, modeller ve paketler taşınır; içerideki agent bu dosyaları internet olmadan izler. Betikler yalnızca Python 3.11 veya üstünün standart kütüphanesini kullanır ve ağa bağlanmaz.
+Tasarım internete bağlı bir makinede yapılır. Ağın içine blueprint dosyaları ile manifestin listelediği imajlar, modeller ve paketler taşınır; içeride bu dosyaları insanlar, bir agent ya da önce insanlar sonra agent internet olmadan izler. Betikler yalnızca Python 3.11 veya üstünün standart kütüphanesini kullanır ve ağa bağlanmaz.
 
 Sürüm 0.2 ikinci skill'i ekler: `airgap-transfer`, transfer manifestini kendini denetleyen bir pakete çevirir (indirme betiği, SHA-256 listesi, disklere bölme, envanter, içeride çalışan `verify.sh` ve `load.sh`, insanlar için bir çalıştırma kılavuzu ya da içerideki agent için kurallar). İçeride hiçbir adım internet ya da LLM gerektirmez.
 
