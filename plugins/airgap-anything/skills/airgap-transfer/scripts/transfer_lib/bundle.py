@@ -317,6 +317,16 @@ def sums_text(entries: list[tuple[str, str]]) -> str:
     return "".join(f"{digest}  {path}\n" for path, digest in sorted(entries))
 
 
+def parse_sums(text: str) -> dict[str, str]:
+    """The digest of each path in the text of a SHA256SUMS file (the reverse of sums_text)."""
+    result = {}
+    for line in text.splitlines():
+        digest, _, name = line.partition("  ")
+        if name:
+            result[name] = digest
+    return result
+
+
 def write_json(path: Path, data: dict) -> None:
     Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

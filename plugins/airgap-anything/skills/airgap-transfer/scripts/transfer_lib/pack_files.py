@@ -6,7 +6,7 @@ import os
 import shutil
 from pathlib import Path
 
-from .bundle import data_files, parts_text, sums_text, volumes_text, write_json
+from .bundle import PackError, data_files, parse_sums, parts_text, sums_text, volumes_text, write_json
 from .constants import (
     AGENT_RULES_FILE,
     BUNDLE_JSON,
@@ -22,7 +22,7 @@ from .constants import (
 )
 from .hashing import CHUNK
 from .inventory import render_csv, render_markdown
-from .runbook import documents
+from .runbook import document_names, documents, lost_commands
 from .tools import COMMANDS, TEMPLATE_COMMANDS
 
 TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates"
@@ -34,6 +34,16 @@ def render_template(name: str) -> str:
     for key in TEMPLATE_COMMANDS:
         text = text.replace("{{" + key + "}}", COMMANDS[key].line)
     return text
+
+
+def generated_names(bundle_data: dict) -> list[str]:
+    """The files write_generated writes besides SHA256SUMS, in its order. Each has a line in
+    SHA256SUMS, so verify.sh checks it."""
+    names = [BUNDLE_JSON, PARTS_FILE, VOLUMES_FILE, INVENTORY_MD, INVENTORY_CSV,
+             *document_names(bundle_data["operator"]), *INSIDE_SCRIPTS]
+    if bundle_data["channel"] == "data_diode":
+        names.append(SEND_ORDER_FILE)
+    return names
 
 
 def write_generated(bundle: Path, bundle_data: dict, manifest: dict) -> list[str]:
@@ -54,17 +64,55 @@ def write_generated(bundle: Path, bundle_data: dict, manifest: dict) -> list[str
         (bundle / name).write_text(text, encoding="utf-8")
     for name in INSIDE_SCRIPTS:
         (bundle / name).write_text(render_template(name), encoding="utf-8")
-    generated = [BUNDLE_JSON, *texts, *INSIDE_SCRIPTS]
+    generated = generated_names(bundle_data)
     if bundle_data["channel"] == "data_diode":
-        order = [BUNDLE_JSON, SUMS_FILE, SEND_ORDER_FILE] + [n for n in generated if n != BUNDLE_JSON]
+        order = [BUNDLE_JSON, SUMS_FILE, SEND_ORDER_FILE] + [n for n in generated if n not in (BUNDLE_JSON, SEND_ORDER_FILE)]
         order += [unit["path"] for volume in bundle_data["volumes"] for unit in volume["units"]]
         (bundle / SEND_ORDER_FILE).write_text("\n".join(order) + "\n", encoding="utf-8")
-        generated.append(SEND_ORDER_FILE)
     entries = [(entry["path"], entry["sha256"]) for entry in data_files(bundle_data)]
     for name in generated:
         entries.append((name, hashlib.sha256((bundle / name).read_bytes()).hexdigest()))
     (bundle / SUMS_FILE).write_text(sums_text(entries), encoding="utf-8")
     return generated + [SUMS_FILE]
+
+
+def refresh_sums(bundle: Path, bundle_data: dict, manifest: dict) -> list[str]:
+    """After INSIDE.md or AGENTS-INSIDE.md was translated, record their new SHA-256 in
+    SHA256SUMS and return their names. Every other line stays as it is: no other file pack.py
+    writes records their hash or size. Raises PackError, and changes nothing, when SHA256SUMS
+    or a document is missing or unreadable, or a document lost a command line pack.py wrote."""
+    bundle = Path(bundle)
+    sums_path = bundle / SUMS_FILE
+    if not sums_path.is_file():
+        raise PackError([f"{SUMS_FILE} is missing; run pack.py again"])
+    try:
+        sums = parse_sums(sums_path.read_text(encoding="utf-8"))
+    except UnicodeDecodeError:
+        raise PackError([f"{SUMS_FILE} is not readable as UTF-8; run pack.py again"]) from None
+    problems = []
+    digests = {}
+    for name, generated in documents(bundle_data, manifest).items():
+        path = bundle / name
+        if not path.is_file():
+            problems.append(f"{name} is missing; run pack.py again, then translate it again")
+            continue
+        data = path.read_bytes()
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            problems.append(f"{name} is not readable as UTF-8; save the translation as UTF-8")
+            continue
+        lost = lost_commands(generated, text)
+        if lost:
+            problems.append(f"{name} lacks the command line(s): " + "; ".join(lost)
+                            + "; put each back exactly as pack.py wrote it")
+            continue
+        digests[name] = hashlib.sha256(data).hexdigest()
+    if problems:
+        raise PackError(problems)
+    sums.update(digests)
+    sums_path.write_text(sums_text(list(sums.items())), encoding="utf-8")
+    return list(digests)
 
 
 class WriteError(Exception):
