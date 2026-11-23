@@ -1,5 +1,7 @@
 import copy
 import json
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +10,7 @@ from unittest import mock
 from tests import transfer_projects
 from transfer_lib.checks import bundle_problems, check_bundle
 from transfer_lib.constants import GB
+from transfer_lib.inputs import channel_of, operator_of
 
 
 class CheckTestCase(unittest.TestCase):
@@ -27,9 +30,22 @@ class CheckTestCase(unittest.TestCase):
     def manifest(self):
         return json.loads((self.project / "docs/airgap/transfer-manifest.json").read_text(encoding="utf-8"))
 
+    def blueprint_path(self):
+        return self.project / "docs/airgap/blueprint.json"
+
+    def change_blueprint(self, **answers):
+        blueprint = json.loads(self.blueprint_path().read_text(encoding="utf-8"))
+        blueprint["answers"].update(answers)
+        self.blueprint_path().write_text(json.dumps(blueprint), encoding="utf-8")
+
     def findings(self, deep=False, environ=None):
         state = transfer_projects.load_state_of(self.project)
-        return check_bundle(self.bundle, state, self.bundle_data(), self.manifest(), deep=deep, environ=environ or {})
+        blueprint = json.loads(self.blueprint_path().read_text(encoding="utf-8"))
+        return check_bundle(self.bundle, state, self.bundle_data(), self.manifest(), operator=operator_of(blueprint),
+                            channel=channel_of(blueprint), deep=deep, environ=environ or {})
+
+    def messages(self, code, **kwargs):
+        return [f.message for f in self.findings(**kwargs) if f.code == code]
 
     def codes(self, **kwargs):
         return sorted({finding.code for finding in self.findings(**kwargs)})
@@ -78,6 +94,28 @@ class ErrorCodesTest(CheckTestCase):
         sums.write_text("".join(line + "\n" for line in sums.read_text(encoding="utf-8").splitlines() if "install.sh" not in line), encoding="utf-8")
         self.assertIn("packages/alpha-engine/install.sh: no matching line in SHA256SUMS", [f.message for f in self.findings()])
 
+    def test_b2_a_generated_file_that_changed_or_is_missing(self):
+        self.pack()
+        verify = self.bundle / "verify.sh"
+        verify.write_text(verify.read_text(encoding="utf-8") + "# edited\n", encoding="utf-8")
+        self.assertEqual(self.messages("B2"), ["verify.sh: its SHA-256 differs from SHA256SUMS; run pack.py again"])
+        for name in ("verify.sh", "load.sh", "VOLUMES.txt", "PARTS.txt", "INVENTORY.csv"):
+            (self.bundle / name).unlink()
+        self.assertEqual(sorted(self.messages("B2")), sorted(
+            f"{name} is missing; run pack.py again" for name in ("verify.sh", "load.sh", "VOLUMES.txt", "PARTS.txt", "INVENTORY.csv")))
+        self.assertEqual(transfer_projects.run_script("check.py", self.project).returncode, 1)
+
+    def test_b2_a_generated_file_without_a_line_in_sha256sums(self):
+        self.pack()
+        sums = self.bundle / "SHA256SUMS"
+        sums.write_text("".join(line + "\n" for line in sums.read_text(encoding="utf-8").splitlines() if not line.endswith("  load.sh")), encoding="utf-8")
+        self.assertEqual(self.messages("B2"), ["load.sh: no line in SHA256SUMS; run pack.py again"])
+
+    def test_b2_a_missing_sha256sums_is_one_finding(self):
+        self.pack()
+        (self.bundle / "SHA256SUMS").unlink()
+        self.assertEqual(self.messages("B2"), ["SHA256SUMS is missing; run pack.py again"])
+
     def test_b3_a_file_over_the_channel_limit(self):
         self.pack(**{"medium.filesystem": "fat32"})
         data = self.bundle_data()
@@ -92,12 +130,34 @@ class ErrorCodesTest(CheckTestCase):
         self.save_bundle_data(data)
         self.assertIn("B4", self.codes())
 
+    def test_b4_the_capacity_answer_lowered_after_packing(self):
+        self.pack(**{"medium.capacity_gb": 20000 / GB})
+        transfer_projects.update_state(self.project, lambda state: state["answers"].update({"medium.capacity_gb": 100 / GB}))
+        messages = self.messages("B4")
+        self.assertTrue(messages)
+        self.assertIn("the medium holds 98 after the reserve", messages[0])
+        result = transfer_projects.run_script("check.py", self.project)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("B4 error: volume 1:", result.stdout)
+
     def test_b5_bundle_from_another_manifest(self):
         self.pack()
         data = self.bundle_data()
         data["manifest_digest"] = "sha256:" + "0" * 64
         self.save_bundle_data(data)
         self.assertIn("B5", self.codes())
+
+    def test_b5_the_blueprint_changed_inside_operator_or_channel_after_packing(self):
+        self.pack()
+        self.change_blueprint(**{"inside.operator": "local_agent", "transfer.channel": "other"})
+        self.assertEqual(self.messages("B5"), [
+            "bundle.json was packed for inside.operator people; the blueprint now says local_agent; run pack.py again",
+            "bundle.json was packed for transfer.channel removable_media; the blueprint now says other; run pack.py again",
+        ])
+        self.assertEqual(self.messages("B7"), ["AGENTS-INSIDE.md is missing; inside.operator is local_agent"])
+        result = transfer_projects.run_script("check.py", self.project)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("B7 error: AGENTS-INSIDE.md is missing", result.stdout)
 
     def test_b6_pickle_weights_without_permission(self):
         self.pack()
@@ -120,12 +180,29 @@ class ErrorCodesTest(CheckTestCase):
         runbook.unlink()
         self.assertEqual([f.message for f in self.findings() if f.code == "B7"], ["INSIDE.md is missing; inside.operator is people"])
 
-    def test_b7_a_translated_runbook_that_keeps_the_commands_passes(self):
+    def test_b7_agent_rules_for_a_local_agent(self):
+        self.pack(architect_answers={"inside.operator": "local_agent"})
+        self.assertEqual(self.codes(), ["BW1"])
+        rules = self.bundle / "AGENTS-INSIDE.md"
+        rules.write_text(rules.read_text(encoding="utf-8").replace("sh /srv/airgap-bundle/load.sh", "run load.sh"), encoding="utf-8")
+        self.assertEqual(self.messages("B7"), [
+            "AGENTS-INSIDE.md lacks the command line(s): sh /srv/airgap-bundle/load.sh /srv/airgap-bundle /srv/models"])
+        rules.unlink()
+        self.assertEqual(self.messages("B7"), ["AGENTS-INSIDE.md is missing; inside.operator is local_agent"])
+        self.assertEqual(self.messages("B2"), [])
+
+    def test_a_translated_runbook_is_b2_until_pack_refreshes_the_sums(self):
         self.pack()
         runbook = self.bundle / "INSIDE.md"
         text = runbook.read_text(encoding="utf-8").replace("Check every file", "Her dosyayı denetle")
         runbook.write_text(text, encoding="utf-8")
         self.assertNotIn("B7", self.codes())
+        self.assertEqual(self.messages("B2"), [
+            "INSIDE.md: its SHA-256 differs from SHA256SUMS; after translating it, run pack.py --refresh-sums, else run pack.py again"])
+        result = transfer_projects.run_script("pack.py", self.project, "--refresh-sums")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.codes(), ["BW1"])
+        self.assertEqual(runbook.read_text(encoding="utf-8"), text)
 
     def test_b8_token_like_values(self):
         self.pack()
@@ -250,6 +327,23 @@ class InvalidInputTest(CheckTestCase):
         self.assertEqual(message.count("\n  items["), 10)
         self.assertIn("  ... and 38 more", message)
 
+    def test_an_invalid_answer_stops_check(self):
+        self.pack()
+        transfer_projects.update_state(self.project, lambda state: state["answers"].update({"medium.capacity_gb": "lots"}))
+        message = self.exit_2()
+        self.assertIn("medium.capacity_gb: must be a number of gigabytes", message)
+        transfer_projects.update_state(self.project, lambda state: state["answers"].update({"medium.capacity_gb": 1000}))
+        transfer_projects.update_state(self.project, lambda state: state["answers"].pop("medium.filesystem"))
+        self.assertIn("medium.filesystem: missing", self.exit_2())
+
+    def test_a_local_model_folder_that_is_gone_does_not_stop_check(self):
+        # The model is in the bundle already; the folder it was copied from is not needed.
+        self.pack()
+        transfer_projects.update_state(self.project, lambda state: state["answers"].update(
+            {"models": {"example-70b": {"source": "local", "path": str(Path(self.tmp.name) / "gone")}}}))
+        result = transfer_projects.run_script("check.py", self.project)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_a_truncated_bundle_json(self):
         self.pack()
         (self.bundle / "bundle.json").write_text('{"items": [', encoding="utf-8")
@@ -276,6 +370,32 @@ class InvalidInputTest(CheckTestCase):
         self.assertTrue(any(unit["of"] for volume in data["volumes"] for unit in volume["units"]))
         self.assertEqual(bundle_problems(data), [])
         self.assertEqual(transfer_projects.run_script("check.py", self.project).returncode, 0)
+
+
+@unittest.skipUnless(shutil.which("sha256sum"), "needs coreutils sha256sum")
+class CheckThenVerifyTest(CheckTestCase):
+    """A bundle that check.py passes also passes verify.sh."""
+
+    def check_and_verify(self):
+        result = transfer_projects.run_script("check.py", self.project)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        result = subprocess.run(["sh", str(self.bundle / "verify.sh"), str(self.bundle)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("verify.sh: OK", result.stdout)
+
+    def test_a_plain_bundle(self):
+        self.pack()
+        self.check_and_verify()
+
+    def test_a_translated_bundle_after_refresh_sums(self):
+        self.pack(language="tr", architect_answers={"inside.operator": "people_then_agent"})
+        for name in ("INSIDE.md", "AGENTS-INSIDE.md"):
+            path = self.bundle / name
+            path.write_text(path.read_text(encoding="utf-8").replace("## Steps", "## Adımlar"), encoding="utf-8")
+        self.assertEqual(transfer_projects.run_script("check.py", self.project).returncode, 1)
+        result = transfer_projects.run_script("pack.py", self.project, "--refresh-sums")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.check_and_verify()
 
 
 if __name__ == "__main__":

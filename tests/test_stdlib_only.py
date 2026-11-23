@@ -36,7 +36,7 @@ class StandardLibraryOnlyTest(unittest.TestCase):
 
     def test_only_the_standard_library_and_the_skills_own_package_are_imported(self):
         offenders = [
-            f"{path.relative_to(root.parent)}: {module}"
+            f"{path.relative_to(root.parents[1])}: {module}"
             for root, files in self.files.items()
             for path in files
             for module in imported_modules(path)
@@ -46,7 +46,7 @@ class StandardLibraryOnlyTest(unittest.TestCase):
 
     def test_no_network_module_is_imported(self):
         offenders = [
-            f"{path.relative_to(root.parent)}: {module}"
+            f"{path.relative_to(root.parents[1])}: {module}"
             for root, files in self.files.items()
             for path in files
             for module in imported_modules(path)

@@ -4,41 +4,29 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+from collections.abc import Sequence
 from pathlib import Path
 
-from .bundle import data_files, manual_entries, pack_items
-from .constants import (
-    AGENT_RULES_FILE,
-    AGENT_RULES_OPERATORS,
-    OPERATORS,
-    PICKLE_SUFFIXES,
-    RUNBOOK_FILE,
-    RUNBOOK_OPERATORS,
-    SUMS_FILE,
-)
+from .bundle import data_files, manual_entries, pack_items, parse_sums
+from .constants import AGENT_RULES_FILE, OPERATORS, PICKLE_SUFFIXES, RUNBOOK_FILE, SUMS_FILE
 from .findings import Finding
-from .runbook import command_lines, documents
-from .volumes import max_file_bytes
+from .pack_files import generated_names
+from .runbook import document_names, documents, lost_commands
+from .volumes import max_file_bytes, volume_capacity
 
 TOKEN = re.compile(rb"hf_[A-Za-z0-9]{20,}")
 TOKEN_SCAN_LIMIT = 16 * 1024 * 1024  # larger files (weights, archives) are not read for tokens
 
 
-def _sums(bundle: Path) -> dict[str, str] | None:
-    """The digest of each path in SHA256SUMS; None when the file cannot be read as UTF-8."""
+def _sums(bundle: Path) -> dict[str, str] | str:
+    """The digest of each path in SHA256SUMS, or why there is none to compare with."""
     path = bundle / SUMS_FILE
     if not path.is_file():
-        return {}
+        return f"{SUMS_FILE} is missing; run pack.py again"
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        return parse_sums(path.read_text(encoding="utf-8"))
     except UnicodeDecodeError:
-        return None
-    result = {}
-    for line in lines:
-        digest, _, name = line.partition("  ")
-        if name:
-            result[name] = digest
-    return result
+        return f"{SUMS_FILE} is not readable as UTF-8"
 
 
 def _sha256(path: Path) -> str:
@@ -49,7 +37,7 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _token_files(bundle: Path, project_files: list[Path]) -> list[Path]:
+def _token_files(bundle: Path, project_files: Sequence[Path]) -> list[Path]:
     found = [p for p in sorted(Path(bundle).rglob("*")) if p.is_file() and p.stat().st_size <= TOKEN_SCAN_LIMIT]
     return found + [p for p in project_files if p.is_file()]
 
@@ -124,10 +112,14 @@ def check_bundle(
     bundle_data: dict,
     manifest: dict,
     *,
+    operator: str,
+    channel: str,
     deep: bool = False,
-    project_files: list[Path] = (),
+    project_files: Sequence[Path] = (),
     environ: dict | None = None,
 ) -> list[Finding]:
+    """The findings for a packed bundle. `operator` and `channel` are the blueprint's current
+    inside.operator and transfer.channel; B5 reports a bundle packed for others."""
     bundle = Path(bundle)
     environ = os.environ if environ is None else environ
     findings: list[Finding] = []
@@ -151,10 +143,12 @@ def check_bundle(
             if not (bundle / entry["path"]).is_file():
                 findings.append(Finding("B1", f"{item['id']}: {entry['path']} is missing"))
 
-    # B2: every file has a line in SHA256SUMS and the size bundle.json gives.
+    # B2: every file has a line in SHA256SUMS and the size bundle.json gives. The files pack.py
+    # writes are small, so their hashes are always compared: verify.sh checks them too.
     sums = _sums(bundle)
-    if sums is None:
-        findings.append(Finding("B2", f"{SUMS_FILE} is not readable as UTF-8"))
+    if isinstance(sums, str):
+        findings.append(Finding("B2", sums))
+        sums = None
     for entry in data_files(bundle_data):
         path = bundle / entry["path"]
         if sums is not None and sums.get(entry["path"]) != entry["sha256"]:
@@ -163,9 +157,23 @@ def check_bundle(
             findings.append(Finding("B2", f"{entry['path']}: {path.stat().st_size} bytes, bundle.json says {entry['size']}"))
         elif deep and path.is_file() and _sha256(path) != entry["sha256"]:
             findings.append(Finding("B2", f"{entry['path']}: its SHA-256 differs from {SUMS_FILE}"))
+    wanted = document_names(operator)  # B7 reports these when they are missing
+    for name in generated_names(bundle_data):
+        path = bundle / name
+        if not path.is_file():
+            if name not in wanted:
+                findings.append(Finding("B2", f"{name} is missing; run pack.py again"))
+        elif sums is None:
+            continue
+        elif name not in sums:
+            findings.append(Finding("B2", f"{name}: no line in {SUMS_FILE}; run pack.py again"))
+        elif _sha256(path) != sums[name]:
+            fix = ("after translating it, run pack.py --refresh-sums, else run pack.py again"
+                   if name in (RUNBOOK_FILE, AGENT_RULES_FILE) else "run pack.py again")
+            findings.append(Finding("B2", f"{name}: its SHA-256 differs from {SUMS_FILE}; {fix}"))
 
     # B3: no file on a volume is larger than the channel allows.
-    limit = max_file_bytes(bundle_data.get("channel", ""), state["answers"])
+    limit = max_file_bytes(channel, state["answers"])
     for volume in bundle_data.get("volumes", []):
         for unit in volume["units"]:
             if limit is not None and unit["size"] > limit:
@@ -173,8 +181,8 @@ def check_bundle(
                     Finding("B3", f"volume {volume['number']}: {unit['path']} is {unit['size']:,} bytes; the channel allows {limit:,}")
                 )
 
-    # B4: every volume fits the medium minus the reserve.
-    capacity = bundle_data.get("volume_capacity")
+    # B4: every volume fits the medium minus the reserve, as transfer.json gives it now.
+    capacity = volume_capacity(channel, state["answers"])
     for volume in bundle_data.get("volumes", []):
         if capacity is not None and volume["bytes"] > capacity:
             findings.append(
@@ -184,6 +192,10 @@ def check_bundle(
     # B5: the bundle was made from the project's current manifest.
     if bundle_data.get("manifest_digest") != manifest.get("inputs_digest"):
         findings.append(Finding("B5", "bundle.json was made from another transfer manifest; run plan.py, fetch.sh and pack.py again"))
+    for key, label, now in (("operator", "inside.operator", operator), ("channel", "transfer.channel", channel)):
+        if bundle_data.get(key) != now:
+            findings.append(Finding(
+                "B5", f"bundle.json was packed for {label} {bundle_data.get(key)}; the blueprint now says {now}; run pack.py again"))
 
     # B6: pickle-based weights need the user's explicit permission.
     for record in bundle_data.get("items", []):
@@ -193,11 +205,8 @@ def check_bundle(
                     findings.append(Finding("B6", f"{entry['path']}: pickle-based weights without the user's permission"))
 
     # B7: the runbook or agent rules that inside.operator calls for.
-    expected = documents(bundle_data, manifest)
-    operator = bundle_data.get("operator")
-    for name, wanted in ((RUNBOOK_FILE, RUNBOOK_OPERATORS), (AGENT_RULES_FILE, AGENT_RULES_OPERATORS)):
-        if operator not in wanted:
-            continue
+    expected = documents({**bundle_data, "operator": operator}, manifest)
+    for name in wanted:
         path = bundle / name
         if not path.is_file():
             findings.append(Finding("B7", f"{name} is missing; inside.operator is {operator}"))
@@ -207,13 +216,13 @@ def check_bundle(
         except UnicodeDecodeError:
             findings.append(Finding("B7", f"{name} is not readable as UTF-8"))
             continue
-        lost = [line for line in command_lines(expected[name]) if line not in text]
+        lost = lost_commands(expected[name], text)
         if lost:
             findings.append(Finding("B7", f"{name} lacks the command line(s): " + "; ".join(lost)))
 
     # B8: nothing that looks like a token.
     secret = environ.get("HF_TOKEN", "")
-    for path in _token_files(bundle, list(project_files)):
+    for path in _token_files(bundle, project_files):
         where = path.relative_to(bundle).as_posix() if bundle in path.parents else str(path)
         try:
             data = path.read_bytes()

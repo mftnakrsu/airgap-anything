@@ -1,15 +1,17 @@
 """Pack a fetched bundle: checksums, volume plan, inventory, inside scripts and runbook.
 
 With --write-volume N --to FOLDER, copy volume N onto a mounted medium and read it back.
+With --refresh-sums, after translating INSIDE.md or AGENTS-INSIDE.md, record their new hashes.
 """
 from datetime import datetime, timezone
 from pathlib import Path
 
 from transfer_lib import cli
 from transfer_lib.bundle import PackError, build_bundle, stray_files
+from transfer_lib.checks import bundle_problems
 from transfer_lib.constants import BUNDLE_JSON, EXIT_FINDINGS, EXIT_INPUT, EXIT_OK
 from transfer_lib.inputs import InputError, channel_of, language_of, load_inputs, operator_of, read_json
-from transfer_lib.pack_files import MediumError, WriteError, write_generated, write_volume
+from transfer_lib.pack_files import MediumError, WriteError, refresh_sums, write_generated, write_volume
 from transfer_lib.questions import answer_problems
 from transfer_lib.state import load_state, save_state, state_path
 
@@ -18,9 +20,13 @@ def main(argv=None) -> int:
     parser = cli.make_parser(__doc__)
     parser.add_argument("--write-volume", type=int, metavar="N", help="copy volume N to --to")
     parser.add_argument("--to", metavar="FOLDER", help="the folder of the mounted medium")
+    parser.add_argument("--refresh-sums", action="store_true",
+                        help="after translating INSIDE.md or AGENTS-INSIDE.md, record their new SHA-256 in SHA256SUMS")
     args = parser.parse_args(argv)
     if (args.write_volume is None) != (args.to is None):
         parser.error("--write-volume and --to go together")
+    if args.refresh_sums and args.write_volume is not None:
+        parser.error("--refresh-sums does not go with --write-volume: refresh the sums first, then write each volume")
     root = Path(args.project_root)
     try:
         blueprint, manifest = load_inputs(root)
@@ -41,6 +47,8 @@ def main(argv=None) -> int:
         cli.fail(EXIT_INPUT, ["Missing or invalid answers in transfer.json:"] + [f"  {p}" for p in problems]
                  + ["Fix them, run plan.py again, then pack.py."])
     bundle = Path(state["answers"]["bundle.path"])
+    if args.refresh_sums:
+        return _refresh(bundle, manifest, meta)
     if args.write_volume is not None:
         try:
             bundle_data = read_json(bundle / BUNDLE_JSON)
@@ -87,9 +95,36 @@ def main(argv=None) -> int:
     if strays:
         print("Not carried, because no item claims them: " + ", ".join(strays))
     if meta["language"] != "en":
-        print(f"The runbook files are in English. Translate their prose into '{meta['language']}' and keep "
-              "every command line, file name and key exactly as written.")
+        print(f"The runbook files are in English. Translate their prose into '{meta['language']}', "
+              "keep every command line, file name and key exactly as written, then run pack.py --refresh-sums.")
     print("Next: check.py; then pack.py --write-volume N --to FOLDER for each volume.")
+    return EXIT_OK
+
+
+def _refresh(bundle: Path, manifest: dict, meta: dict) -> int:
+    """pack.py --refresh-sums: the new hashes of the translated runbook files."""
+    try:
+        bundle_data = read_json(bundle / BUNDLE_JSON)
+    except InputError as error:
+        cli.fail(EXIT_INPUT, [str(error), "Run pack.py without --refresh-sums first."])
+    problems = bundle_problems(bundle_data)
+    if problems:
+        cli.fail(EXIT_INPUT, [f"{bundle / BUNDLE_JSON}: not a complete bundle.json; run pack.py again"])
+    if bundle_data.get("manifest_digest") != manifest["inputs_digest"]:
+        cli.fail(EXIT_INPUT, ["bundle.json was packed from another manifest: run pack.py again"])
+    for key, label in (("operator", "inside.operator"), ("channel", "transfer.channel")):
+        if bundle_data[key] != meta[key]:
+            cli.fail(EXIT_INPUT, [f"bundle.json was packed for {label} {bundle_data[key]}; the blueprint now says "
+                                  f"{meta[key]}: run pack.py again, then translate the runbook files again"])
+    try:
+        names = refresh_sums(bundle, bundle_data, manifest)
+    except PackError as error:
+        cli.fail(EXIT_INPUT, ["SHA256SUMS was not changed:"] + [f"  {p}" for p in error.problems])
+    except OSError as error:
+        cli.fail(EXIT_INPUT, [f"cannot refresh {bundle / 'SHA256SUMS'}: {error}"])
+    print(f"Recorded the SHA-256 of {', '.join(names) or 'no runbook file'} in SHA256SUMS.")
+    print("Next: check.py; then pack.py --write-volume N --to FOLDER for each volume, again for any volume "
+          "written before this.")
     return EXIT_OK
 
 

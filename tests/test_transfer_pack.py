@@ -177,6 +177,69 @@ class PackScriptTest(unittest.TestCase):
         transfer_projects.settle_manual(project)
         result = transfer_projects.run_script("pack.py", project)
         self.assertIn("Translate their prose into 'tr'", result.stdout)
+        self.assertIn("keep every command line, file name and key exactly as written, then run pack.py --refresh-sums",
+                      result.stdout)
+
+    def test_refresh_sums_rewrites_only_the_lines_of_the_translated_documents(self):
+        self.packed(architect_answers={"inside.operator": "people_then_agent"})
+        sums = self.bundle / "SHA256SUMS"
+        before = sums.read_text(encoding="utf-8").splitlines()
+        runbook = self.bundle / "INSIDE.md"
+        runbook.write_text(runbook.read_text(encoding="utf-8").replace("Check every file", "Her dosyayı denetle"),
+                           encoding="utf-8")
+        result = transfer_projects.run_script("pack.py", self.project, "--refresh-sums")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("INSIDE.md, AGENTS-INSIDE.md", result.stdout)
+        self.assertIn("--write-volume", result.stdout)
+        after = sums.read_text(encoding="utf-8").splitlines()
+        changed = [(old, new) for old, new in zip(before, after) if old != new]
+        self.assertEqual(len(before), len(after))
+        self.assertEqual([new.split("  ", 1)[1] for _, new in changed], ["INSIDE.md"])
+        self.assertIn(f"{hashlib.sha256(runbook.read_bytes()).hexdigest()}  INSIDE.md", after)
+
+    def test_refresh_sums_refuses_a_document_that_lost_a_command_line(self):
+        self.packed()
+        sums = self.bundle / "SHA256SUMS"
+        before = sums.read_text(encoding="utf-8")
+        runbook = self.bundle / "INSIDE.md"
+        runbook.write_text(runbook.read_text(encoding="utf-8").replace(
+            "sh /srv/airgap-bundle/verify.sh /srv/airgap-bundle", "verify the bundle"), encoding="utf-8")
+        result = transfer_projects.run_script("pack.py", self.project, "--refresh-sums")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("INSIDE.md lacks the command line(s): sh /srv/airgap-bundle/verify.sh /srv/airgap-bundle", result.stderr)
+        self.assertEqual(sums.read_text(encoding="utf-8"), before)
+        runbook.unlink()
+        result = transfer_projects.run_script("pack.py", self.project, "--refresh-sums")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("INSIDE.md is missing", result.stderr)
+
+    def test_refresh_sums_needs_a_packed_bundle(self):
+        project, bundle = self.fetched()
+        result = transfer_projects.run_script("pack.py", project, "--refresh-sums")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("Run pack.py without --refresh-sums first.", result.stderr)
+        self.packed()
+        (self.bundle / "SHA256SUMS").unlink()
+        result = transfer_projects.run_script("pack.py", self.project, "--refresh-sums")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("SHA256SUMS is missing; run pack.py again", result.stderr)
+
+    def test_refresh_sums_refuses_a_bundle_packed_for_another_operator(self):
+        self.packed()
+        path = self.project / "docs/airgap/blueprint.json"
+        blueprint = json.loads(path.read_text(encoding="utf-8"))
+        blueprint["answers"]["inside.operator"] = "local_agent"
+        path.write_text(json.dumps(blueprint), encoding="utf-8")
+        result = transfer_projects.run_script("pack.py", self.project, "--refresh-sums")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("run pack.py again", result.stderr)
+
+    def test_refresh_sums_does_not_go_with_write_volume(self):
+        self.packed()
+        result = transfer_projects.run_script("pack.py", self.project, "--refresh-sums", "--write-volume", "1",
+                                              "--to", str(self.tmp.name))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--refresh-sums", result.stderr)
 
     def fetched(self, **kwargs):
         project, bundle = transfer_projects.planned_project(Path(self.tmp.name), **kwargs)

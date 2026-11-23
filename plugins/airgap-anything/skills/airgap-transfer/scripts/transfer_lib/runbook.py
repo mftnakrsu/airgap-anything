@@ -1,8 +1,9 @@
 """INSIDE.md (the runbook for people) and AGENTS-INSIDE.md (the rules for an inside agent).
 
 Both are written in English. When the blueprint's language is another, the agent on the
-connected side translates the prose and keeps every command line as it is; check.py B7
-finds a command line that went missing.
+connected side translates the prose, keeps every command line as it is, and runs
+`pack.py --refresh-sums` to record the new hashes; check.py B7 finds a command line that
+went missing, and B2 a translation whose hash was not recorded.
 """
 from __future__ import annotations
 
@@ -143,15 +144,16 @@ def render_agent_rules(bundle_data: dict, manifest: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def document_names(operator: str) -> list[str]:
+    """The names of the files `inside.operator` calls for."""
+    return [name for name, wanted in ((RUNBOOK_FILE, RUNBOOK_OPERATORS), (AGENT_RULES_FILE, AGENT_RULES_OPERATORS))
+            if operator in wanted]
+
+
 def documents(bundle_data: dict, manifest: dict) -> dict[str, str]:
     """The files `inside.operator` calls for, by name."""
-    operator = bundle_data["operator"]
-    result = {}
-    if operator in RUNBOOK_OPERATORS:
-        result[RUNBOOK_FILE] = render_runbook(bundle_data, manifest)
-    if operator in AGENT_RULES_OPERATORS:
-        result[AGENT_RULES_FILE] = render_agent_rules(bundle_data, manifest)
-    return result
+    render = {RUNBOOK_FILE: render_runbook, AGENT_RULES_FILE: render_agent_rules}
+    return {name: render[name](bundle_data, manifest) for name in document_names(bundle_data["operator"])}
 
 
 def command_lines(text: str) -> list[str]:
@@ -165,3 +167,8 @@ def command_lines(text: str) -> list[str]:
         elif inside:
             found.append(line)
     return found
+
+
+def lost_commands(generated: str, text: str) -> list[str]:
+    """The command lines of the generated document that `text` (a translation of it) lacks."""
+    return [line for line in command_lines(generated) if line not in text]
