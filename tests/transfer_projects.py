@@ -18,8 +18,9 @@ COMMIT = "0123456789abcdef0123456789abcdef01234567"
 SUMS_URL = "https://downloads.example.test/alpha/SHA256SUMS"
 
 
-def transfer_catalog(root: Path) -> Catalog:
-    """The fixture catalog with packages on the engine: one per architecture and a script."""
+def transfer_catalog(root: Path, sums_url: str = SUMS_URL) -> Catalog:
+    """The fixture catalog with packages on the engine: one per architecture and a script.
+    `sums_url` is where the publisher's checksum list of the two binaries lives."""
     components = support.fixture_components()
     components[0] = support.component(
         "alpha-engine",
@@ -27,8 +28,8 @@ def transfer_catalog(root: Path) -> Catalog:
         airgap={
             "images": [{"ref": "registry.example.test/synthetic/alpha-engine:1.2.3", "digest": ""}],
             "packages": [
-                support.package("alpha-cli-1.2.3-amd64", "amd64", SUMS_URL),
-                support.package("alpha-cli-1.2.3-arm64", "arm64", SUMS_URL),
+                support.package("alpha-cli-1.2.3-amd64", "amd64", sums_url),
+                support.package("alpha-cli-1.2.3-arm64", "arm64", sums_url),
                 support.package("install.sh", "any"),
             ],
             "runtime_downloads": ["Tokenizer data, fetched on first start."],

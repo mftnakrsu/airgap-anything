@@ -51,15 +51,38 @@ room() {  # stop the whole run on a full disk
   fi
 }
 
-listed_hash() {  # listed_HASH LIST NAME: the hash that LIST gives for NAME, in either common format
+listed_hash() {  # listed_hash LIST NAME: "TAG HASH" for NAME in LIST; TAG is the algorithm named in a "TAG (name) = hash" line, - in other formats
   awk -v name="$2" '
-    $1 ~ /^[0-9A-Fa-f]+$/ && NF >= 2 { f = $2; sub(/^\*/, "", f); g = f; sub(/.*\//, "", g); if (f == name || g == name) { print tolower($1); exit } }
-    $2 ~ /^\(/ && $(NF - 1) == "=" { f = $2; sub(/^\(/, "", f); sub(/\)$/, "", f); if (f == name) { print tolower($NF); exit } }
+    $1 ~ /^[0-9A-Fa-f]+$/ && NF >= 2 { f = $2; sub(/^\*/, "", f); g = f; sub(/.*\//, "", g); if (f == name || g == name) { print "-", tolower($1); exit } }
+    $2 ~ /^\(/ && $(NF - 1) == "=" { f = $2; sub(/^\(/, "", f); sub(/\)$/, "", f); if (f == name) { print toupper($1), tolower($NF); exit } }
     NF == 1 && $1 ~ /^[0-9A-Fa-f]+$/ { only = tolower($1); count++ }
-    END { if (count == 1 && NR == 1) print only }
+    END { if (count == 1 && NR == 1) print "-", only }
   ' "$1"
 }
 """
+
+
+def _local_copy() -> str:
+    """Copy from a local model folder only the files the filter allows (and the pickle files
+    when ALLOW_PICKLE is yes), each to the same relative path; .git folders are skipped. The
+    filter is a `case` in a child shell, so no pattern is ever expanded against a folder."""
+    allowed = "|".join(MODEL_FILE_PATTERNS)
+    pickle = "|".join(PICKLE_PATTERNS)
+    return (
+        '    find -H "$4" -name .git -prune -o \\( -type f -o -type l \\) -exec sh -c \'\n'
+        "      src=${1%/}; dest=$2; pickle=$3; shift 3\n"
+        "      for file; do\n"
+        '        [ -f "$file" ] || continue\n'
+        '        rel=${file#"$src"/}; [ "$rel" != "$file" ] || exit 1\n'
+        "        case ${rel##*/} in\n"
+        f"          {allowed}) ;;\n"
+        f'          {pickle}) [ "$pickle" = yes ] || continue ;;\n'
+        "          *) continue ;;\n"
+        "        esac\n"
+        '        mkdir -p "$dest/$(dirname "$rel")" && cp "$file" "$dest/$rel" || exit 1\n'
+        "      done\n"
+        "    \' sh \"$4\" \"$dest\" \"$6\" {} + || return 1\n"
+    )
 
 
 def _functions(plan: dict) -> str:
@@ -100,11 +123,8 @@ def _functions(plan: dict) -> str:
             '  patterns="' + " ".join(MODEL_FILE_PATTERNS) + '"\n'
             '  if [ "$6" = yes ]; then patterns="$patterns ' + " ".join(PICKLE_PATTERNS) + '"; fi\n'
             '  if [ "$3" = local ]; then\n'
-            '    cp -R "$4/." "$dest/" || return 1\n'
-            '    if [ "$6" != yes ]; then\n'
-            '      find "$dest" -type f \\( ' + " -o ".join(f"-name '{p}'" for p in PICKLE_PATTERNS) + ' \\) -exec rm -f {} + || return 1\n'
-            "    fi\n"
-            "  else\n"
+            + _local_copy()
+            + "  else\n"
             '    repo=$4; revision=$5; include_args=""\n'
             f'    for pattern in $patterns; do include_args="$include_args {include} $pattern"; done\n'
             + (f"    {_line('hf.download')} || return 1\n" if tools.get("models") else "    return 1\n")
@@ -130,19 +150,28 @@ def _functions(plan: dict) -> str:
             '    list="$BUNDLE/$5"; mkdir -p "$(dirname "$list")" || return 1\n'
             '    url=$4; out_file=$out; out="$list.download"\n'
             f"    {_line('curl.download')} || {{ rm -f \"$out\" \"$out_file\"; return 1; }}\n"
-            '    mv "$out" "$list"; out=$out_file\n'
-            '    expected=$(listed_hash "$list" "$name")\n'
-            '    if [ -z "$expected" ]; then rm -f "$out"; log FAILED "package $name: not listed in $4"; return 1; fi\n'
-            # Only md5, sha256 and sha512 can be checked. Any other length (a SHA-1 or SHA-384
-            # list, say) says nothing about the file, so the file stays, as .download and never
+            '    mv "$out" "$list" || return 1\n'
+            '    out=$out_file\n'
+            '    listing=$(listed_hash "$list" "$name")\n'
+            '    if [ -z "$listing" ]; then rm -f "$out"; log FAILED "package $name: not listed in $4"; return 1; fi\n'
+            '    tag=${listing%% *}; expected=${listing#* }\n'
+            # Only md5, sha256 and sha512 can be checked. A "TAG (name) = hash" line names its
+            # algorithm; any tag but those is unsupported even when the length fits (BLAKE2b is
+            # as long as SHA-512, SHA3-256 as SHA-256). A plain list names none, so its length
+            # decides, except that a list called B2SUMS or *b2* or *sha3* is one of the others.
+            # Such a file says nothing about the download, so it stays, as .download and never
             # as the finished file, and only this item fails.
-            "    case ${#expected} in\n"
-            "      32|64|128) ;;\n"
-            "      *)\n"
-            '        log FAILED "package $name: unsupported checksum algorithm (a hash of ${#expected} characters in $4; only md5, sha256 and sha512 are checked); the file was kept unverified as $out"\n'
-            "        return 1\n"
-            "        ;;\n"
+            '    why=""\n'
+            "    case $tag in\n"
+            "      MD5|SHA256|SHA512|SHA2-256|SHA2-512) ;;\n"
+            "      -) case $(printf '%s' \"${4##*/}\" | tr 'A-Z' 'a-z') in *b2*|*sha3*) why=\"a list called ${4##*/}\" ;; esac ;;\n"
+            '      *) why="the tag $tag" ;;\n'
             "    esac\n"
+            '    case ${#expected} in 32|64|128) ;; *) why="a hash of ${#expected} characters" ;; esac\n'
+            '    if [ -n "$why" ]; then\n'
+            '      log FAILED "package $name: unsupported checksum algorithm ($why in $4; only md5, sha256 and sha512 are checked); the file was kept unverified as $out"\n'
+            "      return 1\n"
+            "    fi\n"
             '    actual=$(hash_file "${#expected}" "$out" | tr "A-F" "a-f") || actual=""\n'
             '    if [ "$actual" != "$expected" ]; then\n'
             '      rm -f "$out"\n'
