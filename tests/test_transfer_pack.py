@@ -122,6 +122,17 @@ class PackScriptTest(unittest.TestCase):
         self.assertIn("ALPHA_PING=0", runbook)
         for word in ("curl", "wget", "pip install", "docker pull", "hf download"):
             self.assertNotIn(word, runbook)
+        for name, text in (("INSIDE.md", runbook), ("AGENTS-INSIDE.md", rules)):
+            with self.subTest(document=name):
+                steps_part, _, settings_part = text.partition("\n## Settings to apply before the first start\n")
+                self.assertTrue(settings_part, "no settings section")
+                self.assertIn("- alpha-engine: ALPHA_PING=0 (usage ping)", settings_part)
+                self.assertNotIn("ALPHA_PING", steps_part)
+                sections = steps_part.split("\n### ")[1:]
+                self.assertEqual([s.split(".", 1)[0] for s in sections], [str(n) for n in range(1, len(sections) + 1)])
+                for section in sections:
+                    self.assertIn("```sh\n", section, section.splitlines()[0])
+        self.assertIn("must not invent commands", rules)
 
     def test_data_diode_gets_a_send_order(self):
         self.packed(architect_answers={"transfer.channel": "data_diode"}, answers=None,

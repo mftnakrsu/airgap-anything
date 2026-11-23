@@ -2,9 +2,11 @@
 
 Goal: fill `answers` in `docs/airgap/transfer.json`. `plan.py` creates the file on its first run and, while an answer is missing or does not fit, lists the questions this transfer needs; ask only those.
 
+The scripts import the `transfer_lib` package next to them, so run them as `python3 <skill root>/scripts/plan.py`, not with `python3 -I`: isolated mode leaves their folder off the import path, and they stop with `ModuleNotFoundError: No module named 'transfer_lib'`.
+
 ## Rules
 
-1. One question per message, in the user's language. Store IDs and values exactly as written here.
+1. One question per message, in the user's language. Store IDs and values exactly as written here. Each ID is one flat key of `answers`, dots included: `"bundle.path": "/data/bundle"`, not `"bundle": {"path": "/data/bundle"}`. `plan.py` does not read nested keys; it reports such an answer as missing and asks the question again.
 2. Write each answer to `transfer.json` before you ask the next question.
 3. Skip every question the conversation or the project's files already answer.
 4. Never ask for a token or a password. A model that needs a Hugging Face token gets it from `HF_TOKEN` in the environment of `fetch.sh`, set by the user.

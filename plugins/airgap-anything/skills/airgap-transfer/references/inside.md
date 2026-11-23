@@ -20,8 +20,9 @@ Both are written in English. When the blueprint's `language` is another, transla
 2. `sh verify.sh <folder>`: checks that every file and part of `VOLUMES.txt` is there, joins split files from `PARTS.txt`, and checks every file against its SHA-256 in `SHA256SUMS`. Exit 1 writes `MISSING.txt`: each file, its expected SHA-256, the volume it was on, and what to bring next time.
 3. `sh load.sh <folder> <model folder>`: refuses to run until `verify.sh` has passed on the folder since `SHA256SUMS` last changed, runs `docker load` for every image archive `SHA256SUMS` lists and checks its image ID, and copies the model folders. Packages and manual items stay in the bundle.
 4. Manual items: one step each in the runbook, with the folder that holds their files.
-5. Switch off the telemetry settings that section 4 of the transfer manifest lists, before the first start.
-6. Then: install the registry from its package if it is not running, push the images to it, stage the runtime downloads, and continue with the implementation plan.
+5. Then: install the registry from its package if it is not running, push the images to it, stage the runtime downloads, and continue with the implementation plan.
+
+The telemetry settings that section 4 of the transfer manifest lists are not a step: no command applies them. Both files list them under "Settings to apply before the first start", for a person or the implementation plan to write into the deployment files before any service starts; `AGENTS-INSIDE.md` tells the agent not to invent commands for them.
 
 An image ID that differs stops `load.sh`, unless the engine uses the containerd image store, which reports another ID; there it is a note. A person, not an agent, decides whether to run `load.sh` again with `AIRGAP_SKIP_IMAGE_ID_CHECK=1`; `verify.sh` has already checked every byte.
 
