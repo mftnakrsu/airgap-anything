@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .constants import FILE_LIMIT_CHANNELS, FILESYSTEMS, MEDIUM_CHANNELS
+from .constants import FILE_LIMIT_CHANNELS, FILESYSTEMS, MAX_SIZE_GB, MEDIUM_CHANNELS, size_bytes
 
 QUESTION_IDS = (
     "bundle.path",
@@ -17,10 +17,6 @@ QUESTION_IDS = (
 _REPO = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*")
 _COMMIT = re.compile(r"[0-9a-f]{40}")
 NONE = "none"
-
-
-def _is_number(value) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def has_benchmark_rows(manifest: dict) -> bool:
@@ -115,14 +111,14 @@ def answer_problems(answers: dict, channel: str, manifest: dict, project_root: P
             reasons = _model_problems(value, manifest)
         elif question_id == "medium.capacity_gb":
             allowed_none = channel == "other" and value == NONE
-            reasons = [] if allowed_none or (_is_number(value) and value > 0) else [
-                "must be a number of gigabytes above 0" + (", or 'none'" if channel == "other" else "")
+            reasons = [] if allowed_none or size_bytes(value) is not None else [
+                f"must be a number of gigabytes above 0 and at most {MAX_SIZE_GB}" + (", or 'none'" if channel == "other" else "")
             ]
         elif question_id == "medium.filesystem":
             reasons = [] if value in FILESYSTEMS else ["must be one of " + ", ".join(FILESYSTEMS)]
         elif question_id == "channel.max_file_gb":
-            reasons = [] if value == NONE or (_is_number(value) and value > 0) else [
-                "must be a number of gigabytes above 0, or 'none'"
+            reasons = [] if value == NONE or size_bytes(value) is not None else [
+                f"must be a number of gigabytes above 0 and at most {MAX_SIZE_GB}, or 'none'"
             ]
         else:
             reasons = [] if isinstance(value, bool) else ["must be true or false"]

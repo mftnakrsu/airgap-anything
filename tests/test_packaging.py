@@ -66,10 +66,12 @@ class ManifestTest(unittest.TestCase):
 # organization that is not Verified (developer portal validation, 2026-11-22, and
 # https://claude.com/docs/plugins/pre-submission-checklist): no scripts with #!, no SVG other than
 # the icon, no package-manager files, no commands that download and run code, even in
-# documentation. Python and TOML files are the exception: the portal accepts them only from a
-# Verified organization (it blocked the catalog's first TOML file), and the skill needs both, so
-# a directory listing waits for Verified status. See docs/packaging-facts.md, Q8.
-ALLOWED_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".py", ".toml"}
+# documentation. Python, TOML and shell files are the exception: the portal accepts them only from
+# a Verified organization (it blocked the catalog's first TOML file), and the skills need them
+# (airgap-transfer copies its POSIX sh templates into every bundle), so a directory listing waits
+# for Verified status. See docs/packaging-facts.md, Q8. A .sh file still never starts with #!:
+# the inside runs it as `sh verify.sh`.
+ALLOWED_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".py", ".toml", ".sh"}
 PACKAGE_FILES = {"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-workspace.yaml", "requirements.txt",
                  "pyproject.toml", "uv.lock", "bun.lock", "bun.lockb", ".npmrc", "bunfig.toml", "uv.toml"}
 DOWNLOAD_AND_RUN = re.compile(r"(curl|wget)[^\n|]*\|\s*(ba|z)?sh\b|\b(npx|bunx|uvx|pnpm dlx|yarn dlx|pipx run)\s", re.I)
