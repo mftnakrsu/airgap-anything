@@ -31,7 +31,6 @@ Version 0.2 is implemented: `airgap-architect` and `airgap-transfer`.
 
 - **Readings of the transfer spec.** Where the spec was open, the implementation chose a reading; none has been confirmed yet. Among them: a model `revision` must be a full 40-character commit hash; `load.sh` checks each image's image ID, because `docker load` does not keep the registry digest; every volume carries the same bundle-wide `SHA256SUMS`, `bundle.json`, `PARTS.txt` and `VOLUMES.txt`; `pack.py` writes the runbooks in English and the agent translates the prose, with `check.py` B7 checking that every command line survived; `.sh` is a third Verified-only file type in `tests/test_packaging.py`.
 - **Widening the model filter.** Not built. Only `allow_pickle` widens which model files are fetched; the filter is `MODEL_FILE_PATTERNS` in `transfer_lib/constants.py`, and `check.py` does not report what it left out.
-- **Brand figure.** `assets/brand/how-it-works.svg` still says that the agent inside builds the system; inside, people, an agent or both now follow the bundle.
 - **Publisher signatures.** Not checked. The inventory and `references/channels.md` say so; whether a later version checks them is open.
 
 ## Waiting for an answer

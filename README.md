@@ -21,7 +21,7 @@
 
 `airgap-anything` is a home for agent skills that design systems for networks without internet access. Its first skill, `airgap-architect`, interviews you about your organization and writes a blueprint: one component per layer, GPU sizing, the reason for each choice, and the list of everything that has to be carried into the network.
 
-Version 0.1 covers the core pipeline and the LLM platform layer. See [Scope](#scope).
+Version 0.2 covers the core pipeline and the LLM platform layer, and adds a second skill, `airgap-transfer`, that prepares what the blueprint lists for the trip into the network. See [Scope](#scope).
 
 <p align="center">
   <img src="assets/brand/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the people or the agent inside build the system without internet." width="880">
@@ -178,13 +178,14 @@ A decision inherits the weakest label among its inputs. Every decision that rest
 
 ## Scope
 
-In version 0.1:
+In version 0.2:
 
 - Decision tables for the inference engine and the LLM gateway.
 - Fixed per-tier defaults for UI, identity, observability, orchestration, state stores and artifact registry.
 - Sizing from organization answers, a transfer manifest, and lint.
+- `airgap-transfer`: a plan and fetch script from the transfer manifest, a checked bundle split across media, and `verify.sh` and `load.sh` for the inside.
 
-Not in version 0.1:
+Not in version 0.2:
 
 - Deployment files such as Docker Compose or Helm.
 - A recommendation of which model to run.

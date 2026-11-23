@@ -8,7 +8,7 @@
     {
       "name": "airgap-anything",
       "description": "Agent skills that design systems for air-gapped environments. First skill: airgap-architect.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./plugins/airgap-anything",
       "author": {
         "name": "mftnakrsu"
