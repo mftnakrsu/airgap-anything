@@ -12,7 +12,7 @@ Everything inside works without internet and without an LLM. An agent inside, if
 | `local_agent` | `AGENTS-INSIDE.md`, the rules for an inside agent |
 | `people_then_agent` | Both: the runbook for the first day, the rules once the agent runs |
 
-Both are written in English. When the blueprint's `language` is another, translate the prose after the last `pack.py` run, keep every command line, file name and key exactly as written, then run `pack.py --refresh-sums` to record their new hashes. `check.py` reports B7 when a file is missing or a command line of it went missing, and B2 when a translation's hash was not recorded.
+Both are written in English. When the blueprint's `language` is another, translate the prose after `pack.py` has packed the bundle and before `check.py` and `pack.py --write-volume`: keep every command line, file name and key exactly as written, then run `pack.py --refresh-sums` to record their new hashes. `check.py` reports B7 when a file is missing or a command line of it went missing, and B2 when a translation's hash was not recorded.
 
 ## The steps
 
