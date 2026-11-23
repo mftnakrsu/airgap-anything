@@ -1,0 +1,1 @@
+The lab's air-gap design is done; docs/airgap/ holds the blueprint and the transfer manifest. Everything goes in through our data diode, which has no limit on file size. Get the files ready for sending; build the bundle in BUNDLE. The model lab-8b is example-org/lab-8b on Hugging Face at commit 0123456789abcdef0123456789abcdef01234567.

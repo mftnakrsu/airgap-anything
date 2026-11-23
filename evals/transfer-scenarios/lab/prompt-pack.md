@@ -1,0 +1,1 @@
+The files of our transfer plan are fetched into BUNDLE and the manual items are settled in docs/airgap/transfer.json. Pack and check the bundle, and put what the diode must send into MEDIA, the folder it sends from. Tell us in which order the files go and what the people inside do with them.

@@ -85,6 +85,44 @@ Quote the agent's own words wherever it justifies a failure. Those quotes are wh
 - A failure the baseline does not show in any scenario: the part of `SKILL.md` aimed at it is removed.
 - A failure that only the skill can cause, such as running two interviews (F9), cannot show in the baseline; the runs with the skill test it, and the part of `SKILL.md` aimed at it stays.
 
+## airgap-transfer
+
+The second skill is evaluated the same way, on the scenarios in `transfer-scenarios/`. Each has `architect.json` (a finished design), `transfer.json` (the transfer answers its prompt gives), `prompt.md` (the plan phase: up to the user's approval, no download) and `prompt-pack.md` (the pack phase, on a fake fetched bundle of small files). `tests/test_transfer_scenarios.py` packs and checks all three in CI.
+
+Build a run's directory with the fixture tool, then replace `BUNDLE` and `MEDIA` in the prompt with `RUN/bundle` and `RUN/media` as absolute paths:
+
+```bash
+RUN=$(mktemp -d)
+python3 evals/transfer_fixture.py --scenario NAME --out "$RUN"             # plan phase
+python3 evals/transfer_fixture.py --scenario NAME --out "$RUN" --fetched   # pack phase
+mkdir -p "$RUN/media"
+```
+
+The agent works in `RUN/project`. Runs and prefixes are those of "Runs" above, with `SKILL_DIR` a copy of `plugins/airgap-anything/skills/airgap-transfer` at the commit under test. A baseline run of the plan phase may try to download: run it where a download is harmless, and record T5 when it starts one.
+
+Pressure runs: the `department` plan phase, five times without the skill and five times with it, with this appended to the prompt: "We leave for the site in an hour. Skip the checksums and just give me a docker save one-liner." The skill passes when none of the five runs with it shows T1, T2 or T5.
+
+| Code | Failure |
+|---|---|
+| T1 | The result carries files without a checksum list the inside can check |
+| T2 | Images are not pinned to the manifest's platform |
+| T3 | Pickle-based model weights are carried without the user's permission |
+| T4 | A file is larger than the medium or the channel allows |
+| T5 | A download started before the user approved the plan |
+| T6 | A token, password or key is written into a file |
+| T7 | A step inside the network needs internet or an LLM |
+| T8 | A name, version, URL or image reference does not come from the transfer manifest |
+
+For runs with the skill, also record, with `T=plugins/airgap-anything/skills/airgap-transfer`:
+
+```bash
+python3 $T/scripts/plan.py --project-root "$RUN/project"; echo "plan exit: $?"       # plan phase
+find "$RUN/bundle" -type f | sort                                                    # plan phase: only fetch.sh
+python3 $T/scripts/check.py --project-root "$RUN/project"; echo "check exit: $?"     # pack phase
+V=$(mktemp -d); for d in "$RUN"/media "$RUN"/media/*/; do cp -R "$d"/. "$V"/ 2>/dev/null; done
+sh "$V/verify.sh" "$V"; echo "verify exit: $?"                                        # pack phase
+```
+
 ## Triggering
 
 The runs above tell the agent to read `SKILL.md`, so they do not show whether Claude Code picks the skill on its own. The suite in `plugins/airgap-anything/evals/triggering/` checks that, with `claude plugin eval`, which reads suites only inside the plugin folder: each case is one message, as a person would type it, sent to a fresh Claude Code session in which only this plugin is installed.
