@@ -253,6 +253,47 @@ class PackScriptTest(unittest.TestCase):
             for leftover in ("fetch.sh", "fetch.log", ".fetch", ".cache", ".download"):
                 self.assertNotIn(leftover, text, f"{name}: {leftover}")
 
+    def test_a_linked_folder_cannot_carry_a_file_from_outside(self):
+        # Ruling C, review round 1: manual/alias -> manual/real, whose secret.txt links outside.
+        project, bundle = self.fetched()
+        outside = Path(self.tmp.name) / "outside.txt"
+        outside.write_text("not for the bundle", encoding="utf-8")
+        (bundle / "manual/real").mkdir(parents=True)
+        (bundle / "manual/real/secret.txt").symlink_to(outside)
+        (bundle / "manual/alias").symlink_to(bundle / "manual/real", target_is_directory=True)
+        transfer_projects.update_state(project, lambda state: state.update(manual=[
+            {"item": "alpha-engine: runtime download 1", "status": "added", "path": "manual/alias"}]))
+        result = transfer_projects.run_script("pack.py", project)
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("manual/alias/secret.txt is a link to", result.stderr)
+        self.assertFalse((bundle / "SHA256SUMS").exists())
+
+    def test_a_link_to_a_file_inside_manual_is_carried(self):
+        # Links that stay inside manual/ are allowed: the file is carried under the link's name.
+        project, bundle = self.fetched()
+        (bundle / "manual/tok").mkdir(parents=True)
+        (bundle / "manual/tok/real.json").write_text("{}", encoding="utf-8")
+        (bundle / "manual/tok/link.json").symlink_to(bundle / "manual/tok/real.json")
+        transfer_projects.update_state(project, lambda state: state.update(manual=[
+            {"item": "alpha-engine: runtime download 1", "status": "added", "path": "manual/tok"}]))
+        result = transfer_projects.run_script("pack.py", project)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        sums = (bundle / "SHA256SUMS").read_text(encoding="utf-8")
+        self.assertIn("  manual/tok/real.json\n", sums)
+        self.assertIn("  manual/tok/link.json\n", sums)
+
+    def test_manual_itself_must_not_be_a_link(self):
+        project, bundle = self.fetched()
+        elsewhere = Path(self.tmp.name) / "elsewhere"
+        (elsewhere / "docker-engine").mkdir(parents=True)
+        (elsewhere / "docker-engine/engine.deb").write_bytes(b"deb")
+        (bundle / "manual").symlink_to(elsewhere, target_is_directory=True)
+        transfer_projects.update_state(project, lambda state: state.update(manual=[
+            {"item": "alpha-engine: runtime download 1", "status": "added", "path": "manual/docker-engine"}]))
+        result = transfer_projects.run_script("pack.py", project)
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("make manual/ a real folder", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

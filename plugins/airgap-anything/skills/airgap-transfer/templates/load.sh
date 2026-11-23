@@ -56,7 +56,14 @@ if [ -d images ]; then
   case $({{docker.store}} < /dev/null 2> /dev/null || true) in
     *'driver-type io.containerd.snapshotter.v1'*) STORE=containerd ;;
   esac
-  find images -type f -name '*.tar' | sort > .load-list
+  # Only the archives SHA256SUMS lists, which verify.sh checked; any other .tar is reported and
+  # never loaded.
+  awk '{ f = $0; sub(/^[^ ]+  /, "", f); if (f ~ /^images\/.*\.tar$/) print f }' SHA256SUMS | sort > .load-list
+  find images -type f -name '*.tar' | sort > .load-found
+  while read -r archive; do
+    grep -F -x -q -e "$archive" .load-list || echo "load.sh: not loaded, because SHA256SUMS does not list it: $archive"
+  done < .load-found
+  rm -f .load-found
   while read -r archive; do
     expected=$(cat "${archive%.tar}.id")
     if ! {{docker.load}} < /dev/null > /dev/null; then

@@ -32,10 +32,17 @@ def _hidden(parts) -> bool:
     return any(part.startswith(".") for part in parts)
 
 
-def _files_under(bundle: Path, relative: str) -> list[str]:
+def _files_under(bundle: Path, relative: str, within: Path | None = None) -> list[str]:
     """Bundle paths of the files at or below `relative`, leaving out dot-files, dot-folders
-    (such as the .cache/ that `hf download --local-dir` leaves) and partial downloads."""
+    (such as the .cache/ that `hf download --local-dir` leaves) and partial downloads.
+    With `within`, a file that resolves outside that folder raises PackError."""
     root = bundle / relative
+    if within is not None:
+        outside = [path for path in ([root] if root.is_file() else Path(root).rglob("*"))
+                   if path.is_file() and not _inside(path.resolve(), within.resolve())]
+        if outside:
+            raise PackError([f"{path.relative_to(bundle).as_posix()}: resolves to {path.resolve()}, outside "
+                             f"{within.resolve()}; copy the file itself under manual/" for path in outside])
     if root.is_file():
         return [] if relative.endswith(PARTIAL_SUFFIX) else [relative]
     if not root.is_dir():
@@ -81,7 +88,7 @@ def item_files(bundle: Path, item: dict, state: dict) -> list[str]:
         return files
     if item["kind"] == "manual":
         entry = manual_entries(state).get(item["name"], {})
-        return _files_under(bundle, entry["path"]) if entry.get("status") == "added" else []
+        return _files_under(bundle, entry["path"], bundle / MANUAL_DIR) if entry.get("status") == "added" else []
     return _files_under(bundle, item["path"])
 
 
@@ -90,19 +97,28 @@ def _inside(path: Path, root: Path) -> bool:
 
 
 def manual_path_problems(bundle: Path, entry: dict) -> list[str]:
-    """An added manual item must lie inside <bundle>/manual/, links included."""
+    """An added manual item must lie inside <bundle>/manual/, and so must every link at or
+    under it. manual/ itself must be a real folder. A link to a file that stays inside
+    manual/ is allowed; a link to a folder below the added path is refused, because the
+    walk does not follow it."""
+    bundle = Path(bundle)
+    where = f"manual:{entry['item']}: {entry['path']}"
+    if (bundle / MANUAL_DIR).is_symlink():
+        return [f"{where}: {bundle / MANUAL_DIR} is a link to {(bundle / MANUAL_DIR).resolve()}; "
+                "make manual/ a real folder in the bundle folder"]
     root = (bundle / MANUAL_DIR).resolve()
     given = bundle / entry["path"]
-    where = f"manual:{entry['item']}: {entry['path']}"
-    if not _inside(given.resolve(), root):
+    start = given.resolve()
+    if not _inside(start, root):
         return [f"{where} lies outside {root}; put the files in a folder under manual/ and name that folder"]
     problems = []
-    if given.is_dir() and not given.is_symlink():
-        for folder, dirs, names in os.walk(given):
+    if start.is_dir():
+        for folder, dirs, names in os.walk(start):
             for name in [*dirs, *names]:
                 path = Path(folder) / name
                 if path.is_symlink() and (path.is_dir() or not _inside(path.resolve(), root)):
-                    problems.append(f"{where}: {path.relative_to(bundle).as_posix()} is a link to "
+                    shown = given / path.relative_to(start)
+                    problems.append(f"{where}: {shown.relative_to(bundle).as_posix()} is a link to "
                                     f"{path.resolve()}; copy the file itself under manual/")
     return problems
 

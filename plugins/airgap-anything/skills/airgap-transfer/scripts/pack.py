@@ -9,7 +9,7 @@ from transfer_lib import cli
 from transfer_lib.bundle import PackError, build_bundle, stray_files
 from transfer_lib.constants import BUNDLE_JSON, EXIT_FINDINGS, EXIT_INPUT, EXIT_OK
 from transfer_lib.inputs import InputError, channel_of, language_of, load_inputs, operator_of, read_json
-from transfer_lib.pack_files import WriteError, write_generated, write_volume
+from transfer_lib.pack_files import MediumError, WriteError, write_generated, write_volume
 from transfer_lib.questions import answer_problems
 from transfer_lib.state import load_state, save_state, state_path
 
@@ -51,6 +51,9 @@ def main(argv=None) -> int:
         generated = state["pack"].get("generated") or []
         try:
             bad = write_volume(bundle, bundle_data, args.write_volume, Path(args.to), generated)
+        except MediumError as error:
+            cli.fail(EXIT_FINDINGS, [f"cannot write volume {args.write_volume}: {error}",
+                                     "The medium may be faulty. Write this volume again, or use another medium."])
         except (WriteError, OSError) as error:
             cli.fail(EXIT_INPUT, [f"cannot write volume {args.write_volume}: {error}"])
         if bad:

@@ -183,6 +183,21 @@ class InsideScriptsTest(unittest.TestCase):
     def test_load_arguments(self):
         self.assertEqual(self.run_sh("load.sh", "a", "b", "c").returncode, 2)
 
+    def test_an_archive_not_in_sha256sums_is_never_loaded(self):
+        self.assertEqual(self.run_sh("verify.sh", str(self.inside)).returncode, 0)
+        stray = self.inside / "images/extra/stray.tar"
+        stray.parent.mkdir(parents=True)
+        stray.write_bytes(b"not listed")
+        for shell in SHELLS:
+            with self.subTest(shell=shell):
+                Path(self.env["DOCKER_CALLS"]).unlink(missing_ok=True)
+                result = self.run_sh("load.sh", str(self.inside), str(Path(self.tmp.name) / "models"), shell=shell)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("not loaded, because SHA256SUMS does not list it: images/extra/stray.tar", result.stdout)
+                calls = Path(self.env["DOCKER_CALLS"]).read_text(encoding="utf-8")
+                self.assertNotIn("stray.tar", calls)
+                self.assertEqual(sum(1 for call in calls.splitlines() if "load" in call), 8)
+
 
 if __name__ == "__main__":
     unittest.main()
