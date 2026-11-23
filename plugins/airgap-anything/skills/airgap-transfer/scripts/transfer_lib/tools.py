@@ -40,6 +40,8 @@ _COREUTILS = "https://www.gnu.org/software/coreutils/manual/html_node/"
 #   skopeo global options --override-os/--override-arch: https://github.com/podman-container-tools/skopeo/blob/v1.25.2/docs/skopeo.1.md
 #   docker-archive: transport: https://github.com/podman-container-tools/container-libs/blob/image/v5.42.1/image/docs/containers-transports.5.md
 #   fields Id and RepoDigests of `docker image inspect`: https://docs.docker.com/reference/api/engine/version/v1.57.yaml (ImageInspect)
+#   `docker info -f '{{ .DriverStatus }}'` printing "[[driver-type io.containerd.snapshotter.v1]]" with the
+#   containerd image store: https://docs.docker.com/engine/storage/containerd/ (read 2026-11-23)
 #   untagged output "checksum, a space, a flag, and the file name": https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (cksum output modes)
 #   `cut -d ' ' -f 1`: https://pubs.opengroup.org/onlinepubs/9799919799/utilities/cut.html
 # Hash lines read the file on standard input so that no file name (and no escaped one) is printed.
@@ -94,6 +96,14 @@ COMMANDS: dict[str, Command] = {
         "docker image inspect --format '{{.Id}}' \"$expected\"",
         _DOCKER + "inspect/",
     ),
+    "docker.store": Command(
+        "docker",
+        "print the storage driver status, which names io.containerd.snapshotter.v1 when the engine uses "
+        "the containerd image store (used by load.sh inside)",
+        (),
+        "docker info -f '{{ .DriverStatus }}'",
+        "https://docs.docker.com/engine/storage/containerd/",
+    ),
     "hf.download": Command(
         "hf",
         "download the files of $repo matching $include_args at commit $revision into the folder $dest",
@@ -143,7 +153,7 @@ COMMANDS: dict[str, Command] = {
 }
 
 # The commands load.sh runs inside; pack.py writes their lines into its copy of the template.
-TEMPLATE_COMMANDS = ("docker.load", "docker.image_id")
+TEMPLATE_COMMANDS = ("docker.load", "docker.image_id", "docker.store")
 
 # Which command computes which hash with which tool.
 HASH_COMMANDS = {
