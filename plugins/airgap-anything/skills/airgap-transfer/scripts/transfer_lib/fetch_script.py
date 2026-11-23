@@ -116,8 +116,16 @@ def _functions(plan: dict) -> str:
         include = _line("hf.include") if tools.get("models") else ""
         parts.append(
             "fetch_model() {  # fetch_model NAME FOLDER SOURCE REPO_OR_PATH REVISION ALLOW_PICKLE\n"
-            '  dest="$BUNDLE/$2"; done_file="$BUNDLE/' + FETCH_STATE_DIR + '/$(basename "$2").done"\n'
-            '  if [ -f "$done_file" ]; then log OK "model $1 (already present)"; return 0; fi\n'
+            '  dest="$BUNDLE/$2"; done_file="$BUNDLE/' + FETCH_STATE_DIR + '/$(basename "$2").done"; key="$3 $4 $5 $6"\n'
+            # The done file holds the key of what was fetched: source, repository or path,
+            # revision and pickle setting. Another key means the folder holds something else;
+            # it is never deleted here (it can be tens of GB, and hf keeps stale files), so the
+            # item fails until the folder is deleted. Without the folder the marker is stale.
+            '  if [ -f "$done_file" ]; then\n'
+            '    held=$(cat "$done_file")\n'
+            '    if [ "$held" = "$key" ]; then log OK "model $1 (already present)"; return 0; fi\n'
+            '    if [ -d "$dest" ]; then log FAILED "model $1: $2 holds $held; delete it to fetch $key"; return 1; fi\n'
+            "  fi\n"
             "  room\n"
             '  mkdir -p "$dest" "$BUNDLE/' + FETCH_STATE_DIR + '" || return 1\n'
             '  patterns="' + " ".join(MODEL_FILE_PATTERNS) + '"\n'
@@ -133,7 +141,7 @@ def _functions(plan: dict) -> str:
             '    log FAILED "model $1: no safetensors weights; allow pickle files for it in transfer.json or choose another source"\n'
             "    return 1\n"
             "  fi\n"
-            '  printf \'%s\\n\' "$5" > "$done_file" || return 1\n'
+            '  printf \'%s\\n\' "$key" > "$done_file" || return 1\n'
             '  log OK "model $1 $5"\n'
             "}\n"
         )
@@ -236,7 +244,8 @@ def render_fetch_script(plan: dict, platform: str, generated: str) -> str:
         # pathname expansion on they would expand against the folder fetch.sh is run from.
         # Nothing in this script relies on expansion, so it is off from here on.
         "set -f",
-        'BUNDLE=$(cd "$(dirname "$0")" && pwd)',
+        # CDPATH= keeps cd from printing the folder (and from doubling BUNDLE) when it is exported.
+        'BUNDLE=$(CDPATH= cd -P -- "$(dirname -- "$0")" && pwd)',
         f'LOG="$BUNDLE/{FETCH_LOG}"',
         f"PLATFORM={sh_quote(platform)}",
         f"ARCH={sh_quote(arch)}",

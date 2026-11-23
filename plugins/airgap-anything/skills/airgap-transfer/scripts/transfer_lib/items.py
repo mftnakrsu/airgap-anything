@@ -19,10 +19,18 @@ def image_archive(component: str, ref: str) -> str:
     return f"images/{safe_name(component)}/{safe_name(ref)}.tar"
 
 
+_EXTENSION = re.compile(r"(\.tar)?\.[A-Za-z][A-Za-z0-9]*$")
+
+
 def _unique(path: str, taken: set[str]) -> str:
+    """`path`, or with -2, -3, ... before its extension (foo.tar, foo-2.tar), so that the
+    sibling files that share a name with an archive (foo-2.digest) and *.tar still work.
+    A version such as 1.2.3 is not an extension."""
+    found = _EXTENSION.search(path.rsplit("/", 1)[-1])
+    stem, extension = (path[: len(path) - len(found.group())], found.group()) if found else (path, "")
     candidate, number = path, 2
     while candidate in taken:
-        candidate, number = f"{path}-{number}", number + 1
+        candidate, number = f"{stem}-{number}{extension}", number + 1
     taken.add(candidate)
     return candidate
 

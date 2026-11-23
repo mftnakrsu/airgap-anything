@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from tests import fetch_stubs, transfer_projects
+from tests.transfer_projects import COMMIT
 from transfer_lib.constants import MODEL_FILE_PATTERNS
 from transfer_lib.tools import COMMANDS
 
@@ -39,8 +40,8 @@ class FetchScriptRunTest(unittest.TestCase):
         result = transfer_projects.run_script("plan.py", self.project, env=self.env)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def fetch(self, shell="sh", cwd=None):
-        return subprocess.run([shell, str(self.bundle / "fetch.sh")], capture_output=True, text=True,
+    def fetch(self, shell="sh", cwd=None, script=None):
+        return subprocess.run([shell, script or str(self.bundle / "fetch.sh")], capture_output=True, text=True,
                               env=self.env, cwd=cwd)
 
     def log(self):
@@ -201,6 +202,58 @@ class FetchScriptRunTest(unittest.TestCase):
                     self.assertEqual((dest / "alias.safetensors").read_text(encoding="utf-8"), "model.safetensors")
                     self.assertFalse((dest / "alias.safetensors").is_symlink())
                     self.assertFalse((dest / ".git").exists())
+
+    def test_a_fetched_model_is_skipped_only_while_its_source_is_the_same(self):
+        other = "b" * 40
+        weights = Path(self.tmp.name) / "weights"
+        weights.mkdir()
+        (weights / "model.safetensors").write_text("w", encoding="utf-8")
+        hf = {"source": "huggingface", "repo": "example/model-70b", "revision": COMMIT}
+        first = f"huggingface example/model-70b {COMMIT} no"
+        changes = (
+            ("revision", dict(hf, revision=other), f"huggingface example/model-70b {other} no"),
+            ("repository", dict(hf, repo="example/other"), f"huggingface example/other {COMMIT} no"),
+            ("pickle setting", dict(hf, allow_pickle=True), f"huggingface example/model-70b {COMMIT} yes"),
+            ("local folder", {"source": "local", "path": str(weights)}, f"local {weights}  no"),
+        )
+        for shell in SHELLS:
+            with self.subTest(shell=shell):
+                shutil.rmtree(self.bundle, ignore_errors=True)
+                self.plan()
+                self.assertEqual(self.fetch(shell).returncode, 0, self.log())
+                done = self.bundle / ".fetch/example-70b.done"
+                weight = self.bundle / "models/example-70b/model.safetensors"
+                self.assertEqual(done.read_text(encoding="utf-8"), first + "\n")
+                again = self.fetch(shell)
+                self.assertEqual(again.returncode, 0)
+                self.assertIn("OK model example-70b (already present)", again.stdout)
+                for what, source, key in changes:
+                    with self.subTest(changed=what, shell=shell):
+                        self.plan(models={"example-70b": source})
+                        result = self.fetch(shell)
+                        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                        self.assertIn(f"FAILED model example-70b: models/example-70b holds {first}; "
+                                      f"delete it to fetch {key}", self.log())
+                        self.assertNotIn("OK model example-70b", result.stdout)
+                        self.assertEqual(done.read_text(encoding="utf-8"), first + "\n")
+                        self.assertTrue(weight.is_file())  # nothing was deleted
+                # With the folder deleted, the old marker does not block the new source.
+                self.plan(models={"example-70b": dict(hf, revision=other)})
+                shutil.rmtree(self.bundle / "models/example-70b")
+                self.assertEqual(self.fetch(shell).returncode, 0, self.log())
+                self.assertEqual(done.read_text(encoding="utf-8"), f"huggingface example/model-70b {other} no\n")
+
+    def test_fetch_sh_finds_its_folder_when_cdpath_is_exported(self):
+        # With CDPATH set, `cd bundle` prints the folder, and BUNDLE used to hold it twice.
+        tmp = Path(self.tmp.name)
+        for shell in SHELLS:
+            with self.subTest(shell=shell):
+                shutil.rmtree(self.bundle, ignore_errors=True)
+                self.plan(CDPATH=tmp)
+                result = self.fetch(shell, cwd=tmp, script="bundle/fetch.sh")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual((self.bundle / "packages/alpha-engine/alpha-cli-1.2.3-amd64").read_bytes(), b"cli binary")
+                self.assertNotIn("FAILED", self.log())
 
     def test_model_patterns_reach_hf_literally_whatever_the_current_folder_holds(self):
         # The patterns are split from an unquoted variable; with pathname expansion on,

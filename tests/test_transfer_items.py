@@ -56,6 +56,29 @@ class ItemsTest(unittest.TestCase):
         self.assertEqual(items["manual:Docker Engine (outside the catalog)"]["path"],
                          "manual/Docker_Engine_outside_the_catalog")
 
+    def test_a_taken_path_gets_its_counter_before_the_extension(self):
+        manifest = {
+            "images": [
+                {"component": "alpha", "version": "1", "ref": ref, "digest": "", "license": "", "benchmark": False}
+                for ref in ("reg/a:1", "reg_a:1")
+            ],
+            "models": [{"name": "chat model"}, {"name": "chat_model"}],
+            "packages": [
+                {"component": "alpha", "version": "1", "file": file, "arch": "any", "url": "https://x.test/" + file,
+                 "checksums": "", "license": "", "benchmark": False}
+                for file in ("a b.tgz", "a_b.tgz", "a b.tar.gz", "a_b.tar.gz", "tool 1.2.3", "tool_1.2.3")
+            ],
+        }
+        sources = {"chat model": SOURCE, "chat_model": SOURCE}
+        paths = [item["path"] for item in build_items(manifest, {"models": sources})]
+        self.assertEqual(paths, [
+            "images/alpha/reg_a_1.tar", "images/alpha/reg_a_1-2.tar",
+            "models/chat_model", "models/chat_model-2",
+            "packages/alpha/a_b.tgz", "packages/alpha/a_b-2.tgz",
+            "packages/alpha/a_b.tar.gz", "packages/alpha/a_b-2.tar.gz",
+            "packages/alpha/tool_1.2.3", "packages/alpha/tool_1.2.3-2",
+        ])
+
     def test_safe_names(self):
         self.assertEqual(safe_name("one very large chat model"), "one_very_large_chat_model")
         self.assertEqual(safe_name("../.."), "item")
