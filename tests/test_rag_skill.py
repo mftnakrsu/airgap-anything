@@ -1,7 +1,7 @@
 """Content the airgap-rag skill must carry, from its spec (2026-11-24-airgap-rag-design.md)."""
 import unittest
 
-from tests import RAG_DIR
+from tests import RAG_DIR, TRANSFER_DIR
 
 REFS = RAG_DIR / "references"
 KEYS = ("platform", "consumers", "sources", "doc_types", "languages", "updates", "access", "hardware")
@@ -67,6 +67,15 @@ class ReferencesTest(unittest.TestCase):
         for word in ("/v1/capabilities", "strace -f -e trace=connect", "BYPASS_ADMIN_ACCESS_CONTROL"):
             with self.subTest(word=word):
                 self.assertIn(word, text)
+
+
+class HandOverTest(unittest.TestCase):
+    def test_rows_from_airgap_rag_are_marked_and_accepted(self):
+        rag = (RAG_DIR / "SKILL.md").read_text(encoding="utf-8")
+        transfer = (TRANSFER_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("(from airgap-rag)", rag)
+        self.assertIn("(from airgap-rag)", transfer)
+        self.assertIn("docs/airgap/rag.md", transfer)
 
 
 if __name__ == "__main__":

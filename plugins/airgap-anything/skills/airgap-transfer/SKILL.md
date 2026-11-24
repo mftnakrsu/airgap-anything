@@ -38,7 +38,7 @@ Air-gap transfer:
 - [ ] 10. Hand-off
 ```
 
-1. **Inputs.** Read the manifest and the blueprint its `Blueprint:` line names. Every component and version in the blueprint's decision table must appear in the manifest and the other way round, and the manifest must name a platform. A row marked "(from airgap-agent)" after its component needs no blueprint row when its component is listed in `docs/airgap/agents.md`: `airgap-agent` adds coding-agent rows without changing the blueprint. If not, the manifest is out of date: send the user back to `airgap-architect` and stop.
+1. **Inputs.** Read the manifest and the blueprint its `Blueprint:` line names. Every component and version in the blueprint's decision table must appear in the manifest and the other way round, and the manifest must name a platform. A row marked "(from airgap-agent)" after its component needs no blueprint row when its component is listed in `docs/airgap/agents.md`: `airgap-agent` adds coding-agent rows without changing the blueprint. The same holds for a row marked "(from airgap-rag)" whose component is listed in `docs/airgap/rag.md`. If not, the manifest is out of date: send the user back to `airgap-architect` and stop.
 2. **Questions.** Read `references/questions.md`; ask only what this transfer needs.
 3. **Plan.** Write `docs/airgap/transfer-plan.md` (`references/bundle.md`, "The plan file"), one item per row of the manifest. Read `references/channels.md` for how the channel splits and orders files.
 4. **Approval.** Send the plan message of `references/fetch.md` and end your turn. "Prepare everything" ends here.
@@ -52,7 +52,7 @@ Air-gap transfer:
 ## Rules
 
 1. **Download nothing before the user approves the plan in this conversation.** A `docker pull`, a `git clone`, a checksum file, a bandwidth test, or a download started in the background is a download too; reading a model's page for its commit hash is not. The plan is cheap to change; hundreds of gigabytes of the wrong files are not.
-2. **Every name, version, URL and image reference comes from the transfer manifest**, at the manifest's version: no file from a branch such as `main` when the manifest pins a release. A file the manifest does not name goes in only as a manual item the user adds. To change what is carried, change the design with `airgap-architect`, or, for rows marked "(from airgap-agent)", rerun `airgap-agent`.
+2. **Every name, version, URL and image reference comes from the transfer manifest**, at the manifest's version: no file from a branch such as `main` when the manifest pins a release. A file the manifest does not name goes in only as a manual item the user adds. To change what is carried, change the design with `airgap-architect`, or, for rows marked "(from airgap-agent)", rerun `airgap-agent`, and for rows marked "(from airgap-rag)", rerun `airgap-rag`.
 3. **No token, password or key in any file.** A Hugging Face token comes only from `HF_TOKEN` in the environment; never ask for it in the conversation.
 4. **A bundle without its checksum list is not finished**, even when the skip is written down: inside, nothing could tell a damaged copy from a good one.
 5. **Nothing inside the network needs internet or an LLM.** Every step of the runbook is a command with the output to expect.
