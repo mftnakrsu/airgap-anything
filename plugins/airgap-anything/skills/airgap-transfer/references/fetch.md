@@ -17,7 +17,7 @@ Nothing is downloaded until the user has approved the plan in this conversation.
 
 When the plan is written, send one message with these parts, in this order, and end your turn:
 
-1. The item count by kind (images, models, packages, manual items).
+1. The item count by kind (images, models, packages, project files, manual items).
 2. The tools the commands use (`skopeo` or `docker`, `hf`, `curl`, `sha256sum`).
 3. The bundle folder.
 4. The sizes you know, and what is still unknown.
@@ -44,7 +44,7 @@ Every image reference, model repository and commit, URL and file name comes from
 
 `B` is the bundle folder and `ARCH` the architecture of the manifest's `Platform:` line (`amd64` or `arm64`). `NAME` is the image reference with every character other than letters, digits, `.`, `_` and `-` replaced by `_` (`vllm/vllm-openai:v0.34.0` becomes `vllm_vllm-openai_v0.34.0`). Stop when free space in `B` falls below 1 GiB (`df -h B`).
 
-Run each item on its own and record it in the plan's items table as `fetched` or `failed`, with the error. A failed item does not stop the others; running its commands again fetches it again.
+Run each item on its own and record it in the plan's items table as `fetched` or `failed`, with the error (a project file is `copied`). A failed item does not stop the others; running its commands again fetches it again.
 
 ### Images, with `skopeo` (preferred: it needs no Docker daemon)
 
@@ -84,6 +84,8 @@ curl --fail --location --silent --show-error --output "B/packages/COMPONENT/chec
 ```
 
 The second line only when the manifest names a publisher checksum file for the package; `SUMSFILE` is the last part of its URL.
+
+**Project files.** A manifest row whose source is a path in the project (for example `docs/airgap/agents/qwen-code/`) is copied into the bundle under `files/` with its folder structure, and its files go into `SHA256SUMS` like any other. Nothing is downloaded.
 
 ## Checking what arrived
 

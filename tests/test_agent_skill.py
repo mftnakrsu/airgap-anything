@@ -1,7 +1,7 @@
 """Content the airgap-agent skill must carry, from its spec (2026-11-24-airgap-agent-design.md)."""
 import unittest
 
-from tests import AGENT_DIR
+from tests import AGENT_DIR, TRANSFER_DIR
 
 REFS = AGENT_DIR / "references"
 KEYS = ("users", "tools", "models", "claude_route", "internal_tools", "permissions", "os", "central")
@@ -55,6 +55,16 @@ class ReferencesTest(unittest.TestCase):
                      'qwen -p "', 'codex exec "', 'opencode run "', 'claude -p "', "function_call"):
             with self.subTest(word=word):
                 self.assertIn(word, text)
+
+
+class TransferCarriesProjectFilesTest(unittest.TestCase):
+    def test_a_project_file_item_is_copied_not_fetched(self):
+        fetch = (TRANSFER_DIR / "references" / "fetch.md").read_text(encoding="utf-8")
+        bundle = (TRANSFER_DIR / "references" / "bundle.md").read_text(encoding="utf-8")
+        self.assertIn("**Project files.**", fetch)
+        self.assertRegex(fetch, r"(?i)copied into the bundle")
+        self.assertIn("| file |", bundle)
+        self.assertIn("files/", bundle)
 
 
 if __name__ == "__main__":

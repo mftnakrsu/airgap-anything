@@ -62,7 +62,7 @@ Air-gap transfer:
 
 Before writing the volumes, check each item; fix what fails and check all of them again.
 
-1. Every item of the plan is `fetched` with its files in the bundle, or is a manual item marked `added` or `not needed` with a reason.
+1. Every item of the plan is `fetched` or `copied` with its files in the bundle, or is a manual item marked `added` or `not needed` with a reason.
 2. `cd B && sha256sum -c --quiet SHA256SUMS` prints nothing, and every file of the bundle except the parts and the volume files is listed in `SHA256SUMS`.
 3. No file or part on a volume is larger than the part size, and no volume holds more than its capacity (`references/bundle.md`).
 4. Every image was fetched for the manifest's platform and has a digest; every package with publisher checksums matched them.
