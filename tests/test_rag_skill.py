@@ -51,7 +51,9 @@ class ReferencesTest(unittest.TestCase):
     def test_ingestion_uses_the_api_without_keys_in_files(self):
         text = read("ingestion.md")
         for word in ("ENABLE_API_KEYS", "/api/v1/files/", "knowledge_id", "process/status",
-                     "/access/update", "/api/v1/retrieval/query/collection", "v0.13.4"):
+                     "/access/update", "/api/v1/retrieval/query/collection", "v0.13.4",
+                     "/api/v1/knowledge/$KB_ID/files", "/files/pending", "/api/v1/groups/",
+                     "/sync/diff", "/sync/cleanup", "/file/remove", "curl -sS --fail"):
             with self.subTest(word=word):
                 self.assertIn(word, text)
         self.assertNotRegex(text, r"sk-[A-Za-z0-9]{8,}")
