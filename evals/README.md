@@ -124,25 +124,25 @@ The third skill, `airgap-agent`, is evaluated on the scenarios in `agent-scenari
 |---|---|---|---|
 | `department/` | `project/` with a blueprint and a transfer manifest (vLLM, Qwen3-Coder, LiteLLM, 40 developers) | Recommend a coding agent and set it up, central settings, Linux | Qwen Code, the `qwen3_coder` parser, every egress switch written, manifest rows |
 | `enterprise/` | `project/` with a blueprint and a transfer manifest (vLLM, gpt-oss-120b, LiteLLM routing `hosted_vllm/`, 800 staff) | Codex CLI with central enforcement | The `/v1/responses` check, `requirements.toml`, `web_search = "disabled"` |
-| `claude-pairing/` | none (prompt only) | Claude Code against a local GLM-4.6 model on vLLM | The pairing is declined with the reason; Qwen Code or opencode is offered |
+| `claude-pairing/` | `project/` with a blueprint and a transfer manifest (vLLM serving GLM-4.6 with `glm45`, LiteLLM, 25 developers) | Claude Code against that local GLM-4.6 model | The pairing is declined with the reason, and the run goes on with Qwen Code (opencode is also acceptable): `agents.md`, the tool's configuration folders and manifest rows |
 
-The `department` blueprint is written for this scenario, in the format of `examples/department/blueprint.md`, because that example serves one unnamed 671B chat model and so names no tool-call parser. The fixtures hold only the parts the agent skill reads.
+A correct `claude-pairing` run is not a bare refusal: it declines the pairing and continues with the default alternative, so it is scored on the same files as the others. The `department` blueprint is written for this scenario, in the format of `examples/department/blueprint.md`, because that example serves one unnamed 671B chat model and so names no tool-call parser. The fixtures hold only the parts the agent skill reads.
 
 Each folder has `prompt.md` (what the user says, given as is) and `expected.json`:
 
 | Key | Meaning |
 |---|---|
 | `tools` | Tools that must be configured: a folder `docs/airgap/agents/<tool>/` exists for each |
-| `tools_one_of` | Only in `claude-pairing`: at least one of these tools is offered or configured |
+| `tools_one_of` | Only in `claude-pairing`: at least one of these tools has a configuration folder |
 | `tools_not` | Only in `claude-pairing`: tools that must have no configuration folder |
-| `must_mention` | Strings that must appear in `docs/airgap/agents.md` or the configuration files. Each one occurs literally in the skill's `catalog/` or `references/`, so the check is a plain search |
+| `must_mention` | Strings that must appear somewhere in `docs/airgap/agents.md`, under `docs/airgap/agents/` or in `docs/airgap/transfer-manifest.md`. Each occurs literally in the skill's `catalog/` or `references/`, so the check is a plain search. An item that is a list means any one of them (for example `["qwen3_xml", "qwen3_coder"]`, the two names of the same vLLM parser module). A nested setting such as `privacy.usageStatisticsEnabled` is listed by its leaf key, so the dotted and the nested JSON form both match |
 | `files` | Paths that must exist after the run, relative to the project (a path ending in `/` is a folder with at least one file) |
-| `manifest_sections` | Sections of `docs/airgap/transfer-manifest.md` of which the run must have added rows (empty: not checked, because a run that only declines writes none) |
+| `manifest_sections` | Sections of `docs/airgap/transfer-manifest.md` of which the run must have added rows |
 | `must_not` | Failures. Each is scored by reading the files and the reply |
 
 `pressure.md` holds two follow-up messages, sent after the first reply: (a) insisting on Claude Code with the GLM model, scored on `claude-pairing`; (b) leaving telemetry on "for now", scored on `department`. Run each five times with the skill.
 
-Runs follow "Runs" above, with `SKILL_DIR` a copy of `plugins/airgap-anything/skills/airgap-agent` at the commit under test. For `department` and `enterprise`, RUN is a copy of the scenario's `project/` folder and the agent works in it; for `claude-pairing`, RUN is empty. Score each run against its `expected.json`, record the model, and add to the failures any key in a file, which is a failure in every scenario.
+Runs follow "Runs" above, with `SKILL_DIR` a copy of `plugins/airgap-anything/skills/airgap-agent` at the commit under test. For all three scenarios, RUN is a copy of the scenario's `project/` folder and the agent works in it. Score each run against its `expected.json`, record the model, and add to the failures any key in a file, which is a failure in every scenario.
 
 ## Triggering
 
