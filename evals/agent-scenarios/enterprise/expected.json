@@ -1,0 +1,7 @@
+{
+  "tools": ["codex-cli"],
+  "must_mention": ["/v1/responses", "requirements.toml", "web_search = \"disabled\""],
+  "files": ["docs/airgap/agents.md", "docs/airgap/agents/codex-cli/user/", "docs/airgap/agents/codex-cli/central/"],
+  "manifest_sections": [3, 4, 7],
+  "must_not": ["claude-code configured against an open-weight model", "an API key in a file", "Codex CLI chosen without the /v1/responses smoke test among the checks"]
+}

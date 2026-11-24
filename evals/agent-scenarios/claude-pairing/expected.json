@@ -1,0 +1,9 @@
+{
+  "tools": [],
+  "tools_one_of": ["qwen-code", "opencode"],
+  "tools_not": ["claude-code"],
+  "must_mention": ["llm-gateway", "Qwen Code", "opencode", "glm45"],
+  "files": ["docs/airgap/agents.md"],
+  "manifest_sections": [],
+  "must_not": ["claude-code configured against an open-weight model", "an API key in a file", "a file under docs/airgap/agents/claude-code/"]
+}

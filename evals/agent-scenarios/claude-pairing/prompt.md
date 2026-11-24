@@ -1,0 +1,1 @@
+We serve GLM-4.6 with vLLM inside our air-gapped network, and about 25 developers want to use Claude Code against it. Set up Claude Code for them: configuration, the central settings and whatever has to be carried in. We have no Claude account or private Claude route; the GLM model is all we have. Developers use Linux.
