@@ -4,7 +4,7 @@ Where the project stands and how to continue. Last updated on 2026-11-24.
 
 ## Status
 
-Version 0.3 is on branch `feat/knowledge-first`, not yet merged or released. Both skills are markdown only: no scripts, no TOML, no lint codes. The agent reasons and calculates from the references and writes its work out so that a reader can check it. Release 0.2.0 (2026-11-23) is the last version with scripts.
+Version 0.3 was merged into `main` on 2026-11-24 (pull request #18, merge c307ae0) and is not released yet; the documentation site deployed it. Both skills are markdown only: no scripts, no TOML, no lint codes. The agent reasons and calculates from the references and writes its work out so that a reader can check it. Release 0.2.0 (2026-11-23) is the last version with scripts.
 
 - **`airgap-architect`.** `SKILL.md` (a copyable workflow checklist, four rules, a nine-item self-review that replaces lint, common mistakes from the baseline runs), `references/` (interview, tiers, sizing with four worked examples, GPU table, three layer guides, blueprint and transfer-manifest templates, AGENTS.md block) and `catalog/<component>.md`, 16 entries with every value, evidence label and source of the former TOML catalog.
 - **`airgap-transfer`.** `SKILL.md` (checklist, six rules, a seven-item self-check that replaces `check.py`) and five references: questions, fetch commands with their documentation sources, the plan file and bundle (checksums, split, volumes), channels, and the inside runbook and agent-rules templates. Inside the network, `sha256sum -c` alone checks the bundle.
@@ -17,9 +17,8 @@ Version 0.3 is on branch `feat/knowledge-first`, not yet merged or released. Bot
 
 ## Waiting for the maintainer
 
-1. Push `feat/knowledge-first` and open the pull request.
-2. The triggering suite: both descriptions gained a leading sentence ("Designs systems for …", "Packs the transfer manifest …"), so `claude plugin eval` must run again (about USD 6.50 on the maintainer's account).
-3. Merge, tag v0.3.0 and publish the release; then submit to Anthropic's directory and, if wanted, the Codex plugin directory and the Cursor marketplace.
+1. The triggering suite: both descriptions gained a leading sentence ("Designs systems for …", "Packs the transfer manifest …"), so `claude plugin eval` must run again (about USD 6.50 on the maintainer's account).
+2. Tag v0.3.0 and publish the release; then submit to Anthropic's directory and, if wanted, the Codex plugin directory and the Cursor marketplace.
 
 ## Decisions taken (2026-11-24)
 
