@@ -7,7 +7,7 @@ Multilingual embedding model from BAAI with dense, sparse and ColBERT outputs an
 | Kind | `embedding-model` |
 | Version | `5617a9f61b028005a4858fdac845db406aefb181` |
 | License | MIT |
-| Install | `hf download BAAI/bge-m3` on the connected side, then `vllm serve` from the copied directory |
+| Install | `hf download BAAI/bge-m3 --revision 5617a9f61b028005a4858fdac845db406aefb181 --local-dir ./bge-m3` on the connected side, then `vllm serve ./bge-m3` on the inside |
 | Evidence | docs |
 | Last verified | 2026-11-24 |
 
@@ -38,7 +38,7 @@ The score is a reason, not a promise: MMTEB (multilingual) mean 59.56, taken fro
 Serving, on a separate instance of the architect's `vllm` entry (v0.34.0), as a pooling model (https://docs.vllm.ai/en/stable/cli/serve/):
 
 ```
-vllm serve MODEL_DIR --runner pooling
+vllm serve ./bge-m3 --runner pooling
 ```
 
 For the sparse or ColBERT outputs vLLM documents `--runner pooling --hf-overrides '{"architectures":["BgeM3EmbeddingModel"]}' --pooler-config.task embed|token_classify|token_embed` (https://docs.vllm.ai/en/stable/models/pooling_models/specific_models/). Whether Open WebUI uses them: not documented.
@@ -54,7 +54,7 @@ Open WebUI (https://docs.openwebui.com/reference/env-configuration): `RAG_EMBEDD
 
 ## Caveats
 
-- `hf download <repo>` fetches the current main branch. Pinning the download to the revision above is not documented in the research: compare the `sha` on the model record at download time with the Version.
+- `--revision` takes a commit hash, branch or tag, so the command above downloads exactly the pinned revision; `--local-dir` puts the files in that folder instead of the cache and creates a `.cache/huggingface/` metadata folder at its root (https://huggingface.co/docs/huggingface_hub/guides/cli). The folder name `./bge-m3` is this entry's choice. After the download, the model record's `sha` should still equal the Version.
 - The repository holds `pytorch_model.bin` only, with no safetensors file; the `onnx/` folder adds another 2.27 GB: carry it only if needed.
 - On TEI, bge-m3 and vLLM tie (median 1.08x) in the Runpod benchmark: bge-m3 FP16 with 512-token passages, vLLM on an A40 about 238 texts per second (https://www.runpod.io/blog/gpu-embedding-workloads-benchmark).
 
@@ -70,11 +70,13 @@ None.
 |---|---|---|---|
 | `BAAI/bge-m3` | `5617a9f61b028005a4858fdac845db406aefb181` | 2.27 GB (`pytorch_model.bin` only; the `onnx/` folder is another 2.27 GB, carry it only if needed) | https://huggingface.co/api/models/BAAI/bge-m3?blobs=true |
 
+Carry the whole `./bge-m3` folder, produced by `hf download BAAI/bge-m3 --revision 5617a9f61b028005a4858fdac845db406aefb181 --local-dir ./bge-m3`; it is the path that `vllm serve ./bge-m3` takes inside the network (https://huggingface.co/docs/huggingface_hub/guides/cli).
+
 The runtime image is the architect's `vllm` entry (`vllm/vllm-openai:v0.34.0`), not carried again here.
 
 ### Runtime downloads to stage in advance
 
-None once the model directory is copied and `HF_HUB_OFFLINE=1` is set.
+None once the `./bge-m3` folder is copied and `HF_HUB_OFFLINE=1` is set.
 
 ### Telemetry and egress to switch off before the first start
 
@@ -96,3 +98,4 @@ All rows of Egress switches, in the environment of the embedding instance.
 - https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables
 - https://docs.openwebui.com/reference/env-configuration
 - https://www.runpod.io/blog/gpu-embedding-workloads-benchmark
+- https://huggingface.co/docs/huggingface_hub/guides/cli

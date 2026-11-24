@@ -7,7 +7,7 @@ Multilingual reranker from BAAI that vLLM serves without overrides. The alternat
 | Kind | `reranker-model` |
 | Version | `953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e` |
 | License | Apache-2.0 |
-| Install | `hf download BAAI/bge-reranker-v2-m3` on the connected side, then `vllm serve` from the copied directory |
+| Install | `hf download BAAI/bge-reranker-v2-m3 --revision 953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e --local-dir ./bge-reranker-v2-m3` on the connected side, then `vllm serve ./bge-reranker-v2-m3` on the inside |
 | Evidence | docs |
 | Last verified | 2026-11-24 |
 
@@ -37,7 +37,7 @@ The score is a reason, not a promise: MMTEB-R 58.36, against 66.36 for Qwen3-Rer
 Serving, on an instance of the architect's `vllm` entry (v0.34.0). The XLMRobertaForSequenceClassification architecture needs no overrides (https://docs.vllm.ai/en/stable/models/pooling_models/scoring/):
 
 ```
-vllm serve MODEL_DIR --runner pooling
+vllm serve ./bge-reranker-v2-m3 --runner pooling
 ```
 
 vLLM's `/v1/rerank` matches Open WebUI's external reranker format. TEI's `/rerank` does not: it takes `{query, texts}` and returns `[{index, score}]`, while Open WebUI sends `{model, query, documents, top_n}` and expects `results[].index/relevance_score` (https://docs.openwebui.com/reference/env-configuration). With TEI, a translation layer in front is needed (inferred from the two formats, not run).
@@ -53,7 +53,7 @@ Open WebUI: `ENABLE_RAG_HYBRID_SEARCH=true`, `RAG_RERANKING_ENGINE=external`, `R
 
 ## Caveats
 
-- `hf download <repo>` fetches the current main branch. Pinning the download to the revision above is not documented in the research: compare the `sha` on the model record at download time with the Version.
+- `--revision` takes a commit hash, branch or tag, so the command above downloads exactly the pinned revision; `--local-dir` puts the files in that folder instead of the cache and creates a `.cache/huggingface/` metadata folder at its root (https://huggingface.co/docs/huggingface_hub/guides/cli). The folder name `./bge-reranker-v2-m3` is this entry's choice. After the download, the model record's `sha` should still equal the Version.
 - TEI, if used instead of vLLM, fetches the model from the Hub at start; the documented air-gapped procedure is to clone the repository on a connected machine and start with `--model-id /data/<dir>` (https://raw.githubusercontent.com/huggingface/text-embeddings-inference/main/README.md). Whether `HF_HUB_OFFLINE` is honored by TEI: not documented.
 
 ## Carry in
@@ -68,11 +68,13 @@ None.
 |---|---|---|---|
 | `BAAI/bge-reranker-v2-m3` | `953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e` | 2.27 GB | https://huggingface.co/api/models/BAAI/bge-reranker-v2-m3?blobs=true |
 
+Carry the whole `./bge-reranker-v2-m3` folder, produced by `hf download BAAI/bge-reranker-v2-m3 --revision 953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e --local-dir ./bge-reranker-v2-m3`; it is the path that `vllm serve ./bge-reranker-v2-m3` takes inside the network (https://huggingface.co/docs/huggingface_hub/guides/cli).
+
 The runtime image is the architect's `vllm` entry (`vllm/vllm-openai:v0.34.0`), not carried again here.
 
 ### Runtime downloads to stage in advance
 
-None once the model directory is copied and `HF_HUB_OFFLINE=1` is set.
+None once the `./bge-reranker-v2-m3` folder is copied and `HF_HUB_OFFLINE=1` is set.
 
 ### Telemetry and egress to switch off before the first start
 
@@ -90,3 +92,4 @@ All rows of Egress switches, in the environment of the reranker instance.
 - https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables
 - https://raw.githubusercontent.com/huggingface/text-embeddings-inference/main/README.md
 - https://docs.openwebui.com/reference/env-configuration
+- https://huggingface.co/docs/huggingface_hub/guides/cli

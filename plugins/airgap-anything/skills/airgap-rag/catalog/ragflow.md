@@ -26,7 +26,7 @@ Released 2026-11-06 (https://api.github.com/repos/infiniflow/ragflow/releases/la
 
 ## Configuration
 
-- Default profiles: `elasticsearch,cpu,metadata-mysql` (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env). An optional `tei-cpu` profile serves embeddings with the default model `Qwen/Qwen3-Embedding-0.6B` (same file); the skill serves embeddings from vLLM instead.
+- Default profiles: `elasticsearch,cpu,metadata-mysql` (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env). Optional `tei-cpu` and `tei-gpu` profiles serve embeddings with `TEI_MODEL`, default `Qwen/Qwen3-Embedding-0.6B` (same file); the skill serves embeddings from vLLM instead.
 - Models: RAGFlow bundles no embedding model since v0.22. The `VLLM` and `OpenAI-API-Compatible` providers are tagged LLM and TEXT EMBEDDING (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/conf/llm_factories.json); point them at the network's vLLM. Reranking through these providers: not documented.
 - Permissions: a dataset's scope is "Only me" or "Team"; there is no per-group or per-document access control beyond the creator's rights (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docs/guides/team/resource_sharing/resource_sharing_and_permissions.md).
 - Data sources: 40 are documented (Confluence, SharePoint, S3, Jira, Slack, IMAP and more); permission sync is not documented (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docs/guides/data_source/data_source_categories_and_selection.md). Connector sync is out of scope of the skill.
@@ -36,13 +36,13 @@ Released 2026-11-06 (https://api.github.com/repos/infiniflow/ragflow/releases/la
 
 | Connection | Default | Switch | Source |
 |---|---|---|---|
-| Model downloads through the Hugging Face endpoint | the image sets `HF_ENDPOINT=https://hf-mirror.com` | reset `HF_ENDPOINT` before the first start; the value for an air-gapped host (an internal mirror, or none) is not documented | https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/Dockerfile |
+| Model downloads through the Hugging Face endpoint | the image sets `HF_ENDPOINT=https://hf-mirror.com` | unset `HF_ENDPOINT`, or point it at an internal mirror only if the organization runs one; the value for an air-gapped host is not documented | https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/Dockerfile |
 | OpenTelemetry | off | keep `otel.enable: false` in `service_conf.yaml.template` | https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/service_conf.yaml.template |
 | Telemetry and update checks | not documented | not documented | https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/service_conf.yaml.template |
 
 ## Caveats
 
-- No offline guide was found. The `HF_ENDPOINT` default points at a mirror outside the network, and the `tei-cpu` profile fetches its model at start: stage the model and test with the network cut before relying on it.
+- No offline guide was found. The `HF_ENDPOINT` default points at a mirror outside the network, and a `tei-*` profile fetches its model at start: stage the model and test with the network cut before relying on it.
 - The images bake in the DeepDoc ONNX models and tokenizers (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/Dockerfile).
 - The default stack runs MySQL, Elasticsearch, an object store, a cache and a message queue: it adds five services next to the blueprint and none of them is PostgreSQL 18.
 - Image sizes and digests: not documented in the research.
@@ -62,20 +62,22 @@ Default profile, each with its tag (https://raw.githubusercontent.com/infiniflow
 | `pgsty/silo:RELEASE.2026-08-06T00-00-00Z` (object store) | not documented | not recorded |
 | `apache/kvrocks:2.16.0` (cache and queue) | not documented | not recorded |
 | `nats:2.14.2` | not documented | not recorded |
+| `infiniflow/text-embeddings-inference:cpu-1.8` (only with the `tei-cpu` profile) | not documented | not recorded |
+| `infiniflow/text-embeddings-inference:1.8` (only with the `tei-gpu` profile) | not documented | not recorded |
 
-The `tei-cpu` profile adds a text-embeddings-inference image whose tag the research did not record: read it from the `.env` file at tag `v1.0.0` before staging, and only if that profile is used.
+The optional `tei-cpu` profile (not on by default; the `.env` line `COMPOSE_PROFILES=${COMPOSE_PROFILES},tei-cpu` is commented out) adds `infiniflow/text-embeddings-inference:cpu-1.8`; the `tei-gpu` profile uses `infiniflow/text-embeddings-inference:1.8` (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env). Both are RAGFlow's own build of text-embeddings-inference; carry one only if that profile is used.
 
 ### Models
 
 | Repo | Revision | Why | Source |
 |---|---|---|---|
-| `Qwen/Qwen3-Embedding-0.6B` | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` | only if the `tei-cpu` profile is used | https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B |
+| `Qwen/Qwen3-Embedding-0.6B` (the `TEI_MODEL` default; the `.env` also lists `BAAI/bge-m3` and `BAAI/bge-small-en-v1.5`) | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` | only if a `tei-*` profile is used | https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B |
 
 DeepDoc models are baked into the image: nothing else to carry.
 
 ### Runtime downloads to stage in advance
 
-- The model of the `tei-cpu` profile, as in Models, when that profile is used.
+- The model of the `tei-*` profile (`TEI_MODEL`), as in Models, when that profile is used. The `.env` says the default model needs 25 GB RAM or VRAM to load.
 - Anything else fetched through `HF_ENDPOINT`: not documented.
 
 ### Telemetry and egress to switch off before the first start
@@ -86,7 +88,7 @@ All rows of Egress switches.
 
 - https://api.github.com/repos/infiniflow/ragflow/releases/latest
 - https://raw.githubusercontent.com/infiniflow/ragflow/main/LICENSE
-- https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env
+- https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env (read 2026-11-24: `TEI_IMAGE_CPU`, `TEI_IMAGE_GPU`, `TEI_MODEL`)
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/docker-compose-base.yml
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/Dockerfile
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/service_conf.yaml.template

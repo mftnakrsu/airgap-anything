@@ -7,7 +7,7 @@ Open-weight embedding model from the Qwen team, instruction-aware, served by the
 | Kind | `embedding-model` |
 | Version | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` |
 | License | Apache-2.0 |
-| Install | `hf download Qwen/Qwen3-Embedding-0.6B` on the connected side, then `vllm serve` from the copied directory |
+| Install | `hf download Qwen/Qwen3-Embedding-0.6B --revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3 --local-dir ./qwen3-embedding` on the connected side, then `vllm serve ./qwen3-embedding` on the inside |
 | Evidence | docs |
 | Last verified | 2026-11-24 |
 
@@ -39,7 +39,7 @@ The score is a reason, not a promise: MMTEB (multilingual) mean 64.33 for the 0.
 Serving, on a separate instance of the architect's `vllm` entry (v0.34.0), as a pooling model (https://docs.vllm.ai/en/stable/cli/serve/): Qwen3ForCausalLM is converted to an embedding model automatically.
 
 ```
-vllm serve MODEL_DIR --runner pooling
+vllm serve ./qwen3-embedding --runner pooling
 ```
 
 The endpoint is `/v1/embeddings` (https://docs.vllm.ai/en/stable/models/pooling_models.html). There is no `--task` flag.
@@ -55,7 +55,7 @@ Open WebUI (https://docs.openwebui.com/reference/env-configuration): `RAG_EMBEDD
 
 ## Caveats
 
-- `hf download <repo>` fetches the current main branch. Pinning the download to the revision above is not documented in the research: compare the `sha` on the model record at download time with the Version.
+- `--revision` takes a commit hash, branch or tag, so the command above downloads exactly the pinned revision; `--local-dir` puts the files in that folder instead of the cache and creates a `.cache/huggingface/` metadata folder at its root (https://huggingface.co/docs/huggingface_hub/guides/cli). The folder name `./qwen3-embedding` is this entry's choice. After the download, the model record's `sha` should still equal the Version.
 - The score comes from the model's own card and is not a measurement on the user's documents.
 - TEI (text-embeddings-inference v1.9.4) also lists Qwen3 among its embedding architectures, but on the Runpod benchmark vLLM is 2.6x faster on Qwen3-Embedding-0.6B (https://www.runpod.io/blog/gpu-embedding-workloads-benchmark); the skill uses vLLM.
 
@@ -71,11 +71,13 @@ None.
 |---|---|---|---|
 | `Qwen/Qwen3-Embedding-0.6B` | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` | 1.19 GB | https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B |
 
+Carry the whole `./qwen3-embedding` folder, produced by `hf download Qwen/Qwen3-Embedding-0.6B --revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3 --local-dir ./qwen3-embedding`; it is the path that `vllm serve ./qwen3-embedding` takes inside the network (https://huggingface.co/docs/huggingface_hub/guides/cli).
+
 The runtime image is the architect's `vllm` entry (`vllm/vllm-openai:v0.34.0`), not carried again here.
 
 ### Runtime downloads to stage in advance
 
-None once the model directory is copied and `HF_HUB_OFFLINE=1` is set.
+None once the `./qwen3-embedding` folder is copied and `HF_HUB_OFFLINE=1` is set.
 
 ### Telemetry and egress to switch off before the first start
 
@@ -95,3 +97,4 @@ All rows of Egress switches, in the environment of the embedding instance.
 - https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables
 - https://docs.openwebui.com/reference/env-configuration
 - https://www.runpod.io/blog/gpu-embedding-workloads-benchmark
+- https://huggingface.co/docs/huggingface_hub/guides/cli

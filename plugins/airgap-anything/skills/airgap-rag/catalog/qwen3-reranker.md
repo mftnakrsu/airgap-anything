@@ -7,7 +7,7 @@ Open-weight reranker from the Qwen team, served by the network's vLLM through `/
 | Kind | `reranker-model` |
 | Version | `e61197ed45024b0ed8a2d74b80b4d909f1255473` |
 | License | Apache-2.0 |
-| Install | `hf download Qwen/Qwen3-Reranker-0.6B` on the connected side, then `vllm serve` from the copied directory with the documented overrides |
+| Install | `hf download Qwen/Qwen3-Reranker-0.6B --revision e61197ed45024b0ed8a2d74b80b4d909f1255473 --local-dir ./qwen3-reranker` on the connected side, then `vllm serve ./qwen3-reranker` with the documented overrides on the inside |
 | Evidence | docs |
 | Last verified | 2026-11-24 |
 
@@ -37,7 +37,7 @@ The score is a reason, not a promise: MMTEB-R 66.36 for the 0.6B (bge-reranker-v
 Serving, on an instance of the architect's `vllm` entry (v0.34.0), with the overrides the vLLM docs give (https://docs.vllm.ai/en/stable/models/pooling_models/scoring/):
 
 ```
-vllm serve MODEL_DIR --runner pooling --hf_overrides '{"architectures":["Qwen3ForSequenceClassification"],"classifier_from_token":["no","yes"],"is_original_qwen3_reranker":true}'
+vllm serve ./qwen3-reranker --runner pooling --hf_overrides '{"architectures":["Qwen3ForSequenceClassification"],"classifier_from_token":["no","yes"],"is_original_qwen3_reranker":true}'
 ```
 
 vLLM's `/v1/rerank` (also `/rerank` and `/v2/rerank`) matches Open WebUI's external reranker format. TEI's `/rerank` does not: it takes `{query, texts}` and returns `[{index, score}]`, while Open WebUI sends `{model, query, documents, top_n}` and expects `results[].index/relevance_score` (https://docs.openwebui.com/reference/env-configuration).
@@ -53,7 +53,7 @@ Open WebUI: `ENABLE_RAG_HYBRID_SEARCH=true`, `RAG_RERANKING_ENGINE=external`, `R
 
 ## Caveats
 
-- `hf download <repo>` fetches the current main branch. Pinning the download to the revision above is not documented in the research: compare the `sha` on the model record at download time with the Version.
+- `--revision` takes a commit hash, branch or tag, so the command above downloads exactly the pinned revision; `--local-dir` puts the files in that folder instead of the cache and creates a `.cache/huggingface/` metadata folder at its root (https://huggingface.co/docs/huggingface_hub/guides/cli). The folder name `./qwen3-reranker` is this entry's choice. After the download, the model record's `sha` should still equal the Version.
 - Open WebUI's `RAG_RERANKING_MODEL` with a local Hugging Face model loads inside Open WebUI and, if it fails to load, turns hybrid search off; the skill uses the external engine instead.
 - The `--hf_overrides` spelling is as the vLLM scoring page gives it; the serve page spells the flag `--hf-overrides`.
 
@@ -69,11 +69,13 @@ None.
 |---|---|---|---|
 | `Qwen/Qwen3-Reranker-0.6B` | `e61197ed45024b0ed8a2d74b80b4d909f1255473` | 1.19 GB | https://huggingface.co/api/models/Qwen/Qwen3-Reranker-0.6B |
 
+Carry the whole `./qwen3-reranker` folder, produced by `hf download Qwen/Qwen3-Reranker-0.6B --revision e61197ed45024b0ed8a2d74b80b4d909f1255473 --local-dir ./qwen3-reranker`; it is the path that `vllm serve ./qwen3-reranker` takes inside the network (https://huggingface.co/docs/huggingface_hub/guides/cli).
+
 The runtime image is the architect's `vllm` entry (`vllm/vllm-openai:v0.34.0`), not carried again here.
 
 ### Runtime downloads to stage in advance
 
-None once the model directory is copied and `HF_HUB_OFFLINE=1` is set.
+None once the `./qwen3-reranker` folder is copied and `HF_HUB_OFFLINE=1` is set.
 
 ### Telemetry and egress to switch off before the first start
 
@@ -91,3 +93,4 @@ All rows of Egress switches, in the environment of the reranker instance.
 - https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables
 - https://github.com/huggingface/text-embeddings-inference/pull/730
 - https://docs.openwebui.com/reference/env-configuration
+- https://huggingface.co/docs/huggingface_hub/guides/cli
