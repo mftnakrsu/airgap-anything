@@ -1,12 +1,16 @@
-"""Write the Reference pages of the documentation site from the repository's own sources.
+"""Write the generated pages of the documentation site from the repository's own sources.
 
 Nothing in docs-site/src/content/docs/reference/ is written by hand, and neither are the
-example page, the contributing page or the images the site shares with the README. The catalog
-pages come from plugins/airgap-anything/skills/airgap-architect/catalog/, the GPU page from catalog/gpus.toml, the
-interview questions from references/interview.md, the install page from the README, the scripts, lint-code and blueprint.json
-pages from docs/reference.md, the airgap-transfer pages from that skill's SKILL.md and references/,
-the contributing page from CONTRIBUTING.md, and the example from
-design/demo/department-blueprint.json with tier.py and size.py run on it.
+example page, the install page, the contributing page or the images the site shares with the
+README. The skills ship markdown, so most pages are that markdown with a front matter and links:
+
+- reference/architect/ and reference/transfer/: each skill's SKILL.md workflow and its references/
+- reference/catalog/: one page per catalog entry, and an index
+- reference/gpus.md: the GPU table
+- start/install.md: the Install section of the README
+- project/contributing.md: CONTRIBUTING.md
+- example/department.md: the blueprint and transfer manifest in examples/department/
+
 tests/test_docs_site.py fails when a file differs from what this script writes, so a change to
 a source must be followed by:
 
@@ -17,36 +21,52 @@ Standard library only (Python 3.11+).
 
 from __future__ import annotations
 
-import json
 import re
 import shutil
-import subprocess
-import sys
-import tempfile
-import tomllib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SKILL = REPO_ROOT / "plugins" / "airgap-anything" / "skills" / "airgap-architect"
-CATALOG = SKILL / "catalog"
-TRANSFER = REPO_ROOT / "plugins" / "airgap-anything" / "skills" / "airgap-transfer"
-REFERENCE = REPO_ROOT / "docs" / "reference.md"
+SKILLS = REPO_ROOT / "plugins" / "airgap-anything" / "skills"
+ARCHITECT = SKILLS / "airgap-architect"
+TRANSFER = SKILLS / "airgap-transfer"
+CATALOG = ARCHITECT / "catalog"
+EXAMPLE = REPO_ROOT / "examples" / "department"
 SITE = REPO_ROOT / "docs-site"
 DOCS = SITE / "src" / "content" / "docs"
 OUT = DOCS / "reference"
-EXAMPLE = REPO_ROOT / "design" / "demo" / "department-blueprint.json"
 GITHUB = "https://github.com/mftnakrsu/airgap-anything/blob/main"
 
-# Images the site shows, copied from where the brand and demo tools write them.
+# Images the site shows, copied from where the brand tools write them.
 SHARED = {
     SITE / "src" / "assets" / "logo.svg": REPO_ROOT / "assets" / "brand" / "logo" / "icon-tile.svg",
     SITE / "src" / "assets" / "icon-animated.svg": REPO_ROOT / "assets" / "brand" / "icon-tile-animated.svg",
     SITE / "public" / "favicon.svg": REPO_ROOT / "assets" / "brand" / "icons" / "favicon.svg",
     SITE / "public" / "how-it-works.svg": REPO_ROOT / "assets" / "brand" / "how-it-works.svg",
-    SITE / "public" / "terminal-dark.svg": REPO_ROOT / "assets" / "demo" / "terminal-dark.svg",
 }
 
 LAYER_ORDER = ["llm-serving", "llm-gateway", "ui", "identity", "observability", "orchestration", "state", "registry"]
+
+# (skill folder, site folder, [(path in the skill, page stem, title, description)])
+SKILL_PAGES = [
+    (ARCHITECT, "architect", [
+        ("references/interview.md", "interview", "Interview", "The questions airgap-architect asks, in order, the defaults for unknown answers, and the model and GPU formats."),
+        ("references/tiers.md", "tiers", "Tiers and floors", "How users and departments set the tier, which answers raise single layers, and what each obligation asks for."),
+        ("references/sizing.md", "sizing", "Sizing", "The sizing procedure step by step, its constants with their sources, and four worked examples."),
+        ("references/layers/llm-serving.md", "llm-serving", "Inference engine", "How the inference engine is chosen: the default, the cases that change it, and how the decision is written."),
+        ("references/layers/llm-gateway.md", "llm-gateway", "LLM gateway", "How the gateway is chosen, an existing Kong included, and the license caveats of LiteLLM and Kong."),
+        ("references/layers/supporting-defaults.md", "supporting-layers", "Supporting layers", "The defaults per floor for the UI, identity, observability, orchestration, state and registry layers."),
+        ("references/blueprint-template.md", "blueprint-template", "Blueprint template", "The ten sections of a blueprint and what each one holds."),
+        ("references/transfer-manifest-template.md", "transfer-manifest-template", "Transfer manifest", "The list of everything to carry in, and how it is filled from the catalog."),
+        ("references/agents-snippet.md", "agents-snippet", "AGENTS.md block", "The instruction block for agents that work on the project, and the rules for an agent inside the network."),
+    ]),
+    (TRANSFER, "transfer", [
+        ("references/questions.md", "questions", "Transfer questions", "The questions airgap-transfer asks before it plans a bundle."),
+        ("references/fetch.md", "fetch", "Fetching", "The approval rule, the fetch commands per item kind, the checks of what arrived, and the sources of every command line."),
+        ("references/bundle.md", "bundle", "The plan file and the bundle", "The plan file, the bundle layout, packing with checksums and splitting, and writing the volumes."),
+        ("references/channels.md", "channels", "Channels", "How splitting and sending order change with removable media, a data diode, a staging host or another channel."),
+        ("references/inside.md", "inside", "Inside the network", "The runbook and the agent rules for the inside, as templates."),
+    ]),
+]
 
 
 def _banner(*sources: Path) -> str:
@@ -59,231 +79,9 @@ def _text(value: str) -> str:
     return value.replace("<", "&lt;").replace(">", "&gt;")
 
 
-def _cell(value: str) -> str:
-    return _text(value).replace("|", "\\|").replace("\n", " ")
-
-
 def _frontmatter(title: str, description: str, extra: str = "") -> str:
     description = description.replace('"', "'")
     return f'---\ntitle: "{title}"\ndescription: "{description}"\n{extra}---\n\n'
-
-
-def _reference_section(number: int) -> str:
-    text = REFERENCE.read_text(encoding="utf-8")
-    match = re.search(rf"^## {number}\. .*?\n(.*?)(?=^## \d+\. |\Z)", text, re.S | re.M)
-    if not match:
-        raise SystemExit(f"section {number} not found in {REFERENCE}")
-    return match.group(1).strip() + "\n"
-
-
-def _table_after(section: str, label: str) -> str:
-    match = re.search(rf"^{re.escape(label)}\n\n((?:\|.*\n)+)", section, re.M)
-    if not match:
-        raise SystemExit(f"no table after '{label}'")
-    return match.group(1)
-
-
-# ---------------------------------------------------------------- airgap-transfer pages
-# One page per reference file of airgap-transfer: (file stem, title, description).
-TRANSFER_PAGES = [
-    ("questions", "Transfer questions", "The questions airgap-transfer asks before it plans a bundle, and how each answer is stored."),
-    ("channels", "Channels", "How splitting and sending order change with removable media, a data diode, a staging host or another channel."),
-    ("fetch", "fetch.sh", "What the fetch script does on the connected side, the approval rule, and the tools and command lines it uses."),
-    ("bundle-layout", "Bundle layout and check codes", "The folders and files of a bundle, and the B and BW codes of check.py."),
-    ("inside", "Inside the network", "The runbook, the rules for an inside agent, and the verify.sh and load.sh steps."),
-]
-
-
-def transfer_index() -> str:
-    """The pipeline and exit codes of airgap-transfer, from its SKILL.md."""
-    source = TRANSFER / "SKILL.md"
-    text = source.read_text(encoding="utf-8")
-    match = re.search(r"^## The pipeline\n\n[^\n]*\n\n((?:\|[^\n]*\n)+)", text, re.M)
-    codes = re.search(r"^(\| Exit code \|[^\n]*\n(?:\|[^\n]*\n)+)", text, re.M)
-    if not match or not codes:
-        raise SystemExit(f"no pipeline or exit-code table in {source}")
-    pipeline = re.sub(r"`references/([\w-]+)\.md`", r"[\1](/reference/transfer/\1/)", match.group(1))
-    links = "".join(f"- [{title}](/reference/transfer/{stem}/): {_text(description)}\n" for stem, title, description in TRANSFER_PAGES)
-    return (
-        _frontmatter("airgap-transfer", "The steps, scripts and exit codes of the skill that turns a transfer manifest into a verified bundle.",
-                     "sidebar:\n  order: 0\n")
-        + _banner(source)
-        + "`airgap-transfer` reads `docs/airgap/transfer-manifest.json`, which `airgap-architect` writes, and builds a bundle "
-        "that checks itself. [Carrying it in](/guides/carrying-it-in/) walks through one transfer.\n\n"
-        + "## Steps\n\n" + pipeline + "\n## Exit codes\n\n" + codes.group(1) + "\n## Pages\n\n" + links
-    )
-
-
-def transfer_page(stem: str, title: str, description: str, order: int) -> str:
-    source = TRANSFER / "references" / f"{stem}.md"
-    text = source.read_text(encoding="utf-8")
-    body = text.split("\n", 1)[1].lstrip("\n") if text.startswith("# ") else text
-    return _frontmatter(title, description, f"sidebar:\n  order: {order}\n") + _banner(source) + _absolute_links(body)
-
-
-# ---------------------------------------------------------------- pages from the spec
-def scripts_page() -> str:
-    section = _reference_section(1)
-    body = section.split("\nLint errors:", 1)[0].rstrip() + "\n"
-    return (
-        _frontmatter("Scripts", "The four standard-library scripts that compute the tier and sizing, write the manifest and check the blueprint.")
-        + _banner(REFERENCE)
-        + "The agent runs these scripts during a design; you do not need to. They are documented here for review, "
-        "debugging and contributors. Each script also prints its options with `--help`.\n\n"
-        + body
-        + "\nLint codes are listed on [Lint codes](/reference/lint-codes/).\n"
-    )
-
-
-def lint_page() -> str:
-    section = _reference_section(1)
-    out = (
-        _frontmatter("Lint codes", "Every error, warning and note that lint.py reports, and what each one checks.")
-        + _banner(REFERENCE)
-        + "`lint.py` exits 1 when it finds an error. Warnings and notes are reported but do not change the exit code.\n\n"
-        + "## Errors\n\n" + _table_after(section, "Lint errors:")
-        + "\n## Warnings\n\n" + _table_after(section, "Lint warnings:")
-        + "\n## Notes\n\n" + _table_after(section, "Lint notes:")
-    )
-    return out
-
-
-def blueprint_page() -> str:
-    return (
-        _frontmatter("blueprint.json", "The state file of a design: answers, tier, sizing and one decision per layer.")
-        + _banner(REFERENCE)
-        + _reference_section(2)
-    )
-
-
-# ---------------------------------------------------------------- pages from the catalog
-def _entries() -> list[dict]:
-    entries = [tomllib.loads(p.read_text(encoding="utf-8")) for p in sorted((CATALOG / "components").glob("*.toml"))]
-    return sorted(entries, key=lambda e: (LAYER_ORDER.index(e["layer"]) if e["layer"] in LAYER_ORDER else 99, e["id"]))
-
-
-def _list(items: list[str]) -> str:
-    return "".join(f"- {_text(item)}\n" for item in items) + "\n"
-
-
-def component_page(entry: dict, order: int) -> str:
-    source = CATALOG / "components" / f"{entry['id']}.toml"
-    evidence, airgap, choose = entry["evidence"], entry.get("airgap", {}), entry.get("choose", {})
-    out = _frontmatter(entry["name"], entry["summary"], f"sidebar:\n  order: {order}\n") + _banner(source)
-    out += _text(entry["summary"]) + "\n\n"
-    rows = [
-        ("ID", f"`{entry['id']}`"),
-        ("Layer", f"`{entry['layer']}`"),
-        ("Version", f"`{entry['version']}`"),
-        ("Tiers", ", ".join(entry["tiers"])),
-        ("Requires", ", ".join(f"[`{r}`](/reference/catalog/{r}/)" for r in entry["requires"]) or "nothing"),
-        ("License", _cell(entry["license"])),
-        ("Evidence", f"`{evidence['level']}`"),
-        ("Last verified", str(entry["last_verified"])),
-    ]
-    out += "| | |\n|---|---|\n" + "".join(f"| {k} | {v} |\n" for k, v in rows) + "\n"
-    for key, heading in (("when", "Choose it when"), ("avoid_when", "Avoid it when"), ("caveats", "Caveats")):
-        if choose.get(key):
-            out += f"## {heading}\n\n" + _list(choose[key])
-    if choose.get("alternatives"):
-        out += "## Alternatives\n\n" + "".join(f"- [`{a}`](/reference/catalog/{a}/)\n" for a in choose["alternatives"]) + "\n"
-
-    out += "## Carrying it in\n\n"
-    images = airgap.get("images", [])
-    if images:
-        out += "| Image | Hardware | Digest |\n|---|---|---|\n"
-        for image in images:
-            hardware = ", ".join(image.get("hardware", [])) or "any"
-            out += f"| `{image['ref']}` | {hardware} | {('`' + image['digest'] + '`') if image.get('digest') else 'not pinned'} |\n"
-        out += "\n"
-    else:
-        out += "No container images.\n\n"
-    if airgap.get("packages"):
-        out += "Packages:\n\n| File | Architecture | Publisher checksums |\n|---|---|---|\n"
-        for package in airgap["packages"]:
-            checksums = f"[checksum file]({package['checksums']})" if package.get("checksums") else "none published"
-            out += f"| [`{package['file']}`]({package['url']}) | {package['arch']} | {checksums} |\n"
-        out += "\n"
-    if airgap.get("runtime_downloads"):
-        out += "### Downloads at run time\n\nWhat the software tries to fetch while it runs, and how to stage it instead.\n\n" + _list(airgap["runtime_downloads"])
-    out += "### License server\n\n" + (
-        "Yes: some use of it contacts a license server. The notes below say when.\n\n" if airgap.get("license_server") else "No license server is contacted.\n\n"
-    )
-    if airgap.get("telemetry"):
-        out += "### Telemetry and outbound calls\n\n| What | How to turn it off |\n|---|---|\n"
-        out += "".join(f"| {_cell(t['what'])} | {_cell(t['disable'])} |\n" for t in airgap["telemetry"]) + "\n"
-    if airgap.get("notes"):
-        out += "### Notes\n\n" + _text(airgap["notes"]) + "\n\n"
-    if entry.get("deeper_skills"):
-        out += "## Deeper skills\n\nFor running the tool itself, these skills go further than the catalog:\n\n"
-        out += "".join(f"- `{s['skill']}` in [{s['repo']}](https://github.com/{s['repo']})\n" for s in entry["deeper_skills"]) + "\n"
-    out += "## Evidence\n\n"
-    if evidence.get("verified_by"):
-        out += f"Verified by {_text(evidence['verified_by'])}.\n\n"
-    if evidence.get("notes"):
-        out += _text(evidence["notes"]) + "\n\n"
-    out += "Sources:\n\n" + "".join(f"- <{url}>\n" for url in evidence["sources"])
-    out += f"\nSource of this page: [`{source.relative_to(REPO_ROOT)}`]({GITHUB}/{source.relative_to(REPO_ROOT)}).\n"
-    return out
-
-
-def catalog_index(entries: list[dict]) -> str:
-    out = (
-        _frontmatter("Catalog", "Every component the skill can choose, with its version, tiers, license and evidence.", "sidebar:\n  order: 0\n  label: Overview\n")
-        + _banner(CATALOG / "components")
-        + "The skill chooses only from this catalog, so every version and license in a blueprint comes from here. "
-        "Each page lists what to carry into the network and what the software tries to reach at run time. "
-        "[Contributing](/project/contributing/) explains how an entry is added or re-verified.\n\n"
-    )
-    for layer in [l for l in LAYER_ORDER if any(e["layer"] == l for e in entries)]:
-        out += f"## `{layer}`\n\n| Component | Version | Tiers | License | Evidence | Last verified |\n|---|---|---|---|---|---|\n"
-        for e in (e for e in entries if e["layer"] == layer):
-            out += (f"| [{_cell(e['name'])}](/reference/catalog/{e['id']}/) | `{e['version']}` | {', '.join(e['tiers'])} "
-                    f"| {_cell(e['license'].split(' (')[0])} | `{e['evidence']['level']}` | {e['last_verified']} |\n")
-        out += "\n"
-    return out
-
-
-def gpus_page() -> str:
-    source = CATALOG / "gpus.toml"
-    data = tomllib.loads(source.read_text(encoding="utf-8"))
-    out = (
-        _frontmatter("GPUs", "The GPU table that size.py uses: memory and power per model.")
-        + _banner(source)
-        + "`size.py` reads memory and power from this table. A GPU that is not here can still be used: "
-        "the interview asks for its memory, and the design carries the value as an estimate.\n\n"
-        + "| Model | Vendor | Memory (GB) | Power (W) | Evidence | Last verified |\n|---|---|---|---|---|---|\n"
-    )
-    for gpu in data["gpu"]:
-        out += (f"| {_cell(gpu['model'])} | {gpu['vendor']} | {gpu['vram_gb']} | {gpu.get('tdp_w', 'unknown')} "
-                f"| `{gpu['evidence']}` | {gpu['last_verified']} |\n")
-    out += "\n## Notes and sources\n\n"
-    for gpu in data["gpu"]:
-        out += f"### {_text(gpu['model'])}\n\n"
-        if gpu.get("aliases"):
-            out += "Also written as " + ", ".join(f"`{a}`" for a in gpu["aliases"]) + ".\n\n"
-        if gpu.get("notes"):
-            out += _text(gpu["notes"]) + "\n\n"
-        out += "".join(f"- <{url}>\n" for url in gpu["sources"]) + "\n"
-    return out
-
-
-# ---------------------------------------------------------------- other sources
-def interview_page() -> str:
-    source = SKILL / "references" / "interview.md"
-    text = source.read_text(encoding="utf-8")
-    match = re.search(r"^## Questions, in order\n(.*?)(?=^## `workload.models`)", text, re.S | re.M)
-    if not match:
-        raise SystemExit(f"no question table in {source}")
-    return (
-        _frontmatter("Interview questions", "The questions the agent asks, in order, and how each answer is stored.")
-        + _banner(source)
-        + "The agent asks these one at a time, in your language, and skips every question that your files or "
-        "the conversation already answered. [The interview](/guides/the-interview/) explains the rules.\n"
-        + match.group(1).rstrip() + "\n"
-        + f"\nThe formats of `workload.models`, `workload.context_tokens` and `hardware.gpus` are in "
-        f"[`{source.relative_to(REPO_ROOT)}`]({GITHUB}/{source.relative_to(REPO_ROOT)}).\n"
-    )
 
 
 def _absolute_links(markdown: str) -> str:
@@ -291,6 +89,122 @@ def _absolute_links(markdown: str) -> str:
     return re.sub(r"\]\((?!https?://|#|/)([^)\s]+)\)", lambda m: f"]({GITHUB}/{m.group(1)})", markdown)
 
 
+def _site_links(markdown: str, skill: Path) -> str:
+    """Code spans that name a file of a skill become links to its page on the site."""
+    pages = {path: f"/reference/{folder}/{stem}/" for skill_dir, folder, items in SKILL_PAGES if skill_dir == skill
+             for path, stem, _, _ in items}
+
+    def link(match: re.Match) -> str:
+        path = match.group(1)
+        if path in pages:
+            return f"[`{path}`]({pages[path]})"
+        catalog = re.fullmatch(r"catalog/([a-z0-9-]+)\.md", path)
+        if catalog and (CATALOG / f"{catalog.group(1)}.md").is_file():
+            return f"[`{path}`](/reference/catalog/{catalog.group(1)}/)"
+        if path == "references/gpus.md":
+            return f"[`{path}`](/reference/gpus/)"
+        return match.group(0)
+
+    return re.sub(r"`((?:references|catalog)/[a-z0-9/-]+\.md)`", link, markdown)
+
+
+def _body(path: Path) -> str:
+    """The text of a markdown file without its H1, which becomes the page title."""
+    text = path.read_text(encoding="utf-8")
+    return text.split("\n", 1)[1].lstrip("\n") if text.startswith("# ") else text
+
+
+# ---------------------------------------------------------------- skill pages
+def skill_index(skill: Path, folder: str, items: list) -> str:
+    source = skill / "SKILL.md"
+    text = source.read_text(encoding="utf-8")
+    workflow = re.search(r"^## Workflow\n(.*?)(?=^## )", text, re.S | re.M)
+    if not workflow:
+        raise SystemExit(f"no Workflow section in {source}")
+    description = re.search(r"^description: (.*)$", text, re.M).group(1)
+    links = "".join(f"- [{title}](/reference/{folder}/{stem}/): {_text(desc)}\n" for _, stem, title, desc in items)
+    return (
+        _frontmatter(skill.name, description.split(". Use when", 1)[0] + ".", "sidebar:\n  order: 0\n")
+        + _banner(source)
+        + f"`{skill.name}` is plain markdown: `SKILL.md` and the reference files below. The agent reads them and does the work itself; nothing is installed or run.\n\n"
+        + "## Workflow\n" + _site_links(workflow.group(1), skill) + "\n## Pages\n\n" + links
+    )
+
+
+def skill_page(skill: Path, path: str, title: str, description: str, order: int) -> str:
+    source = skill / path
+    return (
+        _frontmatter(title, description, f"sidebar:\n  order: {order}\n")
+        + _banner(source)
+        + _text_outside_code(_site_links(_body(source), skill))
+    )
+
+
+# ---------------------------------------------------------------- catalog pages
+def _fields(text: str) -> dict:
+    return dict(re.findall(r"^\| (Layer|Version|License|Tiers|Requires|Evidence|Last verified) \| (.*) \|$", text, re.M))
+
+
+def _entries() -> list[dict]:
+    entries = []
+    for path in sorted(CATALOG.glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        name = re.match(r"# (.+) \(`", text).group(1)
+        summary = text.split("\n\n", 2)[1].strip()
+        entries.append({"id": path.stem, "name": name, "summary": summary, "fields": _fields(text), "path": path})
+    order = {layer: i for i, layer in enumerate(LAYER_ORDER)}
+    return sorted(entries, key=lambda e: (order[e["fields"]["Layer"].strip("`")], e["id"]))
+
+
+def _link_ids(markdown: str, ids: set[str]) -> str:
+    return re.sub(r"`([a-z0-9-]+)`", lambda m: f"[`{m.group(1)}`](/reference/catalog/{m.group(1)}/)" if m.group(1) in ids else m.group(0), markdown)
+
+
+def component_page(entry: dict, order: int, ids: set[str]) -> str:
+    body = _body(entry["path"])
+    head, alternatives, rest = re.split(r"(?m)^(## Alternatives\n\n.*\n)", body, maxsplit=1)
+    head = re.sub(r"^(\| Requires \| )(.*)( \|)$", lambda m: m.group(1) + _link_ids(m.group(2), ids) + m.group(3), head, flags=re.M)
+    return (
+        _frontmatter(entry["name"], entry["summary"], f"sidebar:\n  order: {order}\n")
+        + _banner(entry["path"])
+        + _text_outside_code(head + _link_ids(alternatives, ids) + rest)
+    )
+
+
+def _text_outside_code(markdown: str) -> str:
+    """Angle brackets in prose would become HTML in the site; inside code spans and blocks they stay."""
+    parts = re.split(r"(```.*?```|`[^`\n]*`)", markdown, flags=re.S)
+    return "".join(part if part.startswith("`") else _text(part) for part in parts)
+
+
+def catalog_index(entries: list[dict]) -> str:
+    out = (
+        _frontmatter("Catalog", "Every component airgap-architect can choose, with its version, tiers and evidence label.", "sidebar:\n  order: 0\n")
+        + _banner(CATALOG)
+        + "The skill chooses only from this catalog, so every version and image in a blueprint comes from here. "
+        "Each entry also lists what to carry in, the telemetry to switch off and the sources it was read from. "
+        "[Evidence labels](/concepts/evidence/) explains `field`, `docs` and `estimate`.\n\n"
+    )
+    for layer in LAYER_ORDER:
+        rows = [e for e in entries if e["fields"]["Layer"].strip("`") == layer]
+        out += f"## `{layer}`\n\n| Component | Version | Tiers | Evidence | Last verified |\n|---|---|---|---|---|\n"
+        for e in rows:
+            f = e["fields"]
+            out += f"| [{e['name']}](/reference/catalog/{e['id']}/) | {f['Version']} | {f['Tiers']} | {f['Evidence']} | {f['Last verified']} |\n"
+        out += "\n"
+    return out
+
+
+def gpus_page() -> str:
+    source = ARCHITECT / "references" / "gpus.md"
+    return (
+        _frontmatter("GPU table", "Memory and power per GPU model, with the vendor page each row was read from.")
+        + _banner(source)
+        + _body(source)
+    )
+
+
+# ---------------------------------------------------------------- other sources
 def install_page() -> str:
     source = REPO_ROOT / "README.md"
     text = source.read_text(encoding="utf-8")
@@ -300,7 +214,7 @@ def install_page() -> str:
     body = match.group(1).strip().replace("(#use)", "(/start/quick-start/)")
     body = re.sub(r"^### ", "## ", body, flags=re.M)
     return (
-        _frontmatter("Install", "Install the airgap-architect skill once, in Claude Code, in another agent, or on a machine without internet.")
+        _frontmatter("Install", "Install the airgap-anything skills once: in Claude Code, Codex, Cursor, any agent that reads Agent Skills, or on a machine without internet.")
         + _banner(source)
         + _absolute_links(body) + "\n"
     )
@@ -316,82 +230,45 @@ def contributing_page() -> str:
     )
 
 
-def _computed_example() -> dict:
-    """The demo blueprint with tier and sizing filled in by the skill's own scripts."""
-    with tempfile.TemporaryDirectory() as tmp:
-        target = Path(tmp) / "docs" / "airgap" / "blueprint.json"
-        target.parent.mkdir(parents=True)
-        shutil.copy(EXAMPLE, target)
-        for script in ("tier.py", "size.py"):
-            subprocess.run(
-                [sys.executable, "-B", str(SKILL / "scripts" / script), "--blueprint", str(target)],
-                cwd=tmp, check=True, capture_output=True, text=True,
-            )
-        return json.loads(target.read_text(encoding="utf-8"))
-
-
 def example_page() -> str:
-    blueprint = _computed_example()
-    answers, tier, sizing = blueprint["answers"], blueprint["tier"], blueprint["sizing"]
-    out = (
+    blueprint, manifest = EXAMPLE / "blueprint.md", EXAMPLE / "transfer-manifest.md"
+    readme = EXAMPLE / "README.md"
+    return (
         _frontmatter("A department platform", "A worked example: 180 people in four departments, one very large model on eight GPUs.")
-        + _banner(EXAMPLE, SKILL / "scripts")
-        + "This is the example behind the recording in the README. The answers are what an interview would collect; "
-        "the tier and the sizing below were computed by `tier.py` and `size.py` when this page was generated.\n\n"
-        + "## The answers\n\n| Question | Answer |\n|---|---|\n"
+        + _banner(readme, blueprint, manifest)
+        + _absolute_links(_body(readme)) + "\n"
+        + "## The blueprint\n\n" + _demote(_body(blueprint)) + "\n"
+        + "## The transfer manifest\n\n" + _demote(_body(manifest))
     )
-    for key, value in answers.items():
-        shown = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
-        out += f"| `{key}` | {_cell(str(shown))} |\n"
-    out += "\n## The tier\n\n" + f"Base tier: **{tier['base']}**.\n\n"
-    if tier.get("floors"):
-        out += "| Layer | Floor |\n|---|---|\n" + "".join(f"| `{k}` | {v} |\n" for k, v in tier["floors"].items()) + "\n"
-    if tier.get("reasons"):
-        out += "Why:\n\n" + _list(tier["reasons"])
-    out += "## The sizing\n\n"
-    rows = [
-        ("Peak concurrency", f"{sizing['concurrency']['low']} to {sizing['concurrency']['high']} requests in flight"),
-        ("GPUs", str(sizing["total_gpus"])),
-        ("Servers", str(sizing["servers"])),
-        ("Power", f"{sizing['power_kw']} kW" if sizing.get("power_kw") is not None else "unknown"),
-        ("Fits the hardware", "yes" if sizing.get("fits") else "no"),
-    ]
-    out += "| | |\n|---|---|\n" + "".join(f"| {k} | {v} |\n" for k, v in rows) + "\n"
-    out += "Sizing covers memory, not speed: the blueprint still asks for a benchmark before production.\n\n"
-    out += "## The decisions\n\n"
-    for decision in blueprint["decisions"]:
-        names = ", ".join(f"[`{c}`](/reference/catalog/{c}/)" for c in decision["components"]) or "none"
-        out += f"### `{decision['layer']}`: {names}\n\n"
-        if decision.get("existing"):
-            out += "Reused: " + "; ".join(_text(e) for e in decision["existing"]) + ".\n\n"
-        out += _text(decision["rationale"]) + "\n\n"
-        out += f"Evidence: `{decision['evidence']}`.\n\n"
-    out += (
-        "## The scripts on this example\n\n"
-        '<div class="figure"><img src="/terminal-dark.svg" alt="The four scripts run on the department example: base tier T2, '
-        'eight GPUs in one server, the sections of the transfer manifest, and lint reporting no findings"></div>\n'
-    )
-    return out
+
+
+def _demote(markdown: str) -> str:
+    """Headings one level down, so that a file's sections sit under the page's own heading."""
+    out, fence = [], False
+    for line in markdown.splitlines():
+        if line.startswith("```"):
+            fence = not fence
+        out.append("#" + line if not fence and re.match(r"#{1,5} ", line) else line)
+    return _text_outside_code("\n".join(out)) + "\n"
 
 
 def pages() -> dict[Path, str]:
     entries = _entries()
+    ids = {e["id"] for e in entries}
     result = {
-        OUT / "interview-questions.md": interview_page(),
         DOCS / "project" / "contributing.md": contributing_page(),
         DOCS / "start" / "install.md": install_page(),
-        DOCS / "example" / "department.md": example_page(),
-        OUT / "scripts.md": scripts_page(),
-        OUT / "lint-codes.md": lint_page(),
-        OUT / "blueprint-json.md": blueprint_page(),
         OUT / "gpus.md": gpus_page(),
         OUT / "catalog" / "index.md": catalog_index(entries),
     }
+    if (EXAMPLE / "blueprint.md").is_file():
+        result[DOCS / "example" / "department.md"] = example_page()
     for order, entry in enumerate(entries, start=1):
-        result[OUT / "catalog" / f"{entry['id']}.md"] = component_page(entry, order)
-    result[OUT / "transfer" / "index.md"] = transfer_index()
-    for order, (stem, title, description) in enumerate(TRANSFER_PAGES, start=1):
-        result[OUT / "transfer" / f"{stem}.md"] = transfer_page(stem, title, description, order)
+        result[OUT / "catalog" / f"{entry['id']}.md"] = component_page(entry, order, ids)
+    for skill, folder, items in SKILL_PAGES:
+        result[OUT / folder / "index.md"] = skill_index(skill, folder, items)
+        for order, (path, stem, title, description) in enumerate(items, start=1):
+            result[OUT / folder / f"{stem}.md"] = skill_page(skill, path, title, description, order)
     return result
 
 

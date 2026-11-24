@@ -1,0 +1,20 @@
+{
+  "name": "airgap-anything",
+  "interface": {
+    "displayName": "airgap-anything"
+  },
+  "plugins": [
+    {
+      "name": "airgap-anything",
+      "source": {
+        "source": "local",
+        "path": "./plugins/airgap-anything"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

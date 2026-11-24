@@ -1,5 +1,12 @@
 # GPU table
 
+## Contents
+
+- The table
+- Notes and sources per row
+
+## The table
+
 Memory and power per GPU, for `references/sizing.md`. Each row was read from the vendor page in its sources; nothing here comes from memory.
 
 Match the user's GPU name against `Model` and `Aliases`. A name that fits several variants with different memory (`H100`, `A100`) matches no row on purpose: ask which variant it is, or ask for the memory and the vendor. A GPU that is not here needs its memory per GPU from the user, and its power if the power estimate is wanted.

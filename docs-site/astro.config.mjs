@@ -28,13 +28,10 @@ export default defineConfig({
         {
           label: 'Reference',
           items: [
-            'reference/interview-questions',
-            'reference/scripts',
-            'reference/lint-codes',
-            'reference/blueprint-json',
-            'reference/gpus',
-            { label: 'Catalog', collapsed: true, items: [{ autogenerate: { directory: 'reference/catalog' } }] },
+            { label: 'airgap-architect', items: [{ autogenerate: { directory: 'reference/architect' } }] },
             { label: 'airgap-transfer', items: [{ autogenerate: { directory: 'reference/transfer' } }] },
+            { label: 'Catalog', collapsed: true, items: [{ autogenerate: { directory: 'reference/catalog' } }] },
+            'reference/gpus',
           ],
         },
         { label: 'Project', items: ['project/contributing', 'project/testing'] },

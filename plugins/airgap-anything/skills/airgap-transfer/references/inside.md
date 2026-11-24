@@ -1,5 +1,11 @@
 # Inside the network
 
+## Contents
+
+- Who gets what
+- `INSIDE.md` template
+- `AGENTS-INSIDE.md` template
+
 Everything inside works without internet and without an LLM: every step is a command with the output to expect. An agent inside, if there is one, runs the same commands a person would.
 
 ## Who gets what
