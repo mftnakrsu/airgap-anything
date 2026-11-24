@@ -1,0 +1,99 @@
+# Qdrant (`qdrant`)
+
+Standalone vector database server. The choice for very large corpora, or when the vector store should be its own service instead of an extension inside PostgreSQL.
+
+| Field | Value |
+|---|---|
+| Kind | `vector-store` |
+| Version | `v1.20.2` |
+| License | Apache-2.0 |
+| Install | image `qdrant/qdrant:v1.20.2` (amd64 and arm64) |
+| Evidence | docs |
+| Last verified | 2026-11-24 |
+
+Released 2026-11-16 (https://api.github.com/repos/qdrant/qdrant/releases?per_page=8). License from https://api.github.com/repos/qdrant/qdrant/license.
+
+## Choose when
+
+- The corpus is very large, or a separate vector service is wanted.
+- Open WebUI is the platform and `pgvector` no longer fits the corpus. Open WebUI's docs call the Qdrant integration non-core: only PGVector and ChromaDB are consistently maintained by its team (https://docs.openwebui.com/reference/env-configuration/).
+
+## Avoid when
+
+- The corpus is small or medium: `pgvector` needs no extra service and is the default.
+- Nobody will set an API key: with no configuration Qdrant has no authentication and listens on all interfaces.
+
+## Configuration
+
+Open WebUI variables (https://docs.openwebui.com/reference/env-configuration/): `VECTOR_DB=qdrant`, `QDRANT_URI`, `QDRANT_API_KEY` (from the environment), `QDRANT_ON_DISK` False, `QDRANT_PREFER_GRPC` False, `QDRANT_GRPC_PORT` 6334, `QDRANT_TIMEOUT` 5, `QDRANT_HNSW_M` 16, `QDRANT_COLLECTION_PREFIX` open-webui, `ENABLE_QDRANT_MULTITENANCY_MODE` True (the docs say to keep it on).
+
+Access control (https://qdrant.tech/documentation/security/):
+
+- `QDRANT__SERVICE__API_KEY`, and `QDRANT__SERVICE__READ_ONLY_API_KEY` (since v1.7).
+- JWT RBAC with `QDRANT__SERVICE__JWT_RBAC=true` (since v1.9): tokens are HS256, signed with the API key; claims are `access` (r or rw per collection), `exp` and `value_exists`.
+- Enable TLS, or the key can leak.
+
+Sizing (https://qdrant.tech/documentation/capacity-planning/; the page has no single formula, these are its parts):
+
+- base = points x replication_factor
+- dense = base x dims x bytes_per_dim (float32 4, float16 2, uint8 1)
+- hnsw = base x m x 2 x 4 B x 1.2 (153.6 B per point at m=16, computed)
+- id_tracker = base x 52 B
+- payload on disk = base x avg_payload x 1.5
+- add about 20% headroom.
+- Example from the page: 1M points x 768 dims, replication 2, about 6.11 GB RAM (7.33 GB with headroom).
+
+Storage and quantization (https://qdrant.tech/documentation/concepts/storage/, https://qdrant.tech/documentation/guides/quantization/): vectors are always memory-mapped; `memory: cached` is the default and needs RAM, `cold` loads on demand; `hnsw_config.memory` sets the graph's tier; payload defaults to `cold`; `on_disk` is a deprecated alias. Quantization options include TurboQuant (since v1.18, `bits4` default, 8x), scalar int8 (4x), binary (32x, about 21x or 16x) and product (up to 64x).
+
+Multitenancy and hybrid search exist in Qdrant itself (one collection with a tenant keyword index `is_tenant: true` since v1.11; prefetch with `rrf` or `dbsf`). Whether Open WebUI uses Qdrant's hybrid queries: not documented.
+
+## Egress switches
+
+| Connection | Default | Switch | Source |
+|---|---|---|---|
+| Anonymized usage statistics (telemetry) | on for self-hosted installs | `QDRANT__TELEMETRY_DISABLED=true`, or `telemetry_disabled: true` in the config, or `--disable-telemetry` | https://qdrant.tech/documentation/ops-configuration/usage-statistics/ |
+| Server downloads and update check | none documented (the usage-statistics page mentions no update check) | not applicable | https://qdrant.tech/documentation/inference/ |
+
+## Caveats
+
+- Telemetry is on by default: set the switch before the first start.
+- Authentication is off by default and the service listens on all interfaces: set the API key and TLS, and keep the port inside the network.
+- For self-hosting, the docs point to client-side inference such as FastEmbed; the skill serves embeddings from vLLM and sends vectors to Qdrant, so no model goes into this image.
+- Open WebUI v0.13.4 and Qdrant v1.20.2 were not run together for the research.
+
+## Carry in
+
+### Images
+
+| Image | Hardware | Digest |
+|---|---|---|
+| `qdrant/qdrant:v1.20.2` | amd64, arm64 | not recorded |
+
+`-unprivileged` exists for both architectures; `-gpu-nvidia` and `-gpu-amd` are amd64 only (https://hub.docker.com/v2/repositories/qdrant/qdrant/tags?page_size=25&name=v1.20.2).
+
+### Models
+
+None.
+
+### Runtime downloads to stage in advance
+
+None documented for the server.
+
+### Telemetry and egress to switch off before the first start
+
+The telemetry row of Egress switches.
+
+## Evidence
+
+- https://api.github.com/repos/qdrant/qdrant/releases?per_page=8
+- https://api.github.com/repos/qdrant/qdrant/license
+- https://hub.docker.com/v2/repositories/qdrant/qdrant/tags?page_size=25&name=v1.20.2
+- https://qdrant.tech/documentation/ops-configuration/usage-statistics/
+- https://qdrant.tech/documentation/inference/
+- https://qdrant.tech/documentation/capacity-planning/
+- https://qdrant.tech/documentation/concepts/storage/
+- https://qdrant.tech/documentation/guides/quantization/
+- https://qdrant.tech/documentation/security/
+- https://qdrant.tech/documentation/guides/multiple-partitions/
+- https://qdrant.tech/documentation/concepts/hybrid-queries/
+- https://docs.openwebui.com/reference/env-configuration/

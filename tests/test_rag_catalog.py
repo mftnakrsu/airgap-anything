@@ -31,9 +31,20 @@ class RagCatalogTest(unittest.TestCase):
         self.entries = entries()
 
     def test_entries_are_known(self):
-        # Task 1 adds two entries; Task 2 makes this the full set.
-        self.assertTrue(set(self.entries) <= set(RAG_ENTRIES))
-        self.assertTrue({"docling-serve", "pgvector"} <= set(self.entries))
+        self.assertEqual(set(self.entries), set(RAG_ENTRIES))
+
+    def test_ragflow_states_its_permission_model_and_hf_endpoint(self):
+        text = self.entries["ragflow"]
+        self.assertIn("HF_ENDPOINT", text)
+        self.assertRegex(text, r"(?i)only me")
+
+    def test_models_carry_their_serving_command(self):
+        for name in ("qwen3-embedding", "bge-m3", "qwen3-reranker", "bge-reranker-v2-m3"):
+            with self.subTest(entry=name):
+                self.assertIn("--runner pooling", self.entries[name])
+
+    def test_qwen3_reranker_has_the_documented_overrides(self):
+        self.assertIn("is_original_qwen3_reranker", self.entries["qwen3-reranker"])
 
     def test_the_title_names_the_file(self):
         for name, text in self.entries.items():
