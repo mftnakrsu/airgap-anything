@@ -1,0 +1,17 @@
+{
+  "must_mention": [
+    "unverified",
+    [
+      "custom",
+      "Custom"
+    ]
+  ],
+  "files": [
+    "docs/airgap/rag.md"
+  ],
+  "must_not": [
+    "invented Elasticsearch settings presented as sourced",
+    "an API key in a file",
+    "the platform swapped for Open WebUI"
+  ]
+}
