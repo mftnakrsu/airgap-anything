@@ -4,7 +4,7 @@ Nothing in docs-site/src/content/docs/reference/ is written by hand, and neither
 example page, the install page, the contributing page or the images the site shares with the
 README. The skills ship markdown, so most pages are that markdown with a front matter and links:
 
-- reference/architect/, reference/transfer/ and reference/agent/: each skill's SKILL.md workflow and its references/
+- reference/architect/, reference/transfer/, reference/agent/ and reference/rag/: each skill's SKILL.md workflow and its references/
 - reference/catalog/: one page per catalog entry, and an index (the architect's)
 - reference/gpus.md: the GPU table
 - start/install.md: the Install section of the README
@@ -30,8 +30,10 @@ SKILLS = REPO_ROOT / "plugins" / "airgap-anything" / "skills"
 ARCHITECT = SKILLS / "airgap-architect"
 TRANSFER = SKILLS / "airgap-transfer"
 AGENT = SKILLS / "airgap-agent"
+RAG = SKILLS / "airgap-rag"
 CATALOG = ARCHITECT / "catalog"
 AGENT_CATALOG = AGENT / "catalog"
+RAG_CATALOG = RAG / "catalog"
 EXAMPLE = REPO_ROOT / "examples" / "department"
 SITE = REPO_ROOT / "docs-site"
 DOCS = SITE / "src" / "content" / "docs"
@@ -76,6 +78,16 @@ SKILL_PAGES = [
         ("references/templates.md", "templates", "Configuration templates", "The user and central configuration files written for each tool, with every outbound switch off."),
         ("references/verification.md", "verification", "Verification inside", "The install check, the smoke test and the egress check that a person runs inside the network."),
     ]),
+    (RAG, "rag", [
+        ("references/interview.md", "interview", "Interview", "The eight questions airgap-rag asks, with the default for each, and how the platform question is asked and waited on."),
+        ("references/decisions.md", "decisions", "Decisions", "Which platform and vector store to choose and when: Open WebUI knowledge bases, RAGFlow or a custom choice, and why each alternative is refused."),
+        ("references/extraction.md", "extraction", "Extraction and chunking", "The three extraction tiers, the rule that internal documents never leave the network, OCR languages and the chunking settings."),
+        ("references/models.md", "models", "Embedding and reranking models", "How the embedding and reranker models are chosen, served on the network's vLLM and wired to Open WebUI with nothing downloaded at start."),
+        ("references/sizing.md", "sizing", "Sizing the first load", "How long the first load takes and how much space the index needs, step by step, with a fast path."),
+        ("references/ingestion.md", "ingestion", "Bulk load, updates and queries", "The runbook for loading a folder into a knowledge base, updating it, granting access and querying it over the API."),
+        ("references/wiki.md", "wiki", "The LLM wiki", "Documents as plain markdown files in a git repository, for coding agents that read files."),
+        ("references/verification.md", "verification", "Verification inside", "The five checks a person runs inside the network: install, retrieval, OCR per language, access and egress."),
+    ]),
 ]
 
 
@@ -111,7 +123,11 @@ def _site_links(markdown: str, skill: Path) -> str:
         catalog = re.fullmatch(r"catalog/([a-z0-9-]+)\.md", path)
         if catalog and skill == AGENT and (AGENT_CATALOG / f"{catalog.group(1)}.md").is_file():
             return f"[`{path}`](/reference/agent/catalog/{catalog.group(1)}/)"
-        if catalog and skill != AGENT and (CATALOG / f"{catalog.group(1)}.md").is_file():
+        if catalog and skill == RAG and (RAG_CATALOG / f"{catalog.group(1)}.md").is_file():
+            return f"[`{path}`](/reference/rag/catalog/{catalog.group(1)}/)"
+        if catalog and skill not in (AGENT, RAG) and (CATALOG / f"{catalog.group(1)}.md").is_file():
+            return f"[`{path}`](/reference/catalog/{catalog.group(1)}/)"
+        if catalog and skill in (AGENT, RAG) and (CATALOG / f"{catalog.group(1)}.md").is_file():
             return f"[`{path}`](/reference/catalog/{catalog.group(1)}/)"
         if path == "references/gpus.md":
             return f"[`{path}`](/reference/gpus/)"
@@ -138,6 +154,9 @@ def skill_index(skill: Path, folder: str, items: list) -> str:
     if skill == AGENT:
         links += "\n## Catalog\n\nOne entry per tool, each with its pinned version, install, outbound switches and sources.\n\n" + "".join(
             f"- [{e['name']}](/reference/agent/catalog/{e['id']}/): {_text(e['summary'])}\n" for e in _agent_entries())
+    if skill == RAG:
+        links += "\n## Catalog\n\nOne entry per component, each with its pinned version, install, outbound switches and sources.\n\n" + "".join(
+            f"- [{e['name']}](/reference/rag/catalog/{e['id']}/): {_text(e['summary'])}\n" for e in _rag_entries())
     return (
         _frontmatter(skill.name, description.split(". Use when", 1)[0] + ".", "sidebar:\n  order: 0\n")
         + _banner(source)
@@ -180,11 +199,28 @@ def _agent_entries() -> list[dict]:
     return entries
 
 
+def _rag_entries() -> list[dict]:
+    entries = []
+    for path in sorted(RAG_CATALOG.glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        name = re.match(r"# (.+) \(`", text).group(1)
+        entries.append({"id": path.stem, "name": name, "summary": text.split("\n\n", 2)[1].strip(), "path": path})
+    return entries
+
+
 def agent_tool_page(entry: dict, order: int) -> str:
     return (
         _frontmatter(entry["name"], entry["summary"], f"sidebar:\n  order: {order}\n")
         + _banner(entry["path"])
         + _text_outside_code(_site_links(_body(entry["path"]), AGENT))
+    )
+
+
+def rag_component_page(entry: dict, order: int) -> str:
+    return (
+        _frontmatter(entry["name"], entry["summary"], f"sidebar:\n  order: {order}\n")
+        + _banner(entry["path"])
+        + _text_outside_code(_site_links(_body(entry["path"]), RAG))
     )
 
 
@@ -299,6 +335,8 @@ def pages() -> dict[Path, str]:
         result[OUT / "catalog" / f"{entry['id']}.md"] = component_page(entry, order, ids)
     for order, entry in enumerate(_agent_entries(), start=1):
         result[OUT / "agent" / "catalog" / f"{entry['id']}.md"] = agent_tool_page(entry, order)
+    for order, entry in enumerate(_rag_entries(), start=1):
+        result[OUT / "rag" / "catalog" / f"{entry['id']}.md"] = rag_component_page(entry, order)
     for skill, folder, items in SKILL_PAGES:
         result[OUT / folder / "index.md"] = skill_index(skill, folder, items)
         for order, (path, stem, title, description) in enumerate(items, start=1):

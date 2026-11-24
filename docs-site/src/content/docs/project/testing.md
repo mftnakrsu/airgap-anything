@@ -1,13 +1,13 @@
 ---
 title: Testing
-description: How the markdown the three skills ship, the catalog, the sizing examples and the agent's behaviour are tested.
+description: How the markdown the four skills ship, the catalog, the sizing examples and the agent's behaviour are tested.
 ---
 
 | What | How | When |
 |---|---|---|
 | The markdown the skills ship, the catalog, the sizing examples, packaging, README and site | Unit tests on Python 3.11 and the newest Python 3 | CI, on every push and pull request |
-| What the agent does with each skill | Scenario runs with and without the skill, scored against expected decisions, plus runs under time pressure: the architect scenarios, the `airgap-transfer` scenarios in a plan phase and a pack phase, and the `airgap-agent` scenarios | By hand, before a release |
-| Whether Claude Code picks the right skill | `claude plugin eval` on fifteen one-message cases for all three skills: natural requests in English and Turkish, the slash command, and requests the skills must leave alone | When any skill's description changes, and before a release |
+| What the agent does with each skill | Scenario runs with and without the skill, scored against expected decisions, plus runs under time pressure: the architect scenarios, the `airgap-transfer` scenarios in a plan phase and a pack phase, the `airgap-agent` scenarios and the `airgap-rag` scenarios | By hand, before a release |
+| Whether Claude Code picks the right skill | `claude plugin eval` on eighteen one-message cases for all four skills: natural requests in English and Turkish, the slash command, and requests the skills must leave alone | When any skill's description changes, and before a release |
 
 ## The unit tests
 
@@ -25,7 +25,7 @@ python3 -m unittest discover -s tests -t .
 | `tests/test_packaging.py` | The plugin and marketplace manifests for Claude Code, Codex and Cursor name the same plugin and version; the skills are where installers look; the icon and the license; the plugin folder keeps to the directory's rules on file types, sizes and commands that download and run code |
 | `tests/test_readme.py` | The README's install paths, links, anchors and images |
 | `tests/test_docs_site.py` | The generated pages of this site are current, every sidebar entry has a page, and every internal link resolves |
-| `tests/test_triggering_suite.py` | The shape of the triggering suite: every kind of case is there, each checks the right skill, and the three skills are kept apart |
+| `tests/test_triggering_suite.py` | The shape of the triggering suite: every kind of case is there, each checks the right skill, and the four skills are kept apart |
 
 ## The behaviour evals
 

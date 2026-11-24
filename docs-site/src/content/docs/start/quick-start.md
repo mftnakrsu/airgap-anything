@@ -30,6 +30,6 @@ Write your request after the command, or start with the command alone.
 2. It asks the rest one at a time. "I don't know" is a valid answer; a documented default is used and recorded as an assumption. See [The interview](/guides/the-interview/).
 3. The agent works out the tier and the sizing step by step and writes every number into the blueprint, chooses one component per layer from the catalog, and writes the list of what to carry in.
 4. It checks the blueprint against its self-review list and asks for your approval. Nothing is built before you approve.
-5. Once you approve, ask for the transfer in your own words, for example "prepare everything in the transfer manifest for our USB disks". `airgap-transfer` shows its plan and downloads nothing before you say yes. See [Carrying it in](/guides/carrying-it-in/). For coding agents inside the network, ask for them the same way: see [Coding agents inside](/guides/coding-agents/).
+5. Once you approve, ask for the transfer in your own words, for example "prepare everything in the transfer manifest for our USB disks". `airgap-transfer` shows its plan and downloads nothing before you say yes. See [Carrying it in](/guides/carrying-it-in/). For coding agents inside the network, ask for them the same way: see [Coding agents inside](/guides/coding-agents/). To make your documents searchable inside, see [Searchable documents inside](/guides/searchable-documents/).
 
 [What you get](/guides/what-you-get/) describes the files.

@@ -156,6 +156,9 @@ class ReadmeTest(unittest.TestCase):
     def test_the_skills_table_lists_the_agent_skill(self):
         self.assertIn("[`airgap-agent`](plugins/airgap-anything/skills/airgap-agent/SKILL.md)", self.text)
 
+    def test_the_skills_table_lists_the_rag_skill(self):
+        self.assertIn("[`airgap-rag`](plugins/airgap-anything/skills/airgap-rag/SKILL.md)", self.text)
+
     def test_no_owner_token_is_left(self):
         self.assertNotIn("GITHUB_OWNER", self.text)
 
