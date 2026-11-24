@@ -16,15 +16,17 @@ def skill_match(skill):
 
 
 # Grader files that check a Skill call, and the skill each one names. The architect names
-# are the ones of the first suite; the transfer and agent ones carry the skill's name.
-POSITIVE = {"fires.md": "airgap-architect", "fires-transfer.md": "airgap-transfer", "fires-agent.md": "airgap-agent"}
+# are the ones of the first suite; the transfer, agent and rag ones carry the skill's name.
+POSITIVE = {"fires.md": "airgap-architect", "fires-transfer.md": "airgap-transfer", "fires-agent.md": "airgap-agent",
+            "fires-rag.md": "airgap-rag"}
 NEGATIVE = {"does-not-fire.md": "airgap-architect", "does-not-fire-transfer.md": "airgap-transfer",
-            "does-not-fire-agent.md": "airgap-agent"}
+            "does-not-fire-agent.md": "airgap-agent", "does-not-fire-rag.md": "airgap-rag"}
 # The reply each skill's auto case is graded on.
 STARTS = {"airgap-architect": "starts-the-interview.md", "airgap-transfer": "starts-the-transfer.md",
-          "airgap-agent": "starts-the-agent-interview.md"}
+          "airgap-agent": "starts-the-agent-interview.md", "airgap-rag": "starts-the-rag-interview.md"}
 TRANSFER_CASES = {"auto-en-build-bundle", "auto-tr-usb-hazirla", "auto-en-verify-inside", "skip-en-docker-save"}
 AGENT_CASES = {"auto-en-coding-agent", "auto-tr-kodlama-ajani", "skip-en-cloud-copilot"}
+RAG_CASES = {"auto-en-searchable-docs", "auto-tr-belge-arama", "skip-en-cloud-search"}
 
 
 def frontmatter(path):
@@ -51,6 +53,7 @@ class TriggeringSuiteTest(unittest.TestCase):
             self.assertTrue(any(name.startswith(prefix) for name in names), prefix)
         self.assertTrue(TRANSFER_CASES <= set(names))
         self.assertTrue(AGENT_CASES <= set(names))
+        self.assertTrue(RAG_CASES <= set(names))
 
     def test_every_session_can_call_the_skill(self):
         for case in self.cases:
@@ -104,6 +107,17 @@ class TriggeringSuiteTest(unittest.TestCase):
         self.assertIn("does-not-fire-agent.md", self.graders(SUITE / "auto-en-offline-platform"))
         self.assertIn("does-not-fire.md", self.graders(SUITE / "auto-en-coding-agent"))
 
+    def test_rag_is_kept_apart_from_the_others(self):
+        # Document search fires airgap-rag and not the architect; a platform design or a coding agent
+        # fires neither it nor the other way round; a cloud search question starts no skill.
+        self.assertIn("does-not-fire.md", self.graders(SUITE / "auto-en-searchable-docs"))
+        for case in ("auto-en-offline-platform", "auto-en-coding-agent"):
+            self.assertIn("does-not-fire-rag.md", self.graders(SUITE / case))
+        self.assertEqual(
+            sorted(NEGATIVE[name] for name in self.graders(SUITE / "skip-en-cloud-search") if name in NEGATIVE),
+            ["airgap-architect", "airgap-rag"],
+        )
+
 
 class TriggeringWorkflowTest(unittest.TestCase):
     def setUp(self):
@@ -120,6 +134,7 @@ class TriggeringWorkflowTest(unittest.TestCase):
             "plugins/airgap-anything/skills/airgap-architect/SKILL.md",
             "plugins/airgap-anything/skills/airgap-transfer/SKILL.md",
             "plugins/airgap-anything/skills/airgap-agent/SKILL.md",
+            "plugins/airgap-anything/skills/airgap-rag/SKILL.md",
             "plugins/airgap-anything/evals/triggering/**",
             ".github/workflows/triggering.yml",
         ):

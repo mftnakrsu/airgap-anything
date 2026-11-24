@@ -153,12 +153,13 @@ The runs above tell the agent to read `SKILL.md`, so they do not show whether Cl
 |---|---|---|
 | `auto-*` | A natural request in English or Turkish that does not name the skill | Claude calls the Skill tool for `airgap-architect`, and its reply starts the interview instead of answering from memory |
 | `auto-*` for `airgap-transfer` | A request to prepare, carry or check a bundle for a design that has a transfer manifest | Claude calls the Skill tool for `airgap-transfer`, and its reply starts the transfer (or, inside, points to the bundle's runbook and its `sha256sum -c` checks) |
+| `auto-*` for `airgap-rag` | A request to make internal documents searchable on a local model, in English or Turkish | Claude calls the Skill tool for `airgap-rag`, and its reply asks a RAG-specific question (platform, sources, document types, languages, access) or states the defaults it takes and continues |
 | `manual-*` | `/airgap-anything:airgap-architect` and a request | The skill's instructions load (the agent reads its `references/`), and the reply starts the interview |
 | `skip-*` | A request the skill must leave alone, including a near miss ("what does air-gapped mean") | Claude does not call the skill |
 
 A slash command is expanded before the session starts, so a manual start makes no Skill tool call; the manual case looks for the skill's own files in the session trace instead.
 
-Cross-negative graders keep the skills apart: `auto-tr-tasima-listesi` must not start `airgap-transfer`, and `skip-en-docker-save` starts neither.
+Cross-negative graders keep the skills apart: `auto-tr-tasima-listesi` must not start `airgap-transfer`, `skip-en-docker-save` starts neither, `auto-en-searchable-docs` must not start `airgap-architect`, `auto-en-offline-platform` and `auto-en-coding-agent` must not start `airgap-rag`, and `skip-en-cloud-search` starts neither `airgap-architect` nor `airgap-rag`.
 
 Run from the repository root. Each run is a real Claude Code session on your account and costs money, so set a ceiling:
 
