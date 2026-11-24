@@ -13,11 +13,11 @@ After the blueprint exists, ask in your own words, for example "make our documen
 2. **A RAG server**, with RAGFlow as the default. Choose it when scanned or complex PDFs and tables are the core of the corpus and you want a separate server with its own interface and API. Its sharing is only "Only me" or "Team", so there are no group permissions.
 3. **Something else**, your own tool. The skill records its name, version and documentation link, labels every value it cannot verify `unverified`, and still applies the air-gap checklist: staged models, telemetry, manifest rows and the egress check.
 
-It never swaps a platform you named. [Decisions](/reference/rag/decisions/) gives the reasons and the alternatives it refuses.
+It never swaps a platform you named. [Decisions](/reference/rag/decisions/) gives the reasons, and why the alternatives are not chosen.
 
 ## What it asks
 
-The skill reads the blueprint for `org.isolation`, the GPUs and the `rag` users, then asks, in one message, those of its eight questions that your request and the blueprint leave open, each with a default. When you asked it to set things up, it states the defaults it takes, lists them as assumptions in `rag.md` and goes on. The questions are: the platform, who searches (chat users, scripts, coding agents), where the documents live and how many pages, what kinds of documents, which languages, how many pages change per week, who may see what, and whether a GPU is available. [Interview](/reference/rag/interview/) lists them. When your answers are short or you ask to go faster, it takes the defaults, records each as an assumption, and shows the sizing as one summary table.
+The skill reads the blueprint for `org.isolation`, the GPUs and the `rag` users, then asks, in one message, those of its eight questions that your request and the blueprint leave open, each with its default; only the volume of documents has none. When you asked it to set things up, it states the defaults it takes, lists them as assumptions in `rag.md` and goes on. The questions are: the platform, who searches (chat users, scripts, coding agents), where the documents live and how many pages, what kinds of documents, which languages, how many pages change per week, who may see what, and whether a GPU is available. [Interview](/reference/rag/interview/) lists them. When your answers are short or you ask to go faster, it takes the defaults, records each as an assumption, and shows the sizing as one summary table.
 
 ## How documents become text
 

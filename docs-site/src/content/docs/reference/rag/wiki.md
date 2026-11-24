@@ -10,8 +10,18 @@ Goal: give coding agents the organization's documents as plain markdown files in
 
 ## How it works
 
-1. The local agent inside the network converts each document with `pdftotext`, which is in poppler-utils. poppler-utils is an OS package: take it from the internal mirror, or carry it in as a row in section 3 of the transfer manifest, marked "(from airgap-rag)". Its version and download address are not documented in the research: record the version the mirror provides.
-2. The agent writes one markdown file per document into a git repository, keeping the folder structure of the source. Each file starts with a heading holding the document's name and a line naming the source path, then the text. A short index file per folder lists the documents with one line each.
+1. The local agent inside the network converts each document with `pdftotext`, which is in poppler-utils. poppler-utils is an OS package: take it from the internal mirror, or carry it in as the row `custom: poppler-utils` (from airgap-rag) in section 3 of the transfer manifest, which `airgap-transfer` settles as a manual item. Its version and download address are not documented in the research: record the version the mirror provides.
+2. The agent writes one markdown file per document into a git repository, keeping the folder structure of the source. Each file starts with a heading holding the document's name and a line naming the source path, then the text. A short index file per folder lists the documents with one line each. For one document, with `IN` the PDF, `NAME` its name, `TXT` a temporary text file, `MD` the markdown file in the repository and `FAILED` the list of documents that could not be converted:
+
+```
+if pdftotext -layout -enc UTF-8 "$IN" "$TXT"; then
+  { printf '# %s\n\nSource: %s\n\n' "$NAME" "$IN"; cat "$TXT"; } > "$MD"
+else
+  echo "$IN" >> "$FAILED"
+fi
+```
+
+   `pdftotext PDF-file text-file` writes the text of the PDF to the text file; `-layout` keeps the original physical layout as well as it can, and `-enc UTF-8` sets the output encoding, which is also the default. A non-zero exit (1: the PDF cannot be opened, 2: the output file cannot be opened, 3: PDF permissions, 99: other) puts the document on the list of those it could not convert, and no markdown file is written for it (pdftotext(1), read on 2026-11-24 from the poppler repository: https://gitlab.freedesktop.org/poppler/poppler/-/raw/master/utils/pdftotext.1). The man page is the one of poppler's main branch: check `pdftotext -h` inside for the options of the version the mirror provides.
 3. The repository is committed, so a change in a document is a diff and a reviewable change.
 4. Coding agents read it with grep and read, the tools a coding agent already has. Or they reach it through the `mcp-server-git` in airgap-agent's MCP reference (none of its tools fetches, pulls or clones), or the folder is simply opened as a workspace.
 

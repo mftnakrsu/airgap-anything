@@ -79,8 +79,8 @@ SKILL_PAGES = [
         ("references/verification.md", "verification", "Verification inside", "The install check, the smoke test and the egress check that a person runs inside the network."),
     ]),
     (RAG, "rag", [
-        ("references/interview.md", "interview", "Interview", "The eight questions airgap-rag asks, with the default for each, and how the platform question is asked and waited on."),
-        ("references/decisions.md", "decisions", "Decisions", "Which platform and vector store to choose and when: Open WebUI knowledge bases, RAGFlow or a custom choice, and why each alternative is refused."),
+        ("references/interview.md", "interview", "Interview", "The eight questions airgap-rag asks, with their defaults (the volume of documents has none), and how the platform question is asked and waited on."),
+        ("references/decisions.md", "decisions", "Decisions", "Which platform and vector store to choose and when: Open WebUI knowledge bases, RAGFlow or a custom choice, and why the alternatives are not chosen."),
         ("references/extraction.md", "extraction", "Extraction and chunking", "The three extraction tiers, the rule that internal documents never leave the network, OCR languages and the chunking settings."),
         ("references/models.md", "models", "Embedding and reranking models", "How the embedding and reranker models are chosen, served on the network's vLLM and wired to Open WebUI with nothing downloaded at start."),
         ("references/sizing.md", "sizing", "Sizing the first load", "How long the first load takes and how much space the index needs, step by step, with a fast path."),

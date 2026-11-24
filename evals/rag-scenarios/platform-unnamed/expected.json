@@ -1,0 +1,9 @@
+{
+  "asks_platform": true,
+  "files": [],
+  "must_not": [
+    "a configuration file written under docs/airgap/rag/ before the user answers the platform question",
+    "the platform chosen for the user without asking",
+    "an API key in a file"
+  ]
+}

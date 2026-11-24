@@ -13,7 +13,7 @@ Open-weight reranker from the Qwen team, served by the network's vLLM through `/
 | Kind | `reranker-model` |
 | Version | `e61197ed45024b0ed8a2d74b80b4d909f1255473` |
 | License | Apache-2.0 |
-| Install | `hf download Qwen/Qwen3-Reranker-0.6B --revision e61197ed45024b0ed8a2d74b80b4d909f1255473 --local-dir ./qwen3-reranker` on the connected side, then `vllm serve ./qwen3-reranker` with the documented overrides on the inside |
+| Install | `hf download Qwen/Qwen3-Reranker-0.6B --revision e61197ed45024b0ed8a2d74b80b4d909f1255473 --local-dir ./qwen3-reranker` on the connected side, then `vllm serve /srv/models/qwen3-reranker` with the documented overrides on the inside |
 | Evidence | docs |
 | Last verified | 2026-11-24 |
 
@@ -43,7 +43,7 @@ The score is a reason, not a promise: MMTEB-R 66.36 for the 0.6B (bge-reranker-v
 Serving, on an instance of the architect's `vllm` entry (v0.34.0), with the overrides the vLLM docs give (https://docs.vllm.ai/en/stable/models/pooling_models/scoring/):
 
 ```
-vllm serve ./qwen3-reranker --runner pooling --hf_overrides '{"architectures":["Qwen3ForSequenceClassification"],"classifier_from_token":["no","yes"],"is_original_qwen3_reranker":true}'
+vllm serve /srv/models/qwen3-reranker --runner pooling --hf_overrides '{"architectures":["Qwen3ForSequenceClassification"],"classifier_from_token":["no","yes"],"is_original_qwen3_reranker":true}'
 ```
 
 vLLM's `/v1/rerank` (also `/rerank` and `/v2/rerank`) matches Open WebUI's external reranker format. TEI's `/rerank` does not: it takes `{query, texts}` and returns `[{index, score}]`, while Open WebUI sends `{model, query, documents, top_n}` and expects `results[].index/relevance_score` (https://docs.openwebui.com/reference/env-configuration).
@@ -75,9 +75,9 @@ None.
 |---|---|---|---|
 | `Qwen/Qwen3-Reranker-0.6B` | `e61197ed45024b0ed8a2d74b80b4d909f1255473` | 1.19 GB | https://huggingface.co/api/models/Qwen/Qwen3-Reranker-0.6B |
 
-Carry the whole `./qwen3-reranker` folder, produced by `hf download Qwen/Qwen3-Reranker-0.6B --revision e61197ed45024b0ed8a2d74b80b4d909f1255473 --local-dir ./qwen3-reranker`; it is the path that `vllm serve ./qwen3-reranker` takes inside the network (https://huggingface.co/docs/huggingface_hub/guides/cli).
+Carry the whole `./qwen3-reranker` folder, produced by `hf download Qwen/Qwen3-Reranker-0.6B --revision e61197ed45024b0ed8a2d74b80b4d909f1255473 --local-dir ./qwen3-reranker` (https://huggingface.co/docs/huggingface_hub/guides/cli). Inside the network `airgap-transfer` copies it to `/srv/models/<MODEL>`, the path that `vllm serve` takes; `qwen3-reranker` is used here for `<MODEL>` ([`references/models.md`](/reference/rag/models/), Serving).
 
-The runtime image is the architect's `vllm` entry (`vllm/vllm-openai:v0.34.0`), not carried again here.
+The runtime image comes from the architect's `vllm` entry. With a GPU, `vllm/vllm-openai:v0.34.0` is already in the manifest. With no GPU (`hardware.gpus` empty), airgap-rag adds `vllm/vllm-openai-cpu:v0.34.0-x86_64` (`v0.34.0-arm64` on arm64) as the section-1 row `vllm` (from airgap-rag); pooling models on CPU are `unverified` and checked inside ([`references/models.md`](/reference/rag/models/), Serving).
 
 ### Runtime downloads to stage in advance
 
@@ -100,3 +100,5 @@ All rows of Egress switches, in the environment of the reranker instance.
 - https://github.com/huggingface/text-embeddings-inference/pull/730
 - https://docs.openwebui.com/reference/env-configuration
 - https://huggingface.co/docs/huggingface_hub/guides/cli
+- https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/cpu.x86.inc.md
+- https://github.com/vllm-project/vllm/blob/v0.34.0/docs/models/hardware_supported_models/cpu.md

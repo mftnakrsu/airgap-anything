@@ -1,6 +1,6 @@
 ---
 title: "Decisions"
-description: "Which platform and vector store to choose and when: Open WebUI knowledge bases, RAGFlow or a custom choice, and why each alternative is refused."
+description: "Which platform and vector store to choose and when: Open WebUI knowledge bases, RAGFlow or a custom choice, and why the alternatives are not chosen."
 sidebar:
   order: 2
 ---

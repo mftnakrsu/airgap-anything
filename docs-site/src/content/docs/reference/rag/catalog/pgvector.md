@@ -33,10 +33,10 @@ Released 2026-10-01; 0.9.0 is not released (https://github.com/pgvector/pgvector
 
 Open WebUI variables (https://docs.openwebui.com/reference/env-configuration/):
 
-- `VECTOR_DB=pgvector` and `PGVECTOR_DB_URL`, which defaults to `DATABASE_URL`; the database password comes from the environment.
+- `VECTOR_DB=pgvector` and `PGVECTOR_DB_URL`, which defaults to `DATABASE_URL`; the database password comes from the environment. The skill's default leaves `PGVECTOR_DB_URL` unset, so the vectors go into the PostgreSQL that Open WebUI already uses, and that service runs on this image instead of `postgres:18.7`. The alternative is a separate database on this image, with `PGVECTOR_DB_URL` set to it.
 - `PGVECTOR_INDEX_METHOD=hnsw`, set before the first load. When unset, Open WebUI uses ivfflat for vector columns and hnsw for halfvec. Earlier Open WebUI versions built the IVFFlat index on an empty table, which gave a recall@10 of 0.480; IVFFlat needs data first. If it already happened, run `REINDEX INDEX idx_document_chunk_vector;`.
 - `PGVECTOR_USE_HALFVEC=true` is needed above 2,000 dimensions (default False).
-- `PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH`, default 1536. The research documents only the default; set it to the embedding model's dimension when that is larger.
+- `PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH`, default 1536. The research documents only the default; setting it to the embedding model's dimension when that is larger is inferred from its name, not documented.
 - Other documented variables and defaults: `PGVECTOR_CREATE_EXTENSION` true, `PGVECTOR_HNSW_M` 16, `PGVECTOR_HNSW_EF_CONSTRUCTION` 64, `PGVECTOR_IVFFLAT_LISTS` 100, `PGVECTOR_ITERATIVE_SCAN` relaxed_order, `PGVECTOR_POOL_*`.
 
 Index settings (https://github.com/pgvector/pgvector/blob/master/README.md):
@@ -47,7 +47,7 @@ Index settings (https://github.com/pgvector/pgvector/blob/master/README.md):
 
 Storage per vector (README): vector 4*d+8 bytes, halfvec 2*d+8, bit d/8+8, sparsevec 8*non-zero+16. At 768 dimensions that is 3,080 vs 1,544 bytes; at 1,024 dimensions, 4,104 vs 2,056 (computed). An HNSW size formula is not documented: build it and measure with `SELECT pg_size_pretty(pg_relation_size('index_name'));`.
 
-The PostgreSQL service itself (data volume layout since version 18, licensing) is in the architect's `postgresql` entry; this image replaces `postgres:18.7` for the database that holds the vectors.
+The PostgreSQL service itself (data volume layout since version 18, licensing) is in the architect's `postgresql` entry; this image replaces `postgres:18.7` for the database that holds the vectors: by default the database of Open WebUI itself, the same PostgreSQL 18.7. The manifest carries it as the section-1 row `pgvector` (from airgap-rag), and `rag.md` records the substitution; the blueprint is not rewritten.
 
 ## Egress switches
 
