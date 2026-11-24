@@ -22,7 +22,7 @@ Everything inside works without internet and without an LLM: every step is a com
 | `local_agent` | `AGENTS-INSIDE.md`, the rules and steps for an inside agent |
 | `people_then_agent` | Both: the runbook for the first day, the rules once the agent runs |
 
-Write them in the blueprint's language. Translate only the prose: every command line, file name and path stays exactly as below. Write them before the checksums ([`references/bundle.md`](/reference/transfer/bundle/), step 5); after any later change, compute the checksums again.
+Write them in the language of the blueprint's `Language:` line (English when it has none). Translate only the prose: every command line, file name and path stays exactly as below. Write them before the checksums ([`references/bundle.md`](/reference/transfer/bundle/), step 5); after any later change, compute the checksums again.
 
 ## `INSIDE.md` template
 

@@ -90,7 +90,7 @@ Before the hand-off, check each item against the files you wrote. When one fails
 5. Every sizing number follows from the steps shown; concurrency is a range; the assumptions table has a row for every interview answer that was `unknown` and for every constant the steps used; the hardware fits, or `llm-serving` records an override.
 6. The tier's obligations are met: a gateway when one is required, the isolation design subsection for `multi_level`, at least two replicas when no downtime is accepted.
 7. The verification section has the benchmark step, one entry for each decision labelled `estimate`, every benchmark engine, the Kubernetes risk when it applies, and every chosen entry last verified more than 180 days ago.
-8. The transfer manifest lists the images for the design's hardware class and the packages for its platform, and every telemetry setting, runtime download and per-tool skill of each chosen entry, none left out; the blueprint's transfer section copies the telemetry settings.
+8. The transfer manifest lists the images for the design's hardware class and the packages for its platform, and every telemetry setting, runtime download and per-tool skill of each chosen entry, one row each (count the entry's items against the manifest's rows); the blueprint's transfer section copies the telemetry settings.
 9. Each decision's evidence is the weakest label among its guide's case and its components.
 
 ## Common mistakes

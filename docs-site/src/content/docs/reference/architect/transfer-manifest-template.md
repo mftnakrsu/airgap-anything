@@ -14,9 +14,10 @@ The transfer manifest is the one list of everything to carry into the network, a
 - **Platform**: `linux/` and `hardware.cpu_arch` (`amd64` when it was `unknown`, which the blueprint lists as an assumption).
 - **Images**: from each chosen component's Images table, the rows whose Hardware is the hardware class or `any`. When a component has images but none for the class, write a line under the table: "COMPONENT: the catalog lists no image for CLASS hardware; check the entry's air-gap notes before carrying."
 - **Packages**: from each Packages table, the rows whose Arch is the platform's architecture or `any`, with the same kind of line when none fits.
-- **Telemetry, runtime downloads, per-tool skills**: every item of each chosen component's entry.
+- **Telemetry, runtime downloads, per-tool skills**: every item of each chosen component's entry, none left out. The manifest is the complete list the transfer works from, not a selection: whether an item is needed inside is decided later, item by item, during the transfer.
 - **Models**: one row per entry of `workload.models`. The exact repository and revision are chosen during the transfer.
 - **Custom parts**: one row each in section 3, to be enumerated by hand.
+- **A load generator for the benchmark step**: the catalog has none, so add it as a custom row in section 3; otherwise the benchmark the blueprint requires has no tool inside.
 - **Benchmark-only components**: listed in every section like the others, with "(benchmark only)" after the component ID.
 
 ## Template
@@ -40,7 +41,7 @@ Replace `REGISTRY_HOST` with the address of the registry inside the network. `ai
 |---|---|---|---|---|
 | `vllm` | `v0.34.0` | `vllm/vllm-openai:v0.34.0` | nvidia | `REGISTRY_HOST/vllm/vllm-openai:v0.34.0` |
 
-The target path is `REGISTRY_HOST/` followed by the image reference without its registry host (`ghcr.io/berriai/litellm:v1.110.2` becomes `REGISTRY_HOST/berriai/litellm:v1.110.2`).
+The target path is `REGISTRY_HOST/` followed by the image reference without its registry host (`ghcr.io/berriai/litellm:v1.110.2` becomes `REGISTRY_HOST/berriai/litellm:v1.110.2`). A reference without a namespace keeps its name: `postgres:18.7` becomes `REGISTRY_HOST/postgres:18.7`.
 
 ## 2. Model artifacts
 
@@ -64,7 +65,7 @@ The target path is `REGISTRY_HOST/` followed by the image reference without its 
 | Component | Download |
 |---|---|
 
-## 6. Per-tool skills worth carrying inside
+## 6. Per-tool skills
 
 | Component | Repository | Skill |
 |---|---|---|

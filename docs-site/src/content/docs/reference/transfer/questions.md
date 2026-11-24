@@ -43,4 +43,6 @@ For a model from Hugging Face: the repository and the full 40-character commit h
 
 Every custom part and every runtime download of the manifest becomes a manual item: nothing in the catalog says exactly which files it needs. After the fetch, ask about each one: does the user add files for it under `<bundle>/manual/<item>/`, or is it not needed, and why? Record the answer in the plan's items table: `added` with the folder, or `not needed` with the reason.
 
+The per-tool skills of manifest section 6 are offered the same way, one manual item each: the user adds a copy of the skill's folder at a commit they choose, or marks it not needed. The manifest names no version for them, so never fetch one yourself.
+
 This is the only way a file the manifest does not name gets into the bundle, and only the user decides it (an operating-system package, for example). The bundle is not packed while a manual item is unsettled.

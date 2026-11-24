@@ -59,7 +59,7 @@ Replace `REGISTRY_HOST` with the address of the registry inside the network. `ai
 | `distribution-registry` | Images stored in the registry: the registry holds only what is pushed to it. The deployment page's air-gap section says to build the registry's data volume on a connected host that can docker pull the images wanted and then migrate the data volume to the air-gapped network; images with non-distributable layers (its example is the official Microsoft Windows base images) do not carry those layers into a private registry unless the Docker daemon is configured with allow-nondistributable-artifacts for it. |
 | `distribution-registry` | Pull-through cache (only when configured): with the proxy section set (remoteurl, for example https://registry-1.docker.io), the registry fetches images from that upstream registry the first time they are requested and, for a tag pull, checks the remote for newer content; the mirror page says one upstream can be mirrored at a time and that Docker Hub mirrors remain subject to Docker's fair usage policy. Leave proxy unset in an air-gapped site. |
 
-## 6. Per-tool skills worth carrying inside
+## 6. Per-tool skills
 
 | Component | Repository | Skill |
 |---|---|---|

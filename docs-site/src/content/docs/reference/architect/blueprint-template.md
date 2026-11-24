@@ -12,7 +12,7 @@ Copy everything below the line into the blueprint file and fill each section. He
 
 # PROJECT NAME: air-gapped blueprint
 
-Status: draft. Date: YYYY-MM-DD. Oldest catalog entry used: YYYY-MM-DD (component ID).
+Status: draft. Date: YYYY-MM-DD. Language: the code of the conversation's language, for example en. Oldest catalog entry used: YYYY-MM-DD (component ID).
 
 ## 1. Context and answers
 
@@ -39,10 +39,10 @@ One paragraph, then a component diagram (Mermaid or plain text): users, UI, gate
 
 | Layer | Component | Version | Evidence |
 |---|---|---|---|
-| `llm-serving` | `vllm` | `v0.34.0` | docs |
-| `llm-serving` | `sglang` (benchmark only) | `v0.5.23` | docs |
+| `llm-serving` | `vllm` | `v0.34.0` | estimate |
+| `llm-serving` | `sglang` (benchmark only) | `v0.5.23` | estimate |
 
-One row per component, versions copied from the catalog. Then one subsection per layer, in this order: `llm-serving`, `llm-gateway`, `ui`, `identity`, `observability`, `orchestration`, `state`, `registry`.
+One row per component, versions copied from the catalog. Evidence is the decision's label (the weakest of its guide's case and its components), not the catalog entry's own. Then one subsection per layer, in this order: `llm-serving`, `llm-gateway`, `ui`, `identity`, `observability`, `orchestration`, `state`, `registry`.
 
 ### `llm-serving`
 
@@ -66,7 +66,7 @@ Inputs: users, usage shares, contexts per group, models, GPUs. Then every step o
 | Model | GPUs per replica | Replicas | GPUs | KV cache |
 |---|---|---|---|---|
 
-Concurrency as a range; total GPUs, servers, power; whether the hardware fits; every note and warning. Last, the assumptions table: every constant and default the design used, with its value and evidence label.
+Concurrency as a range; total GPUs, servers, whole-system power; whether the hardware fits; every note and warning. Last, the assumptions table, with its value and evidence label for each row: one row per interview answer that was `unknown` (with the default used), and one per constant the steps used, the GPU group sizes and the KV type included.
 
 ## 6. Air-gap transfer
 
@@ -82,7 +82,7 @@ What happens when each component fails and how it is noticed. Backups of state. 
 
 ## 9. Verification plan
 
-1. Benchmark before production: tokens per second and time to first token at `concurrency.high` on the real hardware, and KV-cache capacity where sizing could not compute it.
+1. Benchmark before production: tokens per second and time to first token at `concurrency.high` on the real hardware, and KV-cache capacity where sizing could not compute it, with the load generator the transfer manifest lists.
 2. One entry per decision whose evidence is `estimate`: the layer ID, what the estimate is, and how to check it.
 3. `org.kubernetes_experience` as a risk, when the orchestration floor is T3 and the team does not run Kubernetes.
 4. Every benchmark a layer guide asked for, naming the engine.

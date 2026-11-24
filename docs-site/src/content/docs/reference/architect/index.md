@@ -33,7 +33,7 @@ Air-gap design:
 6. **Blueprint.** Fill [`references/blueprint-template.md`](/reference/architect/blueprint-template/) at the blueprint's path.
 7. **AGENTS.md.** Add the block of [`references/agents-snippet.md`](/reference/architect/agents-snippet/).
 8. **Self-review.** Check every item below; fix what fails and check again.
-9. **Hand-off.** Show the blueprint path, the tier, the GPU range, the eight decisions in one line each and the open questions, then the step after approval from the table below. Stop until the user approves.
+9. **Hand-off.** Show the blueprint path, the tier, the concurrency range and the GPU total, the eight decisions in one line each and the open questions, then the step after approval from the table below. Stop until the user approves.
 
 
 ## Pages

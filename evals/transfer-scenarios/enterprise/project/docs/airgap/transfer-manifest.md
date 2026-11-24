@@ -98,7 +98,7 @@ Replace `REGISTRY_HOST` with the address of the registry inside the network. `ai
 | `sglang` (benchmark only) | ModelScope instead of Hugging Face: set SGLANG_USE_MODELSCOPE=true (the page notes that ModelScope uses a different cache directory). |
 | `sglang` (benchmark only) | Remote weights: object storage URIs (s3://, gs://, az://) and remote URIs are loaded over the network by the runai_streamer and remote load formats, and --load-format remote_instance pulls weights from another running SGLang instance; none of these is needed for a local folder. |
 
-## 6. Per-tool skills worth carrying inside
+## 6. Per-tool skills
 
 | Component | Repository | Skill |
 |---|---|---|

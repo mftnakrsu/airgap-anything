@@ -156,9 +156,9 @@ The [department example](examples/department/blueprint.md) is a complete bluepri
 
 | Layer | Decision |
 |---|---|
-| `llm-serving` | `vllm`, one replica on all eight GPUs; KV-cache capacity to be benchmarked |
+| `llm-serving` | `vllm`, one replica on all eight GPUs, prefix caching off so departments share no cached prompts |
 | `llm-gateway` | `litellm`, for per-department keys, budgets and audit |
-| `ui` | `open-webui` |
+| `ui` | `open-webui`, one instance per department |
 | `identity` | `keycloak` federated to Active Directory |
 | `observability` | `prometheus` and `grafana` |
 | `orchestration` | `docker-compose` |

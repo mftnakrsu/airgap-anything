@@ -83,9 +83,9 @@ Pack only when every item is `fetched`, every manual item is settled, and the ch
    cd B && split -b PARTSIZE -a 3 --numeric-suffixes=1 "FILE" "FILE.part" && sha256sum "FILE".part[0-9][0-9][0-9] >> PARTS.sha256
    ```
 
-   The parts are `FILE.part001`, `FILE.part002`, …; the whole file stays on the connected side and is not written to a volume. With nothing to split, create an empty `PARTS.sha256`.
+   The parts are `FILE.part001`, `FILE.part002`, …; the whole file stays on the connected side and is not written to a volume. When disk space is short, delete the whole file once its parts are recorded: its line in `SHA256SUMS` stays, and the inside rebuilds it from the parts. With nothing to split, create an empty `PARTS.sha256`: it says that nothing was split. `sha256sum -c` exits 1 on an empty list ("no properly formatted checksum lines found"), so every check of it below runs only when it is not empty.
 7. **`VOLUMES.txt`.** One line per file or part that goes onto a volume: `VOLUME SIZE PATH`, for example `2 4294967295 models/main-chat/model-00001-of-00004.safetensors.part001`.
-8. **Data diode only: `SEND-ORDER.txt`.** The files in sending order, one path per line: `SHA256SUMS`, `PARTS.sha256`, `VOLUMES.txt`, `INVENTORY.md`, the runbook files, then every file and part of `VOLUMES.txt`. A resend uses the same names.
+8. **Data diode only: `SEND-ORDER.txt`.** The files in sending order, one path per line: `SEND-ORDER.txt` itself, `SHA256SUMS`, `PARTS.sha256`, `VOLUMES.txt`, `INVENTORY.md`, the runbook files, then every file and part of `VOLUMES.txt`. A resend uses the same names.
 9. **Self-check** (`SKILL.md`), then write the volumes.
 
 ### `INVENTORY.md`
@@ -105,10 +105,10 @@ One medium at a time. For volume N, with the medium mounted at `M`:
 cd B && { printf '%s\n' SHA256SUMS PARTS.sha256 VOLUMES.txt INVENTORY.md INSIDE.md AGENTS-INSIDE.md | while read -r f; do [ -f "$f" ] && echo "$f"; done; awk -v n=N '$1 == n { sub(/^[^ ]+ [^ ]+ /, ""); print }' VOLUMES.txt; } > /tmp/volume-N.list
 cd B && xargs -d '\n' cp --parents -t "M" < /tmp/volume-N.list
 echo "volume N of TOTAL" > "M/VOLUME.txt"
-cd "M" && sha256sum -c --ignore-missing --quiet SHA256SUMS && sha256sum -c --ignore-missing --quiet PARTS.sha256
+cd "M" && sha256sum -c --ignore-missing --quiet SHA256SUMS && { [ ! -s PARTS.sha256 ] || sha256sum -c --ignore-missing --quiet PARTS.sha256; }
 cd "M" && while read -r f; do [ -f "$f" ] || echo "missing: $f"; done < /tmp/volume-N.list
 ```
 
 Every volume carries the shared files, so any one volume tells what the set holds. The read-back checks every file on the medium against its checksum; `--ignore-missing` skips what belongs to other volumes, and the last line reports anything of this volume that did not arrive. Any output or a non-zero exit: the medium may be faulty; write the volume again or use another medium. Otherwise label the medium "volume N of TOTAL".
 
-For a data diode or a staging host, copy the files of `SEND-ORDER.txt` (or the one volume) to the folder the channel sends from, with the same read-back.
+For a data diode, copy every file that `SEND-ORDER.txt` lists, `SEND-ORDER.txt` included, to the folder the diode sends from; for a staging host, the one volume. Then the same read-back.

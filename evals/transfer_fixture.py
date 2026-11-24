@@ -89,6 +89,8 @@ def build(name: str, out: Path, variant: str | None = None, fetched: bool = Fals
         items.append(("package", c, url, path, size, "fetched"))
     for component, text in table(manifest, "5. Runtime downloads to stage in advance"):
         manual.append((f"{plain(component)}: runtime download: {text[:60].rstrip()}", "not needed"))
+    for component, repo, skill in table(manifest, "6. Per-tool skills"):
+        manual.append((f"{plain(component)}: per-tool skill {plain(skill)} from {plain(repo)}", "not needed"))
     for item, status in manual:
         path = f"manual/{safe_name(item)[:60]}"
         if status == "added":
