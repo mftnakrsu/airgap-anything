@@ -40,7 +40,7 @@ Notes on each step:
 | 1. Extraction | 15,000 scanned pages × 0.49 s = 7,350 s, about 2 h on an L4; × 3.1 s = 46,500 s, about 13 h on 8 vCPU. The 35,000 digital pages: through pypdf, measure; through docling-serve without OCR at 0.92 to 1.34 pages/s that is about 7 to 11 h on CPUs of that class |
 | 2. Chunks | 50,000 × 3,000 = 150,000,000 characters ÷ 924 = about 162,000 chunks |
 | 3. Embedding | 162,000 ÷ 277/s = about 590 s (10 min) on an L40S with bge-m3; ÷ 1,240/s = about 130 s on an H100 SXM |
-| 4. Index | 4 × 1,024 + 8 = 4,104 bytes per vector × 162,000 = about 0.67 GB of vectors (`vector`), 0.33 GB as `halfvec`; text about 0.17 GB; the HNSW index is measured |
+| 4. Index | 4 × 1,024 + 8 = 4,104 bytes per vector × 162,000 = about 0.67 GB of vectors (`vector`), 0.33 GB as `halfvec`; text about 0.17 GB; measure the HNSW index with `pg_relation_size` after the load |
 | 5. GPU line | two models, about 2.4 GB of weights for the Qwen3 pair |
 
 Extraction dominates. The embedding step is minutes, which is why the retrieval check (`references/verification.md`) can be repeated after a model change.
@@ -56,7 +56,7 @@ When the user is in a hurry, or the answers were short, show the same calculatio
 | Extraction time | (hours, for the hardware) | step 1: 3.1 s/page CPU, 0.49 s/page L4; pypdf measured |
 | Chunks | (count) | step 2, `estimate` for characters per page |
 | Embedding time | (minutes) | step 3 |
-| Vectors on disk | (GB) | step 4; HNSW measured later |
+| Vectors on disk | (GB) | step 4; measure the HNSW index with `pg_relation_size` after the load |
 | GPU line | (models, GB of weights) | step 5 |
 | Update batch | (pages per week and hours) | `updates`, step 1 rates |
 | Assumptions | (every default used) | `references/interview.md` |

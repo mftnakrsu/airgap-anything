@@ -62,7 +62,7 @@ There is no semantic chunking in Open WebUI. docling-serve has chunk endpoints (
 
 The skill's choice, written to `docs/airgap/rag/`:
 
-- Keep the header splitter on, so chunks follow the structure of the documents.
+- Keep `ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER` on, so chunks follow the structure of the documents.
 - Keep the `character` splitter at 1024 and 100. That is far below the embedding models' limits (32K and 8,192 tokens), so no tokenizer has to be staged.
 - Set `CHUNK_MIN_SIZE_TARGET=256`, so that tiny sections, for example a heading alone, merge into a neighbor. The value, one quarter of `CHUNK_SIZE`, is an `estimate`: tune it with the retrieval check (`references/verification.md`, check 2).
 - Write in `rag.md`: "reindex after changing them". Open WebUI's docs say to reindex existing documents after a change; an admin endpoint `POST /api/v1/knowledge/reindex` exists (read from source at tag v0.13.4).
