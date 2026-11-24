@@ -69,4 +69,4 @@ Bugs and gaps the runs found, all fixed in 5702fdb and b965f10:
 
 - One run per model and scenario; the pressure runs only on Sonnet.
 - The subagents saw the dispatching user's instruction and memory files.
-- The triggering suite (`evals/results/2026-11-23-triggering.md`) ran on the 0.2 descriptions. Both descriptions gained a leading sentence in 0.3, so it has to run again.
+- The triggering suite ran again on the 0.3 descriptions after the merge: 12 of 12 cases pass, every skill check in every run (`evals/results/2026-11-24-triggering.md`).
