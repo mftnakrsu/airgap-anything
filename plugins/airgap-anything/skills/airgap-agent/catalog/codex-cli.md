@@ -41,11 +41,10 @@ Non-interactive run (smoke test): `codex exec "<prompt>"`; the sandbox is read-o
 | Analytics (Statsig) | not documented | `[analytics] enabled = false` | https://learn.chatgpt.com/docs/config-file/config-advanced.md |
 | Feedback uploads | not documented | `[feedback] enabled = false` | https://learn.chatgpt.com/docs/config-file/config-advanced.md |
 | OpenTelemetry export | not configured | leave `[otel]` unconfigured | https://learn.chatgpt.com/docs/config-file/config-advanced.md |
-| Update check | on | `check_for_update_on_startup = false` | https://learn.chatgpt.com/docs/config-file/config-reference.md |
+| Update check | not documented | `check_for_update_on_startup = false` | https://learn.chatgpt.com/docs/config-file/config-reference.md |
 | Web search (an OpenAI index) | `"cached"` | `web_search = "disabled"` | https://learn.chatgpt.com/docs/config-file/config-reference.md |
 | Skill downloads by the bundled `$skill-installer` | available | do not use it; stage skills as files | https://learn.chatgpt.com/docs/build-skills.md |
 | MCP OAuth login | on request | do not run `codex mcp login` | https://learn.chatgpt.com/docs/extend/mcp.md |
-| Model catalog | not documented | `model_catalog_json` pointing to a local file such as `/etc/codex/gateway-models.json` | https://learn.chatgpt.com/docs/enterprise/connect-to-a-gateway.md |
 
 ## Permissions and central policy
 
@@ -65,8 +64,10 @@ Non-interactive run (smoke test): `codex exec "<prompt>"`; the sandbox is read-o
 
 - The docs moved from developers.openai.com/codex to learn.chatgpt.com/docs; the sources below use the new host.
 - The research found no documented switch for error reporting. Run the egress check before relying on the list above.
-- Not documented: the default of `[analytics]` and `[feedback]`, and an architecture for the `bwrap` asset.
-- `.sigstore` signatures are not verified by `airgap-transfer`; the release lists no checksum file in the research.
+- Not documented: the default of `[analytics]` and `[feedback]`, and an architecture for the plain `bwrap` asset (the per-architecture `bwrap-*-unknown-linux-musl.tar.gz` archives are listed below).
+- `.sigstore` signatures are not verified by `airgap-transfer`. The release's only checksum file, `codex-package_SHA256SUMS`, lists the `codex-package-*` archives, not the `codex-*-unknown-linux-musl.tar.gz` archives carried here (read 2026-11-24).
+- `model_catalog_json`: the file format is not documented in the research; the skill does not use it.
+- `/etc/codex/managed_config.toml` sets defaults only; a user can change them. `requirements.toml` holds the limits.
 
 ## Carry in
 
@@ -74,13 +75,16 @@ Non-interactive run (smoke test): `codex exec "<prompt>"`; the sandbox is read-o
 
 | File | Architecture | Source | Checksum |
 |---|---|---|---|
-| `codex-x86_64-unknown-linux-musl.tar.gz` | amd64 | https://api.github.com/repos/openai/codex/releases/latest (tag `rust-v0.172.0`) | `.sigstore` file in the release; not checked by airgap-transfer |
-| `codex-aarch64-unknown-linux-musl.tar.gz` | arm64 | https://api.github.com/repos/openai/codex/releases/latest (tag `rust-v0.172.0`) | `.sigstore` file in the release; not checked by airgap-transfer |
-| `bwrap` | not documented | https://api.github.com/repos/openai/codex/releases/latest (tag `rust-v0.172.0`) | not documented |
+| `codex-x86_64-unknown-linux-musl.tar.gz` | amd64 | https://github.com/openai/codex/releases/download/rust-v0.172.0/codex-x86_64-unknown-linux-musl.tar.gz | none in the release; record the SHA-256 when it is carried in (`.sigstore` file not checked by airgap-transfer) |
+| `codex-aarch64-unknown-linux-musl.tar.gz` | arm64 | https://github.com/openai/codex/releases/download/rust-v0.172.0/codex-aarch64-unknown-linux-musl.tar.gz | none in the release; record the SHA-256 when it is carried in (`.sigstore` file not checked by airgap-transfer) |
+| `bwrap-x86_64-unknown-linux-musl.tar.gz` | amd64 | https://github.com/openai/codex/releases/download/rust-v0.172.0/bwrap-x86_64-unknown-linux-musl.tar.gz | none in the release |
+| `bwrap-aarch64-unknown-linux-musl.tar.gz` | arm64 | https://github.com/openai/codex/releases/download/rust-v0.172.0/bwrap-aarch64-unknown-linux-musl.tar.gz | none in the release |
+
+The URLs are the `browser_download_url` values of the release API for the tag (Evidence).
 
 ### Runtime downloads to stage in advance
 
-- None documented. The local model catalog file named by `model_catalog_json` is written by the skill, not downloaded.
+- None documented.
 
 ### Telemetry and egress to switch off before the first start
 
@@ -89,6 +93,7 @@ All rows of Egress switches, in `/etc/codex/managed_config.toml` where the key i
 ## Evidence
 
 - https://api.github.com/repos/openai/codex/releases/latest
+- https://api.github.com/repos/openai/codex/releases/tags/rust-v0.172.0
 - https://api.github.com/repos/openai/codex
 - https://github.com/openai/codex
 - https://registry.npmjs.org/@openai/codex/latest

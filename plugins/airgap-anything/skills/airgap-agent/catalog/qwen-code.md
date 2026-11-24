@@ -41,7 +41,7 @@ Non-interactive run (smoke test): `qwen -p "<prompt>"` or `--prompt`; `--approva
 | Daily models.dev catalog download | on | `model.catalogRefresh: false`; `QWEN_CODE_MODELS_DEV=off` disables the catalog | https://qwenlm.github.io/qwen-code-docs/en/users/configuration/settings/ |
 | Auto update | on | `general.enableAutoUpdate: false` | https://qwenlm.github.io/qwen-code-docs/en/users/configuration/settings/ |
 | Web search (DashScope or Qwen service) | not auto-enabled for local models | `tools.webSearch.enabled: false` or `ENABLE_WEB_SEARCH=false` | https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/ |
-| Web fetch tool | available | deny `"WebFetch"` in `permissions.deny` | https://qwenlm.github.io/qwen-code-docs/en/users/configuration/settings/ |
+| Web fetch tool | not documented | deny `"WebFetch"` in `permissions.deny` | https://qwenlm.github.io/qwen-code-docs/en/users/configuration/settings/ |
 | OpenTelemetry | off | keep `telemetry.enabled: false` (`--no-telemetry`) | https://qwenlm.github.io/qwen-code-docs/en/developers/development/telemetry/ |
 
 ## Permissions and central policy
@@ -61,7 +61,7 @@ Non-interactive run (smoke test): `qwen -p "<prompt>"` or `--prompt`; `--approva
 
 - The default approval mode is documented two ways (see above).
 - The Docker or Podman sandbox pulls `ghcr.io/qwenlm/qwen-code:<version>` on first use: stage it (Carry in). The research did not settle whether the image tag carries the `v` prefix; check the sandbox page before staging.
-- The research reads the release through the GitHub API; the release page URL form is not recorded here.
+- The download URLs below are the `browser_download_url` values of the release API for tag `v0.28.4`, read 2026-11-24. The installer comes from the repository at the same tag; it has no publisher checksum.
 - Not documented: an offline install procedure beyond the archive installer, and a switch for the models.dev catalog other than the two listed.
 
 ## Carry in
@@ -70,10 +70,11 @@ Non-interactive run (smoke test): `qwen -p "<prompt>"` or `--prompt`; `--approva
 
 | File | Architecture | Source | Checksum |
 |---|---|---|---|
-| `qwen-code-linux-x64.tar.gz` | amd64 | https://api.github.com/repos/QwenLM/qwen-code/releases/latest (tag `v0.28.4`) | `SHA256SUMS` in the same release |
-| `qwen-code-linux-arm64.tar.gz` | arm64 | https://api.github.com/repos/QwenLM/qwen-code/releases/latest (tag `v0.28.4`) | `SHA256SUMS` in the same release |
+| `qwen-code-linux-x64.tar.gz` | amd64 | https://github.com/QwenLM/qwen-code/releases/download/v0.28.4/qwen-code-linux-x64.tar.gz | https://github.com/QwenLM/qwen-code/releases/download/v0.28.4/SHA256SUMS |
+| `qwen-code-linux-arm64.tar.gz` | arm64 | https://github.com/QwenLM/qwen-code/releases/download/v0.28.4/qwen-code-linux-arm64.tar.gz | https://github.com/QwenLM/qwen-code/releases/download/v0.28.4/SHA256SUMS |
+| `install-qwen-standalone.sh` | any | https://raw.githubusercontent.com/QwenLM/qwen-code/v0.28.4/scripts/installation/install-qwen-standalone.sh | none |
 
-The installer script is `install-qwen-standalone.sh`, run with `--archive PATH` and `SHA256SUMS` next to the archive (https://qwenlm.github.io/qwen-code-docs/en/users/overview/).
+The installer script is run with `--archive PATH` and `SHA256SUMS` next to the archive (https://qwenlm.github.io/qwen-code-docs/en/users/overview/).
 
 ### Runtime downloads to stage in advance
 
@@ -86,6 +87,8 @@ All rows of Egress switches, in the system settings file.
 ## Evidence
 
 - https://api.github.com/repos/QwenLM/qwen-code/releases/latest
+- https://api.github.com/repos/QwenLM/qwen-code/releases/tags/v0.28.4
+- https://api.github.com/repos/QwenLM/qwen-code/contents/scripts/installation?ref=v0.28.4
 - https://api.github.com/repos/QwenLM/qwen-code
 - https://qwenlm.github.io/qwen-code-docs/en/users/overview/
 - https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/
