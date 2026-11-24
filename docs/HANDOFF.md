@@ -1,12 +1,20 @@
 # Handoff
 
-Where the project stands and how to continue. Last updated on 2026-11-24 (version 0.4.0 prepared).
+Where the project stands and how to continue. Last updated on 2026-11-24 (version 0.5.0 prepared).
 
 ## Status
 
-Version 0.4.0 is prepared on branch `feat/airgap-agent` and is not merged, tagged or released. It adds the third skill, `airgap-agent`, and raises the version to 0.4.0 in all manifests (`.claude-plugin/marketplace.json`, `plugins/airgap-anything/.claude-plugin/plugin.json`, the portable `plugin.json`).
+Version 0.5.0 is prepared on branch `feat/airgap-rag` and is not merged, tagged or released. It adds the fourth skill, `airgap-rag`, and raises the version to 0.5.0 in all manifests (`.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json`, `plugins/airgap-anything/.claude-plugin/plugin.json`, the portable `plugin.json`). Merge only after the launch on 2026-12-01: the maintainer's decision.
 
-- **Done on the branch.** The skill: `SKILL.md` (checklist, seven rules, seven-item self-check), a catalog of four tools (Qwen Code 0.28.4, Codex CLI 0.172.0, opencode 2.4.1 on the V2 line, Claude Code 2.1.331) with every value sourced, and six references (interview, decisions, serving, mcp, templates, verification). `airgap-transfer` carries `docs/airgap/agents.md` and `docs/airgap/agents/<tool>/{user,central}/` as project files. Triggering cases (15 in the suite) and behavior scenarios with expectations under `evals/agent-scenarios/`. README, a guide (`docs-site/src/content/docs/guides/coding-agents.md`), generated reference pages with the agent catalog, and the sidebar entries. 85 tests, all passing on 2026-11-24. `claude plugin validate plugins/airgap-anything` was run for the manifests.
+- **Done on the branch (0.5).** The skill: `SKILL.md`, a catalog of eight components (docling-serve v1.39.0, pgvector 0.8.7, Qdrant v1.20.2, RAGFlow v1.0.0, Qwen3-Embedding-0.6B, bge-m3, Qwen3-Reranker-0.6B, bge-reranker-v2-m3) with every value sourced, and eight references (interview, decisions, extraction, models, sizing, ingestion, wiki, verification). The user chooses the platform (Open WebUI knowledge bases, a RAG server, or something else recorded as custom with `unverified` values); the skill asks and waits unless one is named. `airgap-transfer` accepts "(from airgap-rag)" rows and carries `docs/airgap/rag.md` and `docs/airgap/rag/` as project files (the transfer marker). Triggering cases (18 in the suite) and behavior scenarios with pressure prompts under `evals/rag-scenarios/`. README, a guide (`docs-site/src/content/docs/guides/searchable-documents.md`), generated reference pages with the rag catalog, and the sidebar entries. 105 tests, all passing on 2026-11-24. `claude plugin validate plugins/airgap-anything --profile directory` was run for the manifests. The site build (`npm run build`) was not run locally, since `node_modules` is absent; CI builds it.
+- **Waiting (0.5).** The final review of the branch, the evals (triggering suite and the `rag-scenarios` runs on Haiku, Sonnet and Opus, recorded under `evals/results/`), and the pull request. None of these has been done.
+- **Rules the skill keeps (0.5).** Documents from inside the network never go to a cloud agent outside it; the connected-side agent may convert only public documents. The Open WebUI API endpoints in the runbook were read from source at v0.13.4, because its docs no longer document them. The skill downloads nothing and runs nothing; no key is written to a file.
+
+### Version 0.4 (released)
+
+Version 0.4.0 added the third skill, `airgap-agent`, and raised the version to 0.4.0 in all manifests.
+
+- **Done (0.4).** The skill: `SKILL.md` (checklist, seven rules, seven-item self-check), a catalog of four tools (Qwen Code 0.28.4, Codex CLI 0.172.0, opencode 2.4.1 on the V2 line, Claude Code 2.1.331) with every value sourced, and six references (interview, decisions, serving, mcp, templates, verification). `airgap-transfer` carries `docs/airgap/agents.md` and `docs/airgap/agents/<tool>/{user,central}/` as project files. Triggering cases (15 in the suite) and behavior scenarios with expectations under `evals/agent-scenarios/`. README, a guide (`docs-site/src/content/docs/guides/coding-agents.md`), generated reference pages with the agent catalog, and the sidebar entries. 85 tests, all passing on 2026-11-24. `claude plugin validate plugins/airgap-anything` was run for the manifests.
 - **Rules the skill keeps.** Claude Code is never configured against an open-weight model (Anthropic "doesn't support routing Claude Code to non-Claude models through any gateway", https://code.claude.com/docs/en/llm-gateway); Qwen Code's `tools.approvalMode` is always written; every outbound switch of a tool is written and proved by the egress check; no key is written to a file.
 - **Evaluated (0.4).** The evals ran on e95a6d2 on 2026-11-24. Triggering: 15 of 15 cases, 45 of 45 runs pass every grader, overall score 1.000, USD 7.96 (`evals/results/2026-11-24-triggering-0.4.md`). Behavior: `department` and `enterprise` pass on Haiku, Sonnet and Opus; the three `claude-pairing` runs declined Claude Code with GLM with the `llm-gateway` reason, recommended Qwen Code and stopped to ask before swapping the tool, which the maintainer's ruling made the correct behavior (the first expectation was wrong and was corrected in `evals/agent-scenarios/claude-pairing/expected.json`); pressure runs 5 of 5 and 5 of 5 on Sonnet, sent as part of the first prompt rather than as a second message (`evals/results/2026-11-24-agent-with-skill.md`).
 - **Released (0.4).** Merged as pull request #19 (74d5346) after CI, the docs build and the triggering workflow passed; tagged v0.4.0 and released on 2026-11-24 with one archive and one `.sha256` file per skill. The directory portal was asked to check the latest version on 2026-11-24 ("Submit latest version"); the 0.3.0 submission was still waiting for an Anthropic reviewer, and no version is live yet. Launch posts are drafted outside the repository for Tuesday 2026-12-01; the maintainer posts them.
@@ -35,7 +43,7 @@ The triggering suite ran on the 0.3 descriptions on 2026-11-24: 12 of 12 cases p
 - The skills ship no scripts (the maintainer: "i dont wanna bunch of pyscript sh sciprt at my skills").
 - The catalog stays, as markdown, with every source; nothing is written from memory.
 - Simplifications against 0.2: decision tables became defaults with reasons; replicas pack whole requests per user group instead of first-fit packing (it reproduces all scenario numbers; mixed contexts can come out one replica higher); no image-ID check inside; one manifest file, markdown.
-- The project aims at a family of `airgap-<role>` skills in one plugin: `airgap-agent` (#10) is done on the 0.4 branch; `airgap-rag` (#11) is next, then the ideas of #12.
+- The project aims at a family of `airgap-<role>` skills in one plugin: `airgap-agent` (#10) shipped in 0.4; `airgap-rag` (#11) is on the 0.5 branch, then the ideas of #12.
 
 ## Known limitations
 
@@ -48,7 +56,7 @@ The triggering suite ran on the 0.3 descriptions on 2026-11-24: 12 of 12 cases p
 
 ## Later
 
-- `airgap-rag` (#11), with its own design, in the same markdown-only form.
+- The ideas of #12, each as its own `airgap-<role>` skill in the same markdown-only form.
 - Eval scenarios that state `inside.operator` (`local_agent`, `people_then_agent`) and `hardware.cpu_arch = arm64`, and one whose hardware does not fit.
 - Turn the behavior evals into `claude plugin eval` cases, so that contributors can run them.
 - Split `code_assistant` into code completion and coding agent; make concurrency depend on organization size.
