@@ -4,8 +4,8 @@ Nothing in docs-site/src/content/docs/reference/ is written by hand, and neither
 example page, the install page, the contributing page or the images the site shares with the
 README. The skills ship markdown, so most pages are that markdown with a front matter and links:
 
-- reference/architect/ and reference/transfer/: each skill's SKILL.md workflow and its references/
-- reference/catalog/: one page per catalog entry, and an index
+- reference/architect/, reference/transfer/ and reference/agent/: each skill's SKILL.md workflow and its references/
+- reference/catalog/: one page per catalog entry, and an index (the architect's)
 - reference/gpus.md: the GPU table
 - start/install.md: the Install section of the README
 - project/contributing.md: CONTRIBUTING.md
@@ -29,7 +29,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILLS = REPO_ROOT / "plugins" / "airgap-anything" / "skills"
 ARCHITECT = SKILLS / "airgap-architect"
 TRANSFER = SKILLS / "airgap-transfer"
+AGENT = SKILLS / "airgap-agent"
 CATALOG = ARCHITECT / "catalog"
+AGENT_CATALOG = AGENT / "catalog"
 EXAMPLE = REPO_ROOT / "examples" / "department"
 SITE = REPO_ROOT / "docs-site"
 DOCS = SITE / "src" / "content" / "docs"
@@ -66,6 +68,14 @@ SKILL_PAGES = [
         ("references/channels.md", "channels", "Channels", "How splitting and sending order change with removable media, a data diode, a staging host or another channel."),
         ("references/inside.md", "inside", "Inside the network", "The runbook and the agent rules for the inside, as templates."),
     ]),
+    (AGENT, "agent", [
+        ("references/interview.md", "interview", "Interview", "The eight questions airgap-agent asks, with the default for each, and how the answers map to tools."),
+        ("references/decisions.md", "decisions", "Decisions", "Which coding-agent tool to choose and when, why Claude Code is never paired with an open-weight model, and the permission stance per tool."),
+        ("references/serving.md", "serving", "Serving requirements", "The API each tool speaks, the parsers the engine needs, the context window, the served model name and the gateway route."),
+        ("references/mcp.md", "mcp", "MCP servers and skills", "MCP servers that work offline, how to install them without internet, and the per-tool skills worth carrying in."),
+        ("references/templates.md", "templates", "Configuration templates", "The user and central configuration files written for each tool, with every outbound switch off."),
+        ("references/verification.md", "verification", "Verification inside", "The install check, the smoke test and the egress check that a person runs inside the network."),
+    ]),
 ]
 
 
@@ -99,7 +109,9 @@ def _site_links(markdown: str, skill: Path) -> str:
         if path in pages:
             return f"[`{path}`]({pages[path]})"
         catalog = re.fullmatch(r"catalog/([a-z0-9-]+)\.md", path)
-        if catalog and (CATALOG / f"{catalog.group(1)}.md").is_file():
+        if catalog and skill == AGENT and (AGENT_CATALOG / f"{catalog.group(1)}.md").is_file():
+            return f"[`{path}`](/reference/agent/catalog/{catalog.group(1)}/)"
+        if catalog and skill != AGENT and (CATALOG / f"{catalog.group(1)}.md").is_file():
             return f"[`{path}`](/reference/catalog/{catalog.group(1)}/)"
         if path == "references/gpus.md":
             return f"[`{path}`](/reference/gpus/)"
@@ -123,6 +135,9 @@ def skill_index(skill: Path, folder: str, items: list) -> str:
         raise SystemExit(f"no Workflow section in {source}")
     description = re.search(r"^description: (.*)$", text, re.M).group(1)
     links = "".join(f"- [{title}](/reference/{folder}/{stem}/): {_text(desc)}\n" for _, stem, title, desc in items)
+    if skill == AGENT:
+        links += "\n## Catalog\n\nOne entry per tool, each with its pinned version, install, outbound switches and sources.\n\n" + "".join(
+            f"- [{e['name']}](/reference/agent/catalog/{e['id']}/): {_text(e['summary'])}\n" for e in _agent_entries())
     return (
         _frontmatter(skill.name, description.split(". Use when", 1)[0] + ".", "sidebar:\n  order: 0\n")
         + _banner(source)
@@ -154,6 +169,23 @@ def _entries() -> list[dict]:
         entries.append({"id": path.stem, "name": name, "summary": summary, "fields": _fields(text), "path": path})
     order = {layer: i for i, layer in enumerate(LAYER_ORDER)}
     return sorted(entries, key=lambda e: (order[e["fields"]["Layer"].strip("`")], e["id"]))
+
+
+def _agent_entries() -> list[dict]:
+    entries = []
+    for path in sorted(AGENT_CATALOG.glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        name = re.match(r"# (.+) \(`", text).group(1)
+        entries.append({"id": path.stem, "name": name, "summary": text.split("\n\n", 2)[1].strip(), "path": path})
+    return entries
+
+
+def agent_tool_page(entry: dict, order: int) -> str:
+    return (
+        _frontmatter(entry["name"], entry["summary"], f"sidebar:\n  order: {order}\n")
+        + _banner(entry["path"])
+        + _text_outside_code(_site_links(_body(entry["path"]), AGENT))
+    )
 
 
 def _link_ids(markdown: str, ids: set[str]) -> str:
@@ -265,6 +297,8 @@ def pages() -> dict[Path, str]:
         result[DOCS / "example" / "department.md"] = example_page()
     for order, entry in enumerate(entries, start=1):
         result[OUT / "catalog" / f"{entry['id']}.md"] = component_page(entry, order, ids)
+    for order, entry in enumerate(_agent_entries(), start=1):
+        result[OUT / "agent" / "catalog" / f"{entry['id']}.md"] = agent_tool_page(entry, order)
     for skill, folder, items in SKILL_PAGES:
         result[OUT / folder / "index.md"] = skill_index(skill, folder, items)
         for order, (path, stem, title, description) in enumerate(items, start=1):

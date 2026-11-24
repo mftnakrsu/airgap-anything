@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The latest release (currently 0.3.x) and `main`.
+The latest release (currently 0.4.x) and `main`.
 
 ## What counts as a security issue
 

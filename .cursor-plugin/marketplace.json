@@ -4,13 +4,13 @@
     "name": "mftnakrsu"
   },
   "metadata": {
-    "description": "Agent skills for air-gapped environments: airgap-architect designs the system and lists what to carry in; airgap-transfer packs that list into a bundle that checks itself inside."
+    "description": "Agent skills for air-gapped environments: airgap-architect designs the system and lists what to carry in; airgap-transfer packs that list into a bundle that checks itself inside; airgap-agent sets up coding agents for the network without internet."
   },
   "plugins": [
     {
       "name": "airgap-anything",
       "source": "./plugins/airgap-anything",
-      "description": "Agent skills for air-gapped environments: airgap-architect designs the system and lists what to carry in; airgap-transfer packs that list into a bundle that checks itself inside."
+      "description": "Agent skills for air-gapped environments: airgap-architect designs the system and lists what to carry in; airgap-transfer packs that list into a bundle that checks itself inside; airgap-agent sets up coding agents for the network without internet."
     }
   ]
 }

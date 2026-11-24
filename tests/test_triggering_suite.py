@@ -16,12 +16,15 @@ def skill_match(skill):
 
 
 # Grader files that check a Skill call, and the skill each one names. The architect names
-# are the ones of the first suite; the transfer ones carry the skill's name.
-POSITIVE = {"fires.md": "airgap-architect", "fires-transfer.md": "airgap-transfer"}
-NEGATIVE = {"does-not-fire.md": "airgap-architect", "does-not-fire-transfer.md": "airgap-transfer"}
+# are the ones of the first suite; the transfer and agent ones carry the skill's name.
+POSITIVE = {"fires.md": "airgap-architect", "fires-transfer.md": "airgap-transfer", "fires-agent.md": "airgap-agent"}
+NEGATIVE = {"does-not-fire.md": "airgap-architect", "does-not-fire-transfer.md": "airgap-transfer",
+            "does-not-fire-agent.md": "airgap-agent"}
 # The reply each skill's auto case is graded on.
-STARTS = {"airgap-architect": "starts-the-interview.md", "airgap-transfer": "starts-the-transfer.md"}
+STARTS = {"airgap-architect": "starts-the-interview.md", "airgap-transfer": "starts-the-transfer.md",
+          "airgap-agent": "starts-the-agent-interview.md"}
 TRANSFER_CASES = {"auto-en-build-bundle", "auto-tr-usb-hazirla", "auto-en-verify-inside", "skip-en-docker-save"}
+AGENT_CASES = {"auto-en-coding-agent", "auto-tr-kodlama-ajani", "skip-en-cloud-copilot"}
 
 
 def frontmatter(path):
@@ -47,6 +50,7 @@ class TriggeringSuiteTest(unittest.TestCase):
         for prefix in ("auto-en-", "auto-tr-", "manual-", "skip-en-", "skip-tr-"):
             self.assertTrue(any(name.startswith(prefix) for name in names), prefix)
         self.assertTrue(TRANSFER_CASES <= set(names))
+        self.assertTrue(AGENT_CASES <= set(names))
 
     def test_every_session_can_call_the_skill(self):
         for case in self.cases:
@@ -96,6 +100,10 @@ class TriggeringSuiteTest(unittest.TestCase):
             ["airgap-architect", "airgap-transfer"],
         )
 
+    def test_agent_and_architect_are_kept_apart(self):
+        self.assertIn("does-not-fire-agent.md", self.graders(SUITE / "auto-en-offline-platform"))
+        self.assertIn("does-not-fire.md", self.graders(SUITE / "auto-en-coding-agent"))
+
 
 class TriggeringWorkflowTest(unittest.TestCase):
     def setUp(self):
@@ -111,6 +119,7 @@ class TriggeringWorkflowTest(unittest.TestCase):
         for path in (
             "plugins/airgap-anything/skills/airgap-architect/SKILL.md",
             "plugins/airgap-anything/skills/airgap-transfer/SKILL.md",
+            "plugins/airgap-anything/skills/airgap-agent/SKILL.md",
             "plugins/airgap-anything/evals/triggering/**",
             ".github/workflows/triggering.yml",
         ):

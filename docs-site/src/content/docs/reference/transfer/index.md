@@ -26,7 +26,7 @@ Air-gap transfer:
 - [ ] 10. Hand-off
 ```
 
-1. **Inputs.** Read the manifest and the blueprint its `Blueprint:` line names. Every component and version in the blueprint's decision table must appear in the manifest and the other way round, and the manifest must name a platform. If not, the manifest is out of date: send the user back to `airgap-architect` and stop.
+1. **Inputs.** Read the manifest and the blueprint its `Blueprint:` line names. Every component and version in the blueprint's decision table must appear in the manifest and the other way round, and the manifest must name a platform. A row marked "(from airgap-agent)" after its component needs no blueprint row when its component is listed in `docs/airgap/agents.md`: `airgap-agent` adds coding-agent rows without changing the blueprint. If not, the manifest is out of date: send the user back to `airgap-architect` and stop.
 2. **Questions.** Read [`references/questions.md`](/reference/transfer/questions/); ask only what this transfer needs.
 3. **Plan.** Write `docs/airgap/transfer-plan.md` ([`references/bundle.md`](/reference/transfer/bundle/), "The plan file"), one item per row of the manifest. Read [`references/channels.md`](/reference/transfer/channels/) for how the channel splits and orders files.
 4. **Approval.** Send the plan message of [`references/fetch.md`](/reference/transfer/fetch/) and end your turn. "Prepare everything" ends here.

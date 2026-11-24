@@ -1,0 +1,37 @@
+# Interview
+
+Goal: an answer for each of the eight questions below, so that `docs/airgap/agents.md` can say what was chosen and why. The interview is short: every question has a default, and a skipped question takes it.
+
+## How to ask
+
+- Ask only the questions the user's message and the blueprint leave open. When the user has asked you to set it up, state the defaults you take for the open ones, list them as assumptions in `docs/airgap/agents.md`, and continue. Otherwise ask them in one message, in the user's language, each with its default. Do not ask them one by one.
+- Read the model and the engine from the blueprint (`docs/airgap/blueprint.md`, or the path the architect used) when one exists, and tell the user which answers you already took from it. Questions 1 and 3 then need no asking.
+- A skipped or "I don't know" answer takes the default. List every default you used in the assumptions of `docs/airgap/agents.md`.
+- Keep the keys and the choice values exactly as written here, whatever the language of the conversation.
+- Never ask for a key or a password. Keys come from environment variables that the user sets inside; `agents.md` names them.
+
+## Questions
+
+| # | Key | Question | Default |
+|---|---|---|---|
+| 1 | `users` | Who uses agents: developers (how many), the inside operator, or both? | developers, count from the blueprint |
+| 2 | `tools` | Which tools do you want, or should I recommend? | recommend |
+| 3 | `models` | Which model or models will agents use? | from the blueprint |
+| 4 | `claude_route` | Can you reach Claude models through a private route, with an account? | no |
+| 5 | `internal_tools` | Which internal systems should agents reach: git server, wiki, issue tracker, database? | git only |
+| 6 | `permissions` | How much may an agent do without asking: read only, edit with approval, edit freely in the workspace? | edit with approval |
+| 7 | `os` | Which operating systems do developers use? | Linux |
+| 8 | `central` | Should settings be enforced centrally, so users cannot turn them off? | yes |
+
+Record `permissions` as one of `read only`, `edit with approval`, `edit freely in the workspace`.
+
+## Mapping answers
+
+- `users`: when the number of agent users differs from the blueprint's `code_assistant` share, tell the user to rerun the architect's sizing. Do not recompute it here, so the arithmetic stays in one place.
+- `tools`: "recommend" follows `references/decisions.md`. More than one tool may be chosen.
+- `claude_route` no: Claude Code is not offered. Say why when the user asks for it: `references/decisions.md`, "Claude Code".
+- `claude_route` yes: Claude Code is offered for the Claude route only, never for an open-weight model.
+- `internal_tools`: each system maps to an MCP server in `references/mcp.md`. Anything not listed there is "not documented": say so and do not guess a server.
+- `permissions`: the stance maps to each tool's settings in `references/decisions.md`. Network access from the sandbox stays off in every stance.
+- `os` includes macOS or Windows: note the managed-settings path for each OS from the catalog entry, and use the firewall deny log instead of strace in the egress check (`references/verification.md`).
+- `central` yes: write the central policy file for each chosen tool (`references/templates.md`). `central` no: write the user file only, and say in `agents.md` that users can turn the switches back on.

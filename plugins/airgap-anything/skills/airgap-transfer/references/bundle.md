@@ -35,13 +35,14 @@ The commands assume GNU coreutils and `find` (Linux). On macOS, install them or 
 | 2 | model | | `org/name` at `REVISION` | `models/main-chat` | | planned |
 | 3 | package | `k3s` | URL | `packages/k3s/FILE` | | planned |
 | 4 | manual | `vllm` | runtime download: compiled kernels | `manual/vllm-kernels` | | ask after the fetch |
+| 5 | file | `qwen-code` | `docs/airgap/agents/qwen-code/` | `files/docs/airgap/agents/qwen-code/` | | planned |
 
 ## Volumes
 
 Filled when packing: the part size, the volume count, what each volume holds.
 ```
 
-One item per image row, model row and package row of the manifest, and one manual item per custom part and per runtime download. Benchmark-only rows are items unless `include_benchmark` is `false`. Status moves from `planned` to `fetched` or `failed` (with the error), and for manual items to `added` or `not needed` (with the reason).
+One item per image row, model row, package row and project file row of the manifest, and one manual item per custom part and per runtime download. Benchmark-only rows are items unless `include_benchmark` is `false`. Status moves from `planned` to `fetched`, `copied` (project files) or `failed` (with the error), and for manual items to `added` or `not needed` (with the reason).
 
 ## Bundle layout
 
@@ -51,6 +52,7 @@ B/
 ├── images/COMPONENT/NAME.tar           and NAME.digest
 ├── models/MODEL/...                    as downloaded, at the pinned commit
 ├── packages/COMPONENT/FILE             and checksums/SUMSFILE
+├── files/<project path>/...            project files, copied with their project paths
 └── manual/ITEM/...                     files the user added
 ```
 
@@ -58,9 +60,9 @@ B/
 
 ## Packing, in order
 
-Pack only when every item is `fetched`, every manual item is settled, and the checks of `references/fetch.md` ("Checking what arrived") pass.
+Pack only when every item is `fetched` or `copied`, every manual item is settled, and the checks of `references/fetch.md` ("Checking what arrived") pass.
 
-1. **Sizes.** `cd B && find images models packages manual -type f -printf '%s %p\n' | sort -rn` lists every file, largest first. Record each item's size in the plan.
+1. **Sizes.** `cd B && find images models packages files manual -type f -printf '%s %p\n' | sort -rn` lists every file, largest first. Record each item's size in the plan.
 2. **Part size.** The smallest of the limits that apply: 4,294,967,295 bytes (4 GiB minus one byte) per file on `fat32`; `channel.max_file_gb` × 10^9 for a data diode or staging host; the volume capacity below. A file larger than the part size is split. No limit applies: nothing is split.
 3. **Volume plan.** For removable media, the capacity of one volume is `medium.capacity_gb` × 10^9 × 0.98 (2 % reserve for the shared files and the filesystem). Take the files and parts largest first and put each on the first volume with room, opening a new volume when none has room. Every other channel is one volume. Write the plan into the plan file.
 4. **Documents.** Write `INVENTORY.md` (below) and the runbook or agent rules of `references/inside.md`. They name the volume count and the split files, so they come after the volume plan.
@@ -89,7 +91,7 @@ For the people who approve the transfer and for scanning stations, largest item 
 | Item | Kind | Component | Version | Source | License | Files | Size | Notes |
 |---|---|---|---|---|---|---|---|---|
 
-Source is the image reference and digest, the model repository and commit, or the URL. Notes name pickle files the user allowed, a package without publisher checksums, and manual items. The SHA-256 of every file is in `SHA256SUMS`.
+Source is the image reference and digest, the model repository and commit, the URL, or the project path. Notes name pickle files the user allowed, a package without publisher checksums, and manual items. The SHA-256 of every file is in `SHA256SUMS`.
 
 ## Writing the volumes
 

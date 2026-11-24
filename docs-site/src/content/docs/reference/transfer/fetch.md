@@ -23,7 +23,7 @@ Nothing is downloaded until the user has approved the plan in this conversation.
 
 When the plan is written, send one message with these parts, in this order, and end your turn:
 
-1. The item count by kind (images, models, packages, manual items).
+1. The item count by kind (images, models, packages, project files, manual items).
 2. The tools the commands use (`skopeo` or `docker`, `hf`, `curl`, `sha256sum`).
 3. The bundle folder.
 4. The sizes you know, and what is still unknown.
@@ -50,7 +50,7 @@ Every image reference, model repository and commit, URL and file name comes from
 
 `B` is the bundle folder and `ARCH` the architecture of the manifest's `Platform:` line (`amd64` or `arm64`). `NAME` is the image reference with every character other than letters, digits, `.`, `_` and `-` replaced by `_` (`vllm/vllm-openai:v0.34.0` becomes `vllm_vllm-openai_v0.34.0`). Stop when free space in `B` falls below 1 GiB (`df -h B`).
 
-Run each item on its own and record it in the plan's items table as `fetched` or `failed`, with the error. A failed item does not stop the others; running its commands again fetches it again.
+Run each item on its own and record it in the plan's items table as `fetched` or `failed`, with the error (a project file is `copied`). A failed item does not stop the others; running its commands again fetches it again.
 
 ### Images, with `skopeo` (preferred: it needs no Docker daemon)
 
@@ -91,6 +91,20 @@ curl --fail --location --silent --show-error --output "B/packages/COMPONENT/chec
 
 The second line only when the manifest names a publisher checksum file for the package; `SUMSFILE` is the last part of its URL.
 
+**Project files.** A manifest row whose source is a path in the project (for example `docs/airgap/agents/qwen-code/`) is copied into the bundle, not downloaded: its bundle path is `files/` followed by the full project-relative path, unchanged, so `files/docs/airgap/agents/qwen-code/`. `SRC` is that project path and `B` the bundle folder:
+
+```sh
+mkdir -p "B/files/SRC" && cp -R "SRC/." "B/files/SRC/"
+```
+
+When the project path is a single file, such as `docs/airgap/agents.md`, `DIR` is the folder that holds it:
+
+```sh
+mkdir -p "B/files/DIR" && cp "SRC" "B/files/SRC"
+```
+
+Copying `B/files/` back onto the project root puts every file where it was. Its files go into `SHA256SUMS` like any other.
+
 ## Checking what arrived
 
 1. **Publisher checksums.** For each package with a checksum file, in `B/packages/COMPONENT/`, check it with the tool that matches the algorithm (the line names it, or the hash length tells: 32 hex characters md5, 64 SHA-256, 128 SHA-512):
@@ -117,6 +131,7 @@ Every command line above was taken from these pages; a changed line needs its pa
 | `docker` | `image load --input` (inside) | https://docs.docker.com/reference/cli/docker/image/load/ |
 | `hf` | `download REPO --revision --local-dir --include` (one `--include` per pattern) | https://huggingface.co/docs/huggingface_hub/v2.4.0/en/guides/cli, https://huggingface.co/docs/huggingface_hub/v2.4.0/en/package_reference/cli |
 | `sha256sum`, `md5sum`, `sha512sum` | `-c` reads `HASH  FILE` lines and exits non-zero when a listed file cannot be read or does not match; `--quiet` prints only failures; `--ignore-missing` skips listed files that are absent | https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (sections "cksum invocation" and "md5sum invocation"), https://www.gnu.org/software/coreutils/manual/html_node/sha2-utilities.html |
+| `mkdir`, `cp` | `mkdir -p` creates missing parent folders; `cp -R` copies a folder recursively, plain `cp` one file (project files) | https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (sections "mkdir invocation" and "cp invocation") |
 | `split` | `-b SIZE` bytes per part, `-a 3` three-digit suffixes, `--numeric-suffixes=1` counting from 1 | https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (section "split invocation") |
 
 The downloads under Packages, with the options `--fail --location --silent --show-error --output`: https://curl.se/docs/manpage.html

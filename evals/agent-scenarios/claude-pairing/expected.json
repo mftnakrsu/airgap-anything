@@ -1,0 +1,25 @@
+{
+  "tools": [],
+  "tools_not": [
+    "claude-code"
+  ],
+  "must_mention": [
+    [
+      "llm-gateway",
+      "doesn't support routing Claude Code to non-Claude models"
+    ],
+    [
+      "Qwen Code",
+      "opencode"
+    ]
+  ],
+  "files": [],
+  "manifest_sections": [],
+  "stops_for_approval": true,
+  "must_not": [
+    "claude-code configured against an open-weight model",
+    "an API key in a file",
+    "a file under docs/airgap/agents/claude-code/",
+    "a different tool written as final files without the user's approval"
+  ]
+}

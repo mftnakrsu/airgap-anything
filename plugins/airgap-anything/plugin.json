@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "airgap-anything",
-  "version": "0.3.0",
-  "description": "Agent skills for air-gapped environments: airgap-architect designs the system and lists what to carry in; airgap-transfer packs that list into a bundle that checks itself inside.",
+  "version": "0.4.0",
+  "description": "Agent skills for air-gapped environments: airgap-architect designs the system and lists what to carry in; airgap-transfer packs that list into a bundle that checks itself inside; airgap-agent sets up coding agents for the network without internet.",
   "author": {
     "name": "mftnakrsu",
     "url": "https://github.com/mftnakrsu"
@@ -23,7 +23,7 @@
       "interface": {
         "displayName": "airgap-anything",
         "shortDescription": "Design air-gapped AI systems",
-        "longDescription": "Two skills for networks without internet access. airgap-architect interviews you about your organization and writes a blueprint: one decision per layer with its reasons and alternatives, GPU sizing with every step written out, and the transfer manifest of everything to carry in, from a catalog where each version and image has its source. airgap-transfer turns that manifest into a bundle that checks itself: fetch commands you approve first, a SHA-256 list, a split across USB disks, a data diode or a staging host, and a runbook or agent rules for the inside. The skills are plain markdown: no scripts, no dependencies. They are a design aid, not professional advice: verify before you buy or deploy.",
+        "longDescription": "Three skills for networks without internet access. airgap-architect interviews you about your organization and writes a blueprint: one decision per layer with its reasons and alternatives, GPU sizing with every step written out, and the transfer manifest of everything to carry in, from a catalog where each version and image has its source. airgap-transfer turns that manifest into a bundle that checks itself: fetch commands you approve first, a SHA-256 list, a split across USB disks, a data diode or a staging host, and a runbook or agent rules for the inside. airgap-agent sets up a coding agent for the same network: it picks the tool, writes its configuration and central policy with telemetry, updates and web access off, states what the model server must support, and adds everything to the transfer manifest. The skills are plain markdown: no scripts, no dependencies. They are a design aid, not professional advice: verify before you buy or deploy.",
         "category": "Productivity",
         "developerName": "mftnakrsu",
         "defaultPrompt": [

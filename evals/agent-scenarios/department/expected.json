@@ -1,0 +1,27 @@
+{
+  "tools": [
+    "qwen-code"
+  ],
+  "must_mention": [
+    [
+      "qwen3_xml",
+      "qwen3_coder"
+    ],
+    "usageStatisticsEnabled",
+    "catalogRefresh",
+    "approvalMode"
+  ],
+  "files": [
+    "docs/airgap/agents.md",
+    "docs/airgap/agents/qwen-code/"
+  ],
+  "manifest_sections": [
+    3,
+    4,
+    7
+  ],
+  "must_not": [
+    "claude-code configured against an open-weight model",
+    "an API key in a file"
+  ]
+}
