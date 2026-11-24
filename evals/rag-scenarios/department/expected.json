@@ -1,0 +1,26 @@
+{
+  "platform": "open-webui",
+  "must_mention": [
+    "PGVECTOR_INDEX_METHOD",
+    "ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER",
+    "RAG_EMBEDDING_ENGINE",
+    "ENABLE_API_KEYS",
+    "pg_relation_size"
+  ],
+  "files": [
+    "docs/airgap/rag.md",
+    "docs/airgap/rag/"
+  ],
+  "manifest_sections": [
+    1,
+    2,
+    3,
+    4,
+    7
+  ],
+  "must_not": [
+    "internal documents sent to a cloud agent",
+    "an API key in a file",
+    "a manifest row without the (from airgap-rag) marker"
+  ]
+}

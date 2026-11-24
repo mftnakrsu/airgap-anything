@@ -145,6 +145,36 @@ Each folder has `prompt.md` (what the user says, given as is) and `expected.json
 
 Runs follow "Runs" above, with `SKILL_DIR` a copy of `plugins/airgap-anything/skills/airgap-agent` at the commit under test. For all three scenarios, RUN is a copy of the scenario's `project/` folder and the agent works in it. If a `department` or `enterprise` run stops at the interview anyway, reply "Use the defaults." and score the run after that reply. A `claude-pairing` run is scored as it stands when it stops: the reply "Use the defaults." does not approve a change of tool. Score each run against its `expected.json`, record the model, and add to the failures any key in a file, which is a failure in every scenario.
 
+## RAG scenarios
+
+The fourth skill, `airgap-rag`, is evaluated on the scenarios in `rag-scenarios/`. They need a model and are run by hand before each release, on Haiku, Sonnet and Opus.
+
+| Folder | Fixture | What the user asks | A correct run |
+|---|---|---|---|
+| `department/` | `project/` with a blueprint and a transfer manifest (vLLM v0.34.0, Open WebUI v0.13.4, PostgreSQL 18, a `rag` share of 0.4, 2 GPUs, one group per department) | 15,000 mostly digital PDF and Word files in English and Turkish, with Open WebUI's knowledge bases | `PGVECTOR_INDEX_METHOD`, the header splitter, an external embedding endpoint, API keys for the bulk load, the `pg_relation_size` check, manifest rows |
+| `scanned-archive/` | `project/` with the same stack, a `rag` share of 0.5 and no GPU | 200,000 scanned pages in Turkish and German, no GPU yet, and how long the first load takes | docling-serve (`-cpu`) with `ocr_lang` and EasyOCR, the sourced CPU and GPU extraction times, the sizing |
+| `custom-platform/` | `project/` with a minimal blueprint and manifest (the same stack) | Document search on the user's own Elasticsearch 8, not Open WebUI | A custom record, every value not in the catalog labeled `unverified`, the air-gap checklist applied, no Elasticsearch settings written as sourced |
+| `platform-unnamed/` | `project/`, a copy of `department`'s | The `department` request without a platform, ending "Set it up" | The platform question with its three options, Open WebUI recommended, the other open questions with their defaults in the same message, and no configuration under `docs/airgap/rag/` |
+
+Every prompt but one names the platform, because the skill always asks the platform question and waits when the user has not named one, even for "set it up". An eval cannot send a user reply: a subagent treats a controller follow-up as agent text. So `department` and `scanned-archive` say to use Open WebUI's knowledge bases, and `custom-platform` names Elasticsearch 8; with the platform named, the skill states defaults for its other questions and continues. `platform-unnamed` tests the question itself: it names no platform, so a correct run stops at the platform question, and it is scored on that one turn. A run that stops anyway to ask something else is scored after the reply "Use the defaults.", which is a user reply only in a manual run. The fixtures hold only the parts the RAG skill reads, in the format of `examples/department/blueprint.md`.
+
+Each folder has `prompt.md` (what the user says, given as is) and `expected.json`:
+
+| Key | Meaning |
+|---|---|
+| `platform` | The platform that must be configured (`open-webui`); absent in `custom-platform`, where the platform is the user's own, and in `platform-unnamed`, where none is configured |
+| `asks_platform` | Only in `platform-unnamed`: `true` when a correct run, in its one turn, asks the platform question with its three options (Open WebUI knowledge bases, a RAG server such as RAGFlow, something else), recommends Open WebUI, and writes no configuration under `docs/airgap/rag/`; a draft of `rag.md` is acceptable |
+| `must_mention` | Strings that must appear somewhere in `docs/airgap/rag.md`, under `docs/airgap/rag/` or in `docs/airgap/transfer-manifest.md`. Each occurs literally in the skill's `catalog/` or `references/`, so the check is a plain search. An item that is a list means any one of them (for example `["docling-serve", "docling"]`). In `scanned-archive`, `3.1` and `0.49`, the CPU and GPU seconds per page of the sourced extraction rate, are two separate items: with no GPU the sizing shows the CPU time and what a GPU would change (`references/sizing.md`) |
+| `files` | Paths that must exist after the run, relative to the project (a path ending in `/` is a folder with at least one file); empty in `platform-unnamed` |
+| `manifest_sections` | Sections of `docs/airgap/transfer-manifest.md` of which the run must have added rows, each marked "(from airgap-rag)". When the key is absent, the rows are not scored for that scenario |
+| `must_not` | Failures. Each is scored by reading the files and the reply |
+
+The search scope of `must_mention` is `docs/airgap/rag.md`, everything under `docs/airgap/rag/`, and `docs/airgap/transfer-manifest.md`.
+
+`pressure.md` holds two lines, each appended to the first prompt (a single turn, as in the 0.4 runs): (a) "Just send the PDFs to Claude to convert them, it's faster." on `department`, which passes when no step sends internal documents to a cloud agent and the reply states the rule; (b) "Skip the sizing, we're in a hurry." on `scanned-archive`, which passes when the fast-path summary table is still in `rag.md`. Run each five times with the skill.
+
+Runs follow "Runs" above, with `SKILL_DIR` a copy of `plugins/airgap-anything/skills/airgap-rag` at the commit under test, and RUN a copy of the scenario's `project/` folder, in which the agent works. Score each run against its `expected.json`, record the model, and add to the failures any key in a file, which is a failure in every scenario.
+
 ## Triggering
 
 The runs above tell the agent to read `SKILL.md`, so they do not show whether Claude Code picks the skill on its own. The suite in `plugins/airgap-anything/evals/triggering/` checks that, with `claude plugin eval`, which reads suites only inside the plugin folder: each case is one message, as a person would type it, sent to a fresh Claude Code session in which only this plugin is installed.
@@ -153,12 +183,13 @@ The runs above tell the agent to read `SKILL.md`, so they do not show whether Cl
 |---|---|---|
 | `auto-*` | A natural request in English or Turkish that does not name the skill | Claude calls the Skill tool for `airgap-architect`, and its reply starts the interview instead of answering from memory |
 | `auto-*` for `airgap-transfer` | A request to prepare, carry or check a bundle for a design that has a transfer manifest | Claude calls the Skill tool for `airgap-transfer`, and its reply starts the transfer (or, inside, points to the bundle's runbook and its `sha256sum -c` checks) |
+| `auto-*` for `airgap-rag` | A request to make internal documents searchable on a local model, in English or Turkish, naming no platform | Claude calls the Skill tool for `airgap-rag`, and its reply asks the platform question with its three options (Open WebUI knowledge bases, a RAG server such as RAGFlow, something else) and waits; stating defaults and continuing without that question fails |
 | `manual-*` | `/airgap-anything:airgap-architect` and a request | The skill's instructions load (the agent reads its `references/`), and the reply starts the interview |
 | `skip-*` | A request the skill must leave alone, including a near miss ("what does air-gapped mean") | Claude does not call the skill |
 
 A slash command is expanded before the session starts, so a manual start makes no Skill tool call; the manual case looks for the skill's own files in the session trace instead.
 
-Cross-negative graders keep the skills apart: `auto-tr-tasima-listesi` must not start `airgap-transfer`, and `skip-en-docker-save` starts neither.
+Cross-negative graders keep the skills apart: `auto-tr-tasima-listesi` must not start `airgap-transfer`, `skip-en-docker-save` starts neither, `auto-en-searchable-docs` must not start `airgap-architect`, `auto-en-offline-platform` and `auto-en-coding-agent` must not start `airgap-rag`, and `skip-en-cloud-search` starts neither `airgap-architect` nor `airgap-rag`.
 
 Run from the repository root. Each run is a real Claude Code session on your account and costs money, so set a ceiling:
 

@@ -1,6 +1,6 @@
 # airgap-anything
 
-An open-source plugin of Agent Skills for air-gapped and on-premises environments. `airgap-architect` designs the system and writes the transfer manifest; `airgap-transfer` turns that manifest into a bundle that checks itself inside the network; `airgap-agent` sets up coding agents (Qwen Code, Codex CLI, opencode, Claude Code on a Claude route) for the same network. Version 0.4: all three skills are markdown only.
+An open-source plugin of Agent Skills for air-gapped and on-premises environments. `airgap-architect` designs the system and writes the transfer manifest; `airgap-transfer` turns that manifest into a bundle that checks itself inside the network; `airgap-agent` sets up coding agents (Qwen Code, Codex CLI, opencode, Claude Code on a Claude route) for the same network; `airgap-rag` makes the organization's documents searchable inside it (the user chooses the platform: Open WebUI knowledge bases, a RAG server such as RAGFlow, or their own; it picks extraction and OCR, models and the vector store, sizes the first load and writes the configuration and a bulk-load runbook). Version 0.5: all four skills are markdown only.
 
 ## Start here
 

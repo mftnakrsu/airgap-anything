@@ -1,0 +1,1 @@
+Our air-gap design is approved: docs/airgap/ in this project holds the blueprint and the transfer manifest. We already run Elasticsearch 8 inside and want to use it for document search, not Open WebUI. The documents are digital PDFs and Word files on a file share. Set it up, and add what has to be carried in to the transfer manifest.

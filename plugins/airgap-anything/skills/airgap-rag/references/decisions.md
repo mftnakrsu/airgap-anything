@@ -1,0 +1,46 @@
+# Decisions
+
+Goal: choose the platform and the vector store, state the reason for each choice and for each refusal. Every row names the catalog entry that holds the facts; read it before you write about the tool.
+
+## Platform
+
+| Situation | Platform | Catalog | Why |
+|---|---|---|---|
+| Default | Open WebUI knowledge bases (v0.13.4) | the architect's `open-webui` entry, not copied here | Already in the blueprint. Grants by group with Read or Write, groups synced from LDAP or OAuth. Its docs say "Only PGVector and ChromaDB will be consistently maintained by the Open WebUI team" (https://docs.openwebui.com/reference/env-configuration/) |
+| Scanned or complex PDFs and tables are the core, and the user wants a separate server | RAGFlow v1.0.0 (Apache-2.0) | `catalog/ragflow.md` | DeepDoc models are baked into the image; it has its own UI and API. Caveats: sharing is only "Only me" or "Team", with no group-level permissions; the image's default `HF_ENDPOINT` is hf-mirror.com and must be reset; its default stack adds five services and none is PostgreSQL 18 |
+| Something else | Custom | none | Recorded with version and docs link; values not in the catalog are labeled `unverified`; the air-gap checklist (staged models, telemetry, manifest rows, egress check) still applies (`references/interview.md`) |
+
+Open WebUI needs a vector store and extraction service from this skill's catalog when the defaults do not fit: `catalog/pgvector.md`, `catalog/qdrant.md`, `catalog/docling-serve.md`. The embedding and reranker models are in `references/models.md`.
+
+## Alternatives, one line each
+
+Not configured by this skill. Name them when the user asks, with the facts below, and stop. Versions and dates were read on 2026-11-24 from the release API of each repository.
+
+| Tool | One line | Source |
+|---|---|---|
+| Onyx v5.1.3 | Connectors that keep source permissions; MIT except the `ee/` directories; groups and permission sync only in paid tiers; `ONYX_AIRGAPPED=true` and `DISABLE_TELEMETRY=true` exist; at least 4 vCPU and 10 GB RAM; no documented OpenAI-compatible path for embeddings | https://docs.onyx.app/admins/permissions/understanding_permissions.md |
+| WeKnora v0.9.1 | Roles (Owner, Admin, Contributor, Viewer) and OIDC under MIT; pre-1.0; configuration and feature docs partly in Chinese; telemetry and update checks not documented | https://raw.githubusercontent.com/Tencent/WeKnora/v0.9.1/website-docs/03-features/01-tenant-auth.md |
+| AnythingLLM v1.20.0 | One container, MIT; multi-user roles but no groups, SSO or document permissions documented; its default embedder downloads on first use, so point it at vLLM | https://docs.anythingllm.com/features/security-and-access |
+| Dify 1.20.0 | RAG inside apps and workflows; modified Apache-2.0, and running it multi-tenant needs written authorization; 16 services; model providers are plugins, so an air gap needs a PyPI mirror and pre-fetched plugins | https://raw.githubusercontent.com/langgenius/dify/main/LICENSE |
+| LightRAG v1.5.8 | Graph RAG as one container, MIT; not profiled in the research, so its offline setup is not documented here | https://api.github.com/repos/HKUDS/LightRAG |
+| RAG-Anything | Graph RAG; not researched: version, license and offline behavior are not documented here | none |
+
+Ingestion cost warning for the graph RAG tools: they build a graph from the text, which takes model calls per chunk during ingestion (design assumption, `estimate`; the research measured no cost). Size that before the first load.
+
+## Vector store
+
+| Choice | When | Catalog |
+|---|---|---|
+| pgvector 0.8.7 (`pgvector/pgvector:0.8.7-pg18`, PostgreSQL 18.7, matching the architect's `postgresql` pin) | Default | `catalog/pgvector.md` |
+| Qdrant v1.20.2 | Very large corpora, or a separate service wanted. Set the API key; telemetry is off with `QDRANT__TELEMETRY_DISABLED=true` | `catalog/qdrant.md` |
+
+Chroma is not used: it has no built-in auth (none since v1.0.0, and it binds to 0.0.0.0), and its default embedder downloads a model (https://docs.trychroma.com/reference/server-env-vars.md, https://docs.trychroma.com/docs/embeddings/embedding-functions). Open WebUI's own default `VECTOR_DB` is chroma, so write `VECTOR_DB=pgvector` explicitly. Milvus and OpenSearch were researched and are not offered: Open WebUI's team maintains only PGVector and ChromaDB, and Open WebUI v0.13.4 pins `pymilvus==2.6.14` with no statement that it works against a Milvus 3.0 server.
+
+Search settings, written to `docs/airgap/rag/`:
+
+- `PGVECTOR_INDEX_METHOD=hnsw`, set before the first load. Earlier Open WebUI versions built an IVFFlat index on an empty table and got a recall@10 of 0.480; `catalog/pgvector.md` has the `REINDEX` fix if that already happened.
+- Hybrid search on, then the reranker: `references/models.md`.
+
+## No model ranking
+
+This skill ranks no models. A score appears only as the reason for a choice, with its model-card source, and says whose run it is: MMTEB 64.33 for Qwen3-Embedding-0.6B and 59.56 for bge-m3 come from the Qwen3-Embedding-8B card, whose leaderboard figures were read on 2025-05-24 (https://huggingface.co/Qwen/Qwen3-Embedding-8B). A newer or stronger model may exist: the choice is checked on the user's own documents with the retrieval check (`references/verification.md`), not with a card.

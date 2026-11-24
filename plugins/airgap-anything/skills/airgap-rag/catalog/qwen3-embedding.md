@@ -1,0 +1,102 @@
+# Qwen3-Embedding-0.6B (`qwen3-embedding`)
+
+Open-weight embedding model from the Qwen team, instruction-aware, served by the network's vLLM. The default embedding model of the skill.
+
+| Field | Value |
+|---|---|
+| Kind | `embedding-model` |
+| Version | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` |
+| License | Apache-2.0 |
+| Install | `hf download Qwen/Qwen3-Embedding-0.6B --revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3 --local-dir ./qwen3-embedding` on the connected side, then `vllm serve /srv/models/qwen3-embedding` on the inside |
+| Evidence | docs |
+| Last verified | 2026-11-24 |
+
+The Version is the `sha` of the Hugging Face model record, read 2026-11-24 (https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B).
+
+| Property | Value | Source |
+|---|---|---|
+| Parameters | 596M, BF16 | https://huggingface.co/api/models/Qwen/Qwen3-Embedding-8B?blobs=true and the 0.6B equivalent |
+| Dimensions | 1024, Matryoshka (shorter vectors through the request field `dimensions`) | https://docs.vllm.ai/en/stable/models/pooling_models/embed/ |
+| Max tokens | 32K | https://huggingface.co/Qwen/Qwen3-Embedding-8B |
+| Weights on disk | 1.19 GB | https://huggingface.co/api/models/Qwen/Qwen3-Embedding-8B?blobs=true |
+| Languages | "100+ languages"; the card does not name Turkish, the Qwen3 base model's list does | https://qwenlm.github.io/blog/qwen3/ |
+
+The score is a reason, not a promise: MMTEB (multilingual) mean 64.33 for the 0.6B, from the table on the Qwen3-Embedding-8B card, whose leaderboard figures were read on 2025-05-24 (https://huggingface.co/Qwen/Qwen3-Embedding-8B). Retrieval quality on the user's own documents is checked with the retrieval check, not with this score.
+
+## Choose when
+
+- The default: the user's languages are covered by the Qwen3 base model's list.
+- Long inputs matter (32K tokens) or a small model should leave GPU memory to the chat model.
+- Shorter vectors are wanted: Matryoshka dimensions cut the vector store's size.
+
+## Avoid when
+
+- The user's languages are not named for the Qwen3 base model: prefer `bge-m3`, which names its multilingual coverage in its paper.
+- Sparse or ColBERT outputs are wanted: that is `bge-m3`.
+
+## Configuration
+
+Serving, on a separate instance of the architect's `vllm` entry (v0.34.0), as a pooling model (https://docs.vllm.ai/en/stable/cli/serve/): Qwen3ForCausalLM is converted to an embedding model automatically.
+
+```
+vllm serve /srv/models/qwen3-embedding --runner pooling
+```
+
+The endpoint is `/v1/embeddings` (https://docs.vllm.ai/en/stable/models/pooling_models.html). There is no `--task` flag.
+
+Open WebUI (https://docs.openwebui.com/reference/env-configuration): `RAG_EMBEDDING_ENGINE=openai`, `RAG_OPENAI_API_BASE_URL`, `RAG_OPENAI_API_KEY` (from the environment) and `RAG_EMBEDDING_MODEL`. With 1024 dimensions `PGVECTOR_USE_HALFVEC` is not needed; above 2,000 dimensions it is. Changing the model needs "Reindex Knowledge and Memory Vectors".
+
+## Egress switches
+
+| Connection | Default | Switch | Source |
+|---|---|---|---|
+| Hugging Face Hub calls from vLLM and its libraries | on | `HF_HUB_OFFLINE=1` | https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables |
+| vLLM usage statistics sent to stats.vllm.ai | on | `VLLM_NO_USAGE_STATS=1` (also `DO_NOT_TRACK=1`, which turns off Hugging Face library telemetry too) | https://docs.vllm.ai/en/stable/usage/usage_stats.html |
+
+## Caveats
+
+- `--revision` takes a commit hash, branch or tag, so the command above downloads exactly the pinned revision; `--local-dir` puts the files in that folder instead of the cache and creates a `.cache/huggingface/` metadata folder at its root (https://huggingface.co/docs/huggingface_hub/guides/cli). The folder name `./qwen3-embedding` is this entry's choice. After the download, the model record's `sha` should still equal the Version.
+- The score comes from the model's own card and is not a measurement on the user's documents.
+- TEI (text-embeddings-inference v1.9.4) also lists Qwen3 among its embedding architectures, but on the Runpod benchmark vLLM is 2.6x faster on Qwen3-Embedding-0.6B (https://www.runpod.io/blog/gpu-embedding-workloads-benchmark); the skill uses vLLM.
+
+## Carry in
+
+### Images
+
+None.
+
+### Models
+
+| Repo | Revision | Size | Source |
+|---|---|---|---|
+| `Qwen/Qwen3-Embedding-0.6B` | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` | 1.19 GB | https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B |
+
+Carry the whole `./qwen3-embedding` folder, produced by `hf download Qwen/Qwen3-Embedding-0.6B --revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3 --local-dir ./qwen3-embedding` (https://huggingface.co/docs/huggingface_hub/guides/cli). Inside the network `airgap-transfer` copies it to `/srv/models/<MODEL>`, the path that `vllm serve` takes; `qwen3-embedding` is used here for `<MODEL>` (`references/models.md`, Serving).
+
+The runtime image comes from the architect's `vllm` entry. With a GPU, `vllm/vllm-openai:v0.34.0` is already in the manifest. With no GPU (`hardware.gpus` empty), airgap-rag adds `vllm/vllm-openai-cpu:v0.34.0-x86_64` (`v0.34.0-arm64` on arm64) as the section-1 row `vllm` (from airgap-rag); pooling models on CPU are `unverified` and checked inside (`references/models.md`, Serving).
+
+### Runtime downloads to stage in advance
+
+None once the `./qwen3-embedding` folder is copied and `HF_HUB_OFFLINE=1` is set.
+
+### Telemetry and egress to switch off before the first start
+
+All rows of Egress switches, in the environment of the embedding instance.
+
+## Evidence
+
+- https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B
+- https://huggingface.co/Qwen/Qwen3-Embedding-8B
+- https://huggingface.co/api/models/Qwen/Qwen3-Embedding-8B?blobs=true
+- https://qwenlm.github.io/blog/qwen3/
+- https://docs.vllm.ai/en/stable/cli/serve/
+- https://docs.vllm.ai/en/stable/models/pooling_models.html
+- https://docs.vllm.ai/en/stable/models/pooling_models/embed/
+- https://docs.vllm.ai/en/stable/models/supported_models/
+- https://docs.vllm.ai/en/stable/usage/usage_stats.html
+- https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables
+- https://docs.openwebui.com/reference/env-configuration
+- https://www.runpod.io/blog/gpu-embedding-workloads-benchmark
+- https://huggingface.co/docs/huggingface_hub/guides/cli
+- https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/cpu.x86.inc.md
+- https://github.com/vllm-project/vllm/blob/v0.34.0/docs/models/hardware_supported_models/cpu.md
