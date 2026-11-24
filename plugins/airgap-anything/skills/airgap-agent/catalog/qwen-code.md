@@ -31,6 +31,8 @@ Terminal coding agent from the Qwen team that talks to any OpenAI-compatible end
 
 User file `~/.qwen/settings.json` (project: `.qwen/settings.json`); the key goes in `~/.qwen/.env`, named by `envKey`. The environment route is `OPENAI_API_KEY`, `OPENAI_BASE_URL` and `OPENAI_MODEL`. Template: `references/templates.md`, section Qwen Code.
 
+Non-interactive run (smoke test): `qwen -p "<prompt>"` or `--prompt`; `--approval-mode` overrides `tools.approvalMode` for one run (https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/).
+
 ## Egress switches
 
 | Connection | Default | Switch | Source |
@@ -86,6 +88,7 @@ All rows of Egress switches, in the system settings file.
 - https://api.github.com/repos/QwenLM/qwen-code/releases/latest
 - https://api.github.com/repos/QwenLM/qwen-code
 - https://qwenlm.github.io/qwen-code-docs/en/users/overview/
+- https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/
 - https://qwenlm.github.io/qwen-code-docs/en/users/configuration/settings/
 - https://qwenlm.github.io/qwen-code-docs/en/users/configuration/model-providers/
 - https://qwenlm.github.io/qwen-code-docs/en/users/support/tos-privacy/

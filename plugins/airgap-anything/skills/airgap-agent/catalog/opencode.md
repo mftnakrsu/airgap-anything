@@ -32,6 +32,8 @@ Terminal coding agent with provider-neutral configuration and central `policies`
 
 `opencode.json` or `opencode.jsonc` in `~/.config/opencode/`, in the project, or in `/etc/opencode/`. A custom provider sets `baseURL` under `settings` and the key variable under `env`; models are referenced as `<provider>/<model>`. Template: `references/templates.md`, section opencode.
 
+Non-interactive run (smoke test): `opencode run "<prompt>"` (https://opencode.ai/docs/cli/). That page documents no flag of `run` and does not say whether it describes V1 or V2: confirm with `opencode run --help` on the pinned version.
+
 ## Egress switches
 
 | Connection | Default | Switch | Source |
@@ -92,6 +94,7 @@ All rows of Egress switches, in the global config and in `/etc/opencode/opencode
 - https://registry.npmjs.org/@opencode/cli
 - https://github.com/anomalyco/opencode/issues/38723
 - https://opencode.ai/docs/config/
+- https://opencode.ai/docs/cli/
 - https://opencode.ai/docs/providers/
 - https://opencode.ai/docs/models/
 - https://opencode.ai/docs/network/

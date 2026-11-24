@@ -36,6 +36,8 @@ These apply to the gateway or provider route in front of Claude models.
 
 `ANTHROPIC_BASE_URL` names the route. The credential goes in `ANTHROPIC_AUTH_TOKEN` (`Authorization: Bearer`), `ANTHROPIC_API_KEY` (`x-api-key`) or `apiKeyHelper` (both headers, cached 5 minutes, `CLAUDE_CODE_API_KEY_HELPER_TTL_MS`). Extra headers: `ANTHROPIC_CUSTOM_HEADERS`. Models: `ANTHROPIC_MODEL` or `model`, `ANTHROPIC_DEFAULT_{OPUS,SONNET,HAIKU}_MODEL`, `CLAUDE_CODE_SUBAGENT_MODEL`. `ANTHROPIC_SMALL_FAST_MODEL` is deprecated. Unrecognized model IDs get an assumed 1M context (since v2.1.323); correct it with `CLAUDE_CODE_MAX_CONTEXT_TOKENS`. Put the settings in the managed settings file. Template: `references/templates.md`, section Claude Code.
 
+Non-interactive run (smoke test): `claude -p "<prompt>"` (or `--print`); a call that needs approval is denied unless a rule such as `--allowedTools "Bash(ls *)"` allows it; `--bare` skips hooks, skills, plugins, MCP servers and CLAUDE.md discovery (https://code.claude.com/docs/en/headless).
+
 ## Egress switches
 
 | Connection | Default | Switch | Source |
@@ -108,6 +110,7 @@ All rows of Egress switches, in the managed settings file (`env` block). Set `CL
 - https://downloads.claude.ai/claude-code-releases/bootstrap.sh
 - https://code.claude.com/docs/en/legal-and-compliance
 - https://code.claude.com/docs/en/setup
+- https://code.claude.com/docs/en/headless
 - https://code.claude.com/docs/en/llm-gateway
 - https://code.claude.com/docs/en/llm-gateway-connect.md
 - https://code.claude.com/docs/en/llm-gateway-protocol.md

@@ -24,16 +24,47 @@ Pass: the archive's checksum matches and the tool prints its version, equal to t
 
 ## 2. Smoke test
 
-Run one non-interactive prompt that forces a tool call, against the internal model. Use the same prompt for every tool, for example: "List the files in this folder using your tool."
+Run one non-interactive prompt that forces a tool call, against the internal model. Use the same prompt for every tool: `PROMPT` below is "List the files in this folder using your tool." Run it in a folder that holds a few files. The model comes from the configuration the skill wrote (`references/templates.md`), so no model flag is needed.
 
-| Tool | Non-interactive command |
-|---|---|
-| Qwen Code | not documented in the research; see the tool's docs (the pages read are in `catalog/qwen-code.md`, Evidence) |
-| Codex CLI | not documented in the research; see the tool's docs (`catalog/codex-cli.md`, Evidence) |
-| opencode | not documented in the research for V2; see the tool's docs (`catalog/opencode.md`, Evidence) |
-| Claude Code | not documented in the research; see the tool's docs (`catalog/claude-code.md`, Evidence); the `claude-code-ci-harness` skill of `air-gapped/skills` runs it headless |
+| Tool | Command | Source |
+|---|---|---|
+| Qwen Code | `qwen -p "PROMPT"` (long form `--prompt`); the configured `tools.approvalMode` applies, and `--approval-mode` overrides it per run | https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/ |
+| Codex CLI | `codex exec "PROMPT"`; the sandbox is read-only unless `--sandbox workspace-write` is given, and `--skip-git-repo-check` lets it run outside a Git repository | https://learn.chatgpt.com/docs/non-interactive-mode |
+| opencode | `opencode run "PROMPT"`; the page documents no flag of `run`, so the model is the one in the configuration | https://opencode.ai/docs/cli/ |
+| Claude Code | `claude -p "PROMPT" --allowedTools "Bash(ls *)"`; `--output-format json` returns the result with metadata | https://code.claude.com/docs/en/headless |
 
-For Codex CLI also send one `POST /v1/responses` request with streaming to the gateway first: a working Chat Completions endpoint does not prove Responses compatibility (`catalog/codex-cli.md`).
+Notes:
+
+- Do not add `--yolo` (Qwen Code) or `--sandbox danger-full-access` (Codex CLI): the test must run under the stance in `agents.md`.
+- Claude Code only: `-p` denies a call that needs approval unless a rule allows it, hence the `--allowedTools` rule for the listing. A `-p` run also loads the project's hooks and `.mcp.json`; add `--bare` to skip that (https://code.claude.com/docs/en/headless).
+- The `claude-code-ci-harness` and `opencode-ci-harness` skills of `air-gapped/skills` run these tools headless against a compatible endpoint; they are optional (`references/mcp.md`).
+
+For Codex CLI first prove the endpoint with a request that the tool itself will send: `POST` to `GATEWAY_URL/responses` (the base URL ends in `/v1`), with the key as the gateway expects it, using any HTTP client. A minimal JSON body, with the function-tool shape of the Responses API (https://developers.openai.com/api/docs/guides/function-calling):
+
+```json
+{
+  "model": "SERVED_MODEL_NAME",
+  "input": "What is the weather in Paris? Use the tool.",
+  "tools": [
+    {
+      "type": "function",
+      "name": "get_weather",
+      "description": "Get the weather for a city.",
+      "parameters": {
+        "type": "object",
+        "properties": { "city": { "type": "string" } },
+        "required": ["city"]
+      }
+    }
+  ]
+}
+```
+
+- Pass: HTTP 200 and an `output` list that holds an item of type `function_call` naming `get_weather`.
+- Fail: a 404 or 400, or only a text message in `output`. A working Chat Completions endpoint does not prove Responses compatibility (`catalog/codex-cli.md`); check the gateway route (`references/serving.md`, LiteLLM) and the parsers.
+- The request does not test streaming: Codex CLI needs SSE with `response.completed`, so `codex exec` itself is the streaming test.
+
+Results:
 
 - Pass: the tool call is executed and the answer names the files in the folder.
 - Fail: a plain text answer without a tool call. This usually means a wrong or missing parser on the engine: check `--enable-auto-tool-choice`, `--tool-call-parser` and `--reasoning-parser` against `references/serving.md`, then the tool's own switch for tools (opencode: `"capabilities": {"tools": true}`).

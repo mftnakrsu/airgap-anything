@@ -30,7 +30,9 @@ Terminal coding agent from OpenAI with a built-in sandbox and a central policy f
 
 ## Configuration
 
-User file `~/.codex/config.toml` (or under `CODEX_HOME`); a trusted project may add `.codex/config.toml`. The provider block sets `base_url`, `wire_api = "responses"`, `requires_openai_auth = false` and `env_key`. Template: `references/templates.md`, section Codex CLI. `wire_api`: "`responses` is the only supported value".
+User file `~/.codex/config.toml` (or under `CODEX_HOME`); a trusted project may add `.codex/config.toml`. The provider block sets `base_url`, `wire_api = "responses"`, `requires_openai_auth = false` and `env_key`. Template: `references/templates.md`, section Codex CLI.
+
+Non-interactive run (smoke test): `codex exec "<prompt>"`; the sandbox is read-only unless `--sandbox workspace-write` is given; `--skip-git-repo-check` allows a folder that is not a Git repository (https://learn.chatgpt.com/docs/non-interactive-mode). The function-tool request shape for the `/v1/responses` check is from https://developers.openai.com/api/docs/guides/function-calling. `wire_api`: "`responses` is the only supported value".
 
 ## Egress switches
 
@@ -102,6 +104,8 @@ All rows of Egress switches, in `/etc/codex/managed_config.toml` where the key i
 - https://learn.chatgpt.com/docs/agent-configuration/agents-md.md
 - https://learn.chatgpt.com/docs/build-skills.md
 - https://learn.chatgpt.com/docs/extend/mcp.md
+- https://learn.chatgpt.com/docs/non-interactive-mode
+- https://developers.openai.com/api/docs/guides/function-calling
 - https://docs.vllm.ai/en/v0.34.0/serving/online_serving/
 - https://raw.githubusercontent.com/vllm-project/vllm/v0.34.0/vllm/envs.py
 - https://recipes.vllm.ai/openai/gpt-oss-120b

@@ -51,7 +51,8 @@ class ReferencesTest(unittest.TestCase):
 
     def test_verification_has_the_three_checks(self):
         text = read("verification.md")
-        for word in ("SHA256SUMS", "tool call", "strace -f -e trace=connect", "deny log", "man7.org"):
+        for word in ("SHA256SUMS", "tool call", "strace -f -e trace=connect", "deny log", "man7.org",
+                     'qwen -p "', 'codex exec "', 'opencode run "', 'claude -p "', "function_call"):
             with self.subTest(word=word):
                 self.assertIn(word, text)
 
