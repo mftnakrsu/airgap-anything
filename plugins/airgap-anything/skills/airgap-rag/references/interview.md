@@ -4,7 +4,9 @@ Goal: an answer for each of the eight questions below, so that `docs/airgap/rag.
 
 ## How to ask
 
-- Ask only the questions the user's message and the blueprint leave open. When the user has asked you to set it up, state the defaults you take for the open ones, list them as assumptions in `docs/airgap/rag.md`, and continue. Otherwise ask them in one message, in the user's language, each with its default. Do not ask them one by one.
+- Ask only the questions the user's message and the blueprint leave open. The one exception to "continue with defaults" is the platform (question 1): when the user has not named a platform, always ask it and wait for the answer, even when they said "set it up". They may want something completely different from the options, and a wrong guess costs a whole configuration. Ask it with the other open questions in one message, in the user's language, each with its default shown, so that one reply settles everything. Do not ask them one by one.
+- Continue without asking when the user named a platform (a tool not in the catalog is recorded as custom), or said to take the recommended option or the defaults. A platform the user named is never swapped for another without their consent.
+- For every other open question, when the user has asked you to set it up, state the defaults you take, list them as assumptions in `docs/airgap/rag.md`, and continue.
 - Read the blueprint (`docs/airgap/blueprint.md`, or the path the architect used) when one exists, and tell the user which answers you already took from it. Questions 7 and 8 then need no asking.
 - A skipped or "I don't know" answer takes the default. List every default you used in the assumptions of `rag.md`.
 - Keep the keys and the choice values exactly as written here, whatever the language of the conversation.
@@ -27,7 +29,7 @@ The fast path, in its own paragraph: when the user's answers are short, or they 
 
 ## The platform question
 
-Ask question 1 with three options, in this order, and say which one you recommend:
+Ask question 1 with three options, in this order, and say which one you recommend (see "How to ask": this is the question that is always asked and waited for when the platform is unnamed):
 
 1. **Open WebUI knowledge bases** (recommended). Open WebUI is already in the architect's blueprint, and knowledge bases grant Read or Write by group, with groups synced from LDAP or OAuth.
 2. **A standalone RAG server**, with RAGFlow as the default. Choose it when scanned or complex PDFs and tables are the core of the corpus and the user wants a separate server with its own UI and API. Its sharing is only "Only me" or "Team", so say that group permissions are not available (`catalog/ragflow.md`).

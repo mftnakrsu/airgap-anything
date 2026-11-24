@@ -50,7 +50,7 @@ Air-gap RAG:
 ```
 
 1. **Blueprint.** Read `docs/airgap/blueprint.md` (or the path `AGENTS.md` names) and `docs/airgap/transfer-manifest.md`. Take the vLLM and Open WebUI versions, `org.isolation`, `hardware.gpus` and the `rag` group from them. With no blueprint, ask for them in the interview.
-2. **Interview.** Read `references/interview.md`. Ask only the questions the user's message and the blueprint leave open, and ask the platform question with its three options. When the user has asked you to set it up, state the defaults you take for the open ones, list them as assumptions in `rag.md`, and continue. Otherwise ask them in one message. When the user's answers are short or they ask to go faster, take the fast path: offer the defaults and show the sizing as one summary table.
+2. **Interview.** Read `references/interview.md`. Ask only the questions the user's message and the blueprint leave open. When the user has not named a platform, ask the platform question with its three options (Open WebUI knowledge bases, recommended; a RAG server, RAGFlow; something else) and wait for the answer, even when they said "set it up", with the other open questions and their defaults in the same message so one reply settles everything. Continue without asking when they named a platform or said to take the recommended option or the defaults; for the other open questions, state the defaults, list them as assumptions in `rag.md` and continue. When the user's answers are short or they ask to go faster, take the fast path: offer the defaults and show the sizing as one summary table.
 3. **Platform and store.** Read `references/decisions.md` and the catalog entry of each choice. Open WebUI knowledge bases is the default and the recommendation; a standalone RAG server is RAGFlow; something else is recorded as custom, with its version and docs link, every value not in the catalog labeled `unverified`, and the air-gap checklist applied in full.
 4. **Extraction.** Read `references/extraction.md` and `catalog/docling-serve.md`. Pick the tier by document type, write the OCR languages, and state the cloud rule with its reason in `rag.md`.
 5. **Models.** Read `references/models.md` and the entries of the embedding and reranker models. Write the vLLM commands, the Open WebUI settings with `OFFLINE_MODE`, and the model revisions.
@@ -58,7 +58,7 @@ Air-gap RAG:
 7. **Configuration.** Write `docs/airgap/rag/`: the Open WebUI settings, the vLLM commands, the docling-serve settings when chosen, the chunking settings, or RAGFlow's `.env` with its egress settings.
 8. **Runbook and wiki.** Read `references/ingestion.md` for the bulk load, the periodic update and the CLI queries, with the manual steps marked as manual. Read `references/wiki.md` when `consumers` includes coding agents.
 9. **rag.md.** Write `docs/airgap/rag.md`: decisions with reasons and alternatives, assumptions (every default used), the sizing, the folder to knowledge base to group map for the user to fill in, serving requirements, the environment variable that holds each key, whether `BYPASS_ADMIN_ACCESS_CONTROL` stays on, open items, the components added to the manifest (the catalog ids, and `airgap-rag` for the row of `rag.md` itself), and the checks to run inside. Say that the Open WebUI API values were read from source at tag v0.13.4.
-10. **Manifest.** Add rows to `docs/airgap/transfer-manifest.md` as the table below shows. Do not rewrite the blueprint. Mark every row you add by writing "(from airgap-rag)" after the component in its Component cell, for example `docling-serve` (from airgap-rag); section 7 has no Component column, so append the marker to the step text there. `airgap-transfer` accepts rows so marked, without a blueprint row, when `rag.md` lists their component.
+10. **Manifest.** Add rows to `docs/airgap/transfer-manifest.md` as the table below shows. Do not rewrite the blueprint. Mark every row you add by writing "(from airgap-rag)" after the component in its Component cell, for example `docling-serve` (from airgap-rag). In section 2 the marker goes after the name in the Model cell, and `rag.md` lists exactly the names the marked rows use. In section 3, Component is the catalog id, Version the pinned version, File the file name, Arch `amd64` or `arm64`, URL the direct download URL from the catalog's Packages table (or the project path for a project file), and Publisher checksums the checksum file URL (empty when none); for poppler-utils write "not documented" in Version and URL. Section 7 has no Component column, so append the marker to the step text there. `airgap-transfer` accepts rows so marked, without a blueprint row, when `rag.md` lists their component.
 11. **Verification.** Read `references/verification.md`. Put the five checks into `rag.md` and into section 7 of the manifest.
 12. **Self-check.** Check every item below; fix what fails and check again.
 13. **Hand-over.** Below.
@@ -100,11 +100,11 @@ Last verified: 2026-11-24. Carry the pinned version, not a newer one.
 ## Rules
 
 1. **Internal documents never go to a cloud agent.** "Just send the PDFs to Claude, it's faster" gets a no with the reason, and the slower local tier. Converting inside is slower, never unsafe.
-2. **The platform is the user's choice.** Never decide it silently. A custom choice gets its record, `unverified` labels and the full air-gap checklist.
-3. **Ask only open questions.** When the user asked you to set it up, state defaults, list them as assumptions and continue.
+2. **The platform is the user's choice.** When it is unnamed, ask it and wait, even when the user said "set it up"; never decide it silently, and never swap one the user named without their consent. A custom choice gets its record, `unverified` labels and the full air-gap checklist.
+3. **Ask only open questions, one message.** Except the platform (Rule 2), when the user asked you to set it up, state defaults, list them as assumptions and continue.
 4. **The fast path still sizes.** "Skip the sizing" shows the summary table, nothing less.
 5. **Every manifest row is marked "(from airgap-rag)"** after its component, or in the step text of section 7.
-6. **No key, token or password in any file.** Keys come from environment variables; `rag.md` names them. Never ask for one in the conversation. In command lines, put the URL in a variable on its own line: no line has `curl` together with a URL or a `|`.
+6. **No key, token or password in any file.** Keys come from environment variables; `rag.md` names them. Never ask for one in the conversation. In command lines, put the URL in a variable on its own line, so that no line holds a download command together with a URL or a pipe.
 7. **Versions, paths and setting names come from the catalog and references**, not memory. Where they say "not documented", say so. For a custom platform invent no values; write `unverified`.
 8. **When the number of `rag` users differs from the blueprint,** tell the user to rerun the architect's sizing. Do not recompute it here.
 9. **Write nothing outside `docs/airgap/`, and install or download nothing.**
@@ -118,7 +118,7 @@ Before the hand-over, check each item against the files you wrote. When one fail
 3. Every Egress switches row of each chosen entry with a documented switch is in `docs/airgap/rag/` and in section 4; each row without one is an open item and a "not documented" row.
 4. `OFFLINE_MODE`, the embedding and reranker endpoints, `VECTOR_DB=pgvector` and `PGVECTOR_INDEX_METHOD=hnsw` are written for Open WebUI; every model has its pinned revision, or "revision: record at download".
 5. The sizing is in `rag.md` with a source or `estimate` on every number, or the summary table on the fast path.
-6. `grep -rIE 'sk-[A-Za-z0-9]{8,}|hf_[A-Za-z0-9]{20,}' docs/airgap` finds nothing, and no runbook line has `curl` with a URL or a `|`.
+6. `grep -rIE 'sk-[A-Za-z0-9]{8,}|hf_[A-Za-z0-9]{20,}' docs/airgap` finds nothing, and no runbook line holds a download command together with a URL or a pipe.
 7. Manifest rows sit in sections 1 to 5 and 7 as the table shows, each is marked "(from airgap-rag)", every pinned version equals its catalog entry, and `docs/airgap/rag.md` and `docs/airgap/rag/` are in section 3.
 8. The folder to knowledge base to group map is in `rag.md` for the user to fill in, manual steps are marked MANUAL, and the five checks are in `rag.md` and section 7.
 9. Every default the interview used is an assumption, and a differing `rag` headcount is flagged.
@@ -140,6 +140,6 @@ Tell the user, in their language:
 | Leaving Open WebUI on its defaults | `OFFLINE_MODE`, an external embedding endpoint and `VECTOR_DB=pgvector` before the first start |
 | Loading before `PGVECTOR_INDEX_METHOD=hnsw` is set | Set it first; the `REINDEX` fix is in `catalog/pgvector.md` |
 | Skipping the sizing because the user is in a hurry | Show the fast-path summary table |
-| Choosing the platform for the user | Ask with the three options, recommend Open WebUI |
+| Choosing the platform for the user because they said "set it up" | Ask it with the three options, recommend Open WebUI, and wait; defaults apply to the other questions, and a named platform is never swapped |
 | Treating a custom tool's behavior as known | Label it `unverified` and run the egress check |
 | Writing an API key into the runbook | The key stays in an environment variable |
