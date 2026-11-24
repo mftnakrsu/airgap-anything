@@ -54,6 +54,7 @@ Released 2026-11-06 (https://api.github.com/repos/infiniflow/ragflow/releases/la
 - The default stack runs MySQL, Elasticsearch, an object store, a cache and a message queue: it adds five services next to the blueprint and none of them is PostgreSQL 18.
 - Image sizes and digests: not documented in the research.
 - Conversion on the connected side may only handle public documents; documents from inside the network never leave it.
+- At tag v1.0.0 the README names ClickHouse in the default stack (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/README.md, line 22), but the `clickhouse` service in `docker/docker-compose-base.yml` carries `profiles: [clickhouse]`, which the default `COMPOSE_PROFILES` (`elasticsearch,cpu,metadata-mysql`, from `docker/.env`) does not include. Whether the backend needs it at runtime is not documented: confirm the stack is healthy after start; if ClickHouse turns out to be needed, carry `clickhouse/clickhouse-server:26.5.5.8` (the image that file names) and add `clickhouse` to `COMPOSE_PROFILES`.
 
 ## Carry in
 
@@ -105,6 +106,7 @@ All rows of Egress switches.
 - https://raw.githubusercontent.com/infiniflow/ragflow/main/LICENSE
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env (read 2026-11-24: `TEI_IMAGE_CPU`, `TEI_IMAGE_GPU`, `TEI_MODEL`)
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/docker-compose-base.yml
+- https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/README.md
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/Dockerfile
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/service_conf.yaml.template
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/conf/llm_factories.json
