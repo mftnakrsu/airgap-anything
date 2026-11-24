@@ -20,7 +20,7 @@ Write them in the language of the blueprint's `Language:` line (English when it 
 
 ## `INSIDE.md` template
 
-Fill in the parts in capitals. Steps 2 and 3 only when files were split; one step 3 line per split file, one step 5 line per image, one step 7 per manual item that was added.
+Fill in the parts in capitals. Steps 2 and 3 only when files were split; one step 3 line per split file, one step 5 line per image, step 6b only when the bundle has a `files/` folder, one step 7 per manual item that was added.
 
 ````markdown
 # Inside the network: PROJECT NAME
@@ -80,6 +80,14 @@ mkdir -p /srv/models && cp -R /srv/airgap-bundle/models/. /srv/models/
 
 Expected: no output.
 
+### 6b. Copy the project files
+
+```sh
+mkdir -p PROJECT_FOLDER && cp -R /srv/airgap-bundle/files/. PROJECT_FOLDER/
+```
+
+Expected: no output. `PROJECT_FOLDER` is the root of the project inside; `docs/airgap/agents.md` and the configuration folders under `docs/airgap/agents/` land at their project paths. Then follow `docs/airgap/agents.md`: install check, smoke test, egress check.
+
 ### 7. Manual item: ITEM
 
 ```sh
@@ -119,5 +127,5 @@ You work inside a network without internet access. These rules come before any o
 3. Never download anything, and never fetch a missing file from another source: a missing or damaged file is carried in again from outside.
 4. Never edit SHA256SUMS, PARTS.sha256, VOLUMES.txt or the files they list.
 5. The settings under "Settings to apply before the first start" are not commands. A person, or the implementation plan, writes them into the deployment files; do not invent commands for them.
-6. Never improvise a step that is not written below. Ask a person instead. VOLUME_FOLDER is the one value you ask a person for.
+6. Never improvise a step that is not written below. Ask a person instead. VOLUME_FOLDER, and PROJECT_FOLDER when step 6b exists, are the values you ask a person for.
 ```

@@ -68,6 +68,13 @@ class TransferCarriesProjectFilesTest(unittest.TestCase):
         self.assertIn("files/docs/airgap/agents/qwen-code/", bundle)
         self.assertIn("cp -R", fetch)
 
+    def test_rows_from_airgap_agent_are_marked_and_accepted(self):
+        transfer = (TRANSFER_DIR / "SKILL.md").read_text(encoding="utf-8")
+        agent = (AGENT_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("from airgap-agent", agent, "the agent marks the rows it adds")
+        self.assertIn("from airgap-agent", transfer, "the transfer accepts marked rows without a blueprint row")
+        self.assertIn("docs/airgap/agents.md", transfer)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -91,6 +91,12 @@ The second line only when the manifest names a publisher checksum file for the p
 mkdir -p "B/files/SRC" && cp -R "SRC/." "B/files/SRC/"
 ```
 
+When the project path is a single file, such as `docs/airgap/agents.md`, `DIR` is the folder that holds it:
+
+```sh
+mkdir -p "B/files/DIR" && cp "SRC" "B/files/SRC"
+```
+
 Copying `B/files/` back onto the project root puts every file where it was. Its files go into `SHA256SUMS` like any other.
 
 ## Checking what arrived
@@ -119,6 +125,7 @@ Every command line above was taken from these pages; a changed line needs its pa
 | `docker` | `image load --input` (inside) | https://docs.docker.com/reference/cli/docker/image/load/ |
 | `hf` | `download REPO --revision --local-dir --include` (one `--include` per pattern) | https://huggingface.co/docs/huggingface_hub/v2.4.0/en/guides/cli, https://huggingface.co/docs/huggingface_hub/v2.4.0/en/package_reference/cli |
 | `sha256sum`, `md5sum`, `sha512sum` | `-c` reads `HASH  FILE` lines and exits non-zero when a listed file cannot be read or does not match; `--quiet` prints only failures; `--ignore-missing` skips listed files that are absent | https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (sections "cksum invocation" and "md5sum invocation"), https://www.gnu.org/software/coreutils/manual/html_node/sha2-utilities.html |
+| `mkdir`, `cp` | `mkdir -p` creates missing parent folders; `cp -R` copies a folder recursively, plain `cp` one file (project files) | https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (sections "mkdir invocation" and "cp invocation") |
 | `split` | `-b SIZE` bytes per part, `-a 3` three-digit suffixes, `--numeric-suffixes=1` counting from 1 | https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (section "split invocation") |
 
 The downloads under Packages, with the options `--fail --location --silent --show-error --output`: https://curl.se/docs/manpage.html
