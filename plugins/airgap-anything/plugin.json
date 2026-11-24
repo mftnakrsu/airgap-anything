@@ -17,5 +17,27 @@
     "architecture",
     "llm",
     "sizing"
-  ]
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "airgap-anything",
+        "shortDescription": "Design air-gapped AI systems",
+        "longDescription": "Two skills for networks without internet access. airgap-architect interviews you about your organization and writes a blueprint: one decision per layer with its reasons and alternatives, GPU sizing with every step written out, and the transfer manifest of everything to carry in, from a catalog where each version and image has its source. airgap-transfer turns that manifest into a bundle that checks itself: fetch commands you approve first, a SHA-256 list, a split across USB disks, a data diode or a staging host, and a runbook or agent rules for the inside. The skills are plain markdown: no scripts, no dependencies. They are a design aid, not professional advice: verify before you buy or deploy.",
+        "category": "Productivity",
+        "developerName": "mftnakrsu",
+        "defaultPrompt": [
+          "Design an air-gapped LLM platform for my organization.",
+          "How many GPUs do we need to serve a 70B model to 500 users on a network without internet?",
+          "Prepare everything in our transfer manifest for our USB disks."
+        ],
+        "websiteURL": "https://airgap-anything.mefby.com",
+        "supportURL": "https://github.com/mftnakrsu/airgap-anything/issues",
+        "privacyPolicyURL": "https://airgap-anything.mefby.com/project/privacy/",
+        "logo": "./.claude-plugin/icon.png",
+        "composerIcon": "./.claude-plugin/icon.png",
+        "brandColor": "#FFC800"
+      }
+    }
+  }
 }
