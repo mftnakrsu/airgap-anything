@@ -34,7 +34,7 @@ export default defineConfig({
             'reference/gpus',
           ],
         },
-        { label: 'Project', items: ['project/contributing', 'project/testing'] },
+        { label: 'Project', items: ['project/contributing', 'project/testing', 'project/privacy'] },
       ],
     }),
   ],

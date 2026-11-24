@@ -206,6 +206,16 @@ Not in version 0.3:
 
 When [superpowers](https://github.com/obra/superpowers) is installed, the blueprint is written where its specs live and handed to `superpowers:writing-plans` after you approve it. Without superpowers the skills work on their own.
 
+## Privacy and network access
+
+The plugin is Markdown, JSON and an icon: no code, no server, nothing collected, nothing sent to its authors or anyone else. Your agent reads the skills under its own terms.
+
+- `airgap-architect` needs no network access. It writes the blueprint, `docs/airgap/transfer-manifest.md` and an `AGENTS.md` block in your project.
+- `airgap-transfer` proposes download commands for what the transfer manifest lists: container images from their registries (for example Docker Hub, `ghcr.io`, `quay.io`), model files from Hugging Face, and packages from the release pages the catalog names. It runs them only after you approve the plan, from your machine straight to those services. A Hugging Face token is read only from `HF_TOKEN` in your environment and never written to a file.
+- The interview asks about the organization (headcount, departments, hardware), not about people.
+
+The full policy is on the [privacy page](https://airgap-anything.mefby.com/project/privacy/).
+
 ## Contributing
 
 The catalog is the part that ages, and it is markdown: adding or re-verifying a component is a small pull request. [CONTRIBUTING.md](CONTRIBUTING.md) explains how. One rule above all: nothing is written from memory.
