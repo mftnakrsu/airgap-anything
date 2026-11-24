@@ -32,9 +32,22 @@ class AgentCatalogTest(unittest.TestCase):
         self.entries = entries()
 
     def test_entries_are_there(self):
-        # Task 1 adds qwen-code; Task 2 makes this the full set.
-        self.assertTrue(set(self.entries) <= set(AGENT_TOOLS))
-        self.assertIn("qwen-code", self.entries)
+        self.assertEqual(set(self.entries), set(AGENT_TOOLS))
+
+    def test_claude_code_is_never_for_open_weight_models(self):
+        text = self.entries["claude-code"]
+        self.assertIn("https://code.claude.com/docs/en/llm-gateway", text)
+        avoid = text.split("\n## Avoid when\n", 1)[1].split("\n## ", 1)[0]
+        self.assertRegex(avoid, r"(?i)open-weight")
+
+    def test_opencode_is_pinned_to_v2_and_says_why(self):
+        text = self.entries["opencode"]
+        self.assertEqual(fields(text)["Version"], "`v2.4.1`")
+        self.assertIn("1.19.6", text)
+        self.assertRegex(text, r"models\.opencode\.ai")
+
+    def test_codex_speaks_only_responses(self):
+        self.assertEqual(fields(self.entries["codex-cli"])["Speaks"].strip(), "`responses`")
 
     def test_the_title_names_the_file(self):
         for tool, text in self.entries.items():

@@ -1,0 +1,108 @@
+# Codex CLI (`codex-cli`)
+
+Terminal coding agent from OpenAI with a built-in sandbox and a central policy file. It speaks only the Responses API, so the endpoint behind it must pass a `/v1/responses` smoke test.
+
+| Field | Value |
+|---|---|
+| Kind | `coding-agent` |
+| Version | `rust-v0.172.0` |
+| License | Apache-2.0 |
+| Speaks | `responses` |
+| Install | release archive `codex-{x86_64,aarch64}-unknown-linux-musl.tar.gz`, rename the binary to `codex`; `.sigstore` files are listed in the release (airgap-transfer does not check the signatures); `bwrap` asset for the Linux sandbox |
+| Evidence | docs |
+| Last verified | 2026-11-24 |
+
+## Choose when
+
+- Central enforcement and a sandbox are wanted, and the serving endpoint passes the `/v1/responses` smoke test (`references/verification.md`).
+
+## Avoid when
+
+- The engine or gateway offers only Chat Completions: the gateway page says a working Chat Completions endpoint "doesn't establish Responses compatibility". Use `qwen-code` instead.
+
+## Serving needs
+
+- The endpoint "must accept `POST /v1/responses`".
+- It must stream SSE incrementally, including `response.completed`, and keep `function_call` and `function_call_output` items intact.
+- vLLM serves `/v1/responses`; it ignores `store` unless `VLLM_ENABLE_RESPONSES_API_STORE=1`, which keeps responses in memory and never frees them. For gpt-oss, the vLLM recipe lists basic streaming, zero usage counts and function calling only with `tool_choice="auto"`.
+- Behind LiteLLM, use the route in `references/serving.md`: `hosted_vllm/` sends `/v1/responses` natively, while `custom_openai/` and `openai_like/` are bridged through `/v1/chat/completions`.
+- Private CA: `CODEX_CA_CERTIFICATE` (takes precedence over `SSL_CERT_FILE`).
+
+## Configuration
+
+User file `~/.codex/config.toml` (or under `CODEX_HOME`); a trusted project may add `.codex/config.toml`. The provider block sets `base_url`, `wire_api = "responses"`, `requires_openai_auth = false` and `env_key`. Template: `references/templates.md`, section Codex CLI. `wire_api`: "`responses` is the only supported value".
+
+## Egress switches
+
+| Connection | Default | Switch | Source |
+|---|---|---|---|
+| Analytics (Statsig) | not documented | `[analytics] enabled = false` | https://learn.chatgpt.com/docs/config-file/config-advanced.md |
+| Feedback uploads | not documented | `[feedback] enabled = false` | https://learn.chatgpt.com/docs/config-file/config-advanced.md |
+| OpenTelemetry export | not configured | leave `[otel]` unconfigured | https://learn.chatgpt.com/docs/config-file/config-advanced.md |
+| Update check | on | `check_for_update_on_startup = false` | https://learn.chatgpt.com/docs/config-file/config-reference.md |
+| Web search (an OpenAI index) | `"cached"` | `web_search = "disabled"` | https://learn.chatgpt.com/docs/config-file/config-reference.md |
+| Skill downloads by the bundled `$skill-installer` | available | do not use it; stage skills as files | https://learn.chatgpt.com/docs/build-skills.md |
+| MCP OAuth login | on request | do not run `codex mcp login` | https://learn.chatgpt.com/docs/extend/mcp.md |
+| Model catalog | not documented | `model_catalog_json` pointing to a local file such as `/etc/codex/gateway-models.json` | https://learn.chatgpt.com/docs/enterprise/connect-to-a-gateway.md |
+
+## Permissions and central policy
+
+- `approval_policy`: `on-request`, `never` or a granular table. `untrusted` is no longer supported; the managed-configuration example still lists it.
+- `sandbox_mode`: `read-only`, `workspace-write`, `danger-full-access`. `workspace-write` keeps network access off unless `sandbox_workspace_write.network_access` is set. Network access from the sandbox stays off.
+- `.rules` files in `~/.codex/rules/` hold `prefix_rule(pattern=[...], decision="allow|prompt|forbidden")`.
+- Central: `/etc/codex/requirements.toml` holds `allowed_approval_policies`, `allowed_sandbox_modes`, `allowed_web_search_modes`, `[rules] prefix_rules` and an `mcp_servers` allowlist (an empty one disables all MCP servers). `/etc/codex/managed_config.toml` sets defaults. macOS MDM uses `com.openai.codex`.
+- The Linux sandbox needs `bubblewrap`. The bundled `bwrap` release asset is the fallback; it needs unprivileged user namespaces.
+
+## Skills, context and MCP
+
+- Skills: `.agents/skills` from the working directory up to the repository root, `$HOME/.agents/skills`, `/etc/codex/skills`, plus bundled skills.
+- Context: `~/.codex/AGENTS.override.md`, else `~/.codex/AGENTS.md`, then `AGENTS.md` from the repository root down to the working directory, capped at 32 KiB.
+- MCP: `[mcp_servers.<name>]` in `~/.codex/config.toml` or a trusted `.codex/config.toml`.
+
+## Caveats
+
+- The docs moved from developers.openai.com/codex to learn.chatgpt.com/docs; the sources below use the new host.
+- The research found no documented switch for error reporting. Run the egress check before relying on the list above.
+- Not documented: the default of `[analytics]` and `[feedback]`, and an architecture for the `bwrap` asset.
+- `.sigstore` signatures are not verified by `airgap-transfer`; the release lists no checksum file in the research.
+
+## Carry in
+
+### Packages
+
+| File | Architecture | Source | Checksum |
+|---|---|---|---|
+| `codex-x86_64-unknown-linux-musl.tar.gz` | amd64 | https://api.github.com/repos/openai/codex/releases/latest (tag `rust-v0.172.0`) | `.sigstore` file in the release; not checked by airgap-transfer |
+| `codex-aarch64-unknown-linux-musl.tar.gz` | arm64 | https://api.github.com/repos/openai/codex/releases/latest (tag `rust-v0.172.0`) | `.sigstore` file in the release; not checked by airgap-transfer |
+| `bwrap` | not documented | https://api.github.com/repos/openai/codex/releases/latest (tag `rust-v0.172.0`) | not documented |
+
+### Runtime downloads to stage in advance
+
+- None documented. The local model catalog file named by `model_catalog_json` is written by the skill, not downloaded.
+
+### Telemetry and egress to switch off before the first start
+
+All rows of Egress switches, in `/etc/codex/managed_config.toml` where the key is a config key, and in `requirements.toml` for `allowed_web_search_modes`.
+
+## Evidence
+
+- https://api.github.com/repos/openai/codex/releases/latest
+- https://api.github.com/repos/openai/codex
+- https://github.com/openai/codex
+- https://registry.npmjs.org/@openai/codex/latest
+- https://learn.chatgpt.com/docs/sandboxing.md
+- https://learn.chatgpt.com/docs/config-file/config-reference.md
+- https://learn.chatgpt.com/docs/config-file/config-advanced.md
+- https://learn.chatgpt.com/docs/config-file/environment-variables.md
+- https://learn.chatgpt.com/docs/enterprise/connect-to-a-gateway.md
+- https://learn.chatgpt.com/docs/enterprise/gateway-compatibility.md
+- https://learn.chatgpt.com/docs/enterprise/managed-configuration.md
+- https://learn.chatgpt.com/docs/agent-approvals-security.md
+- https://learn.chatgpt.com/docs/agent-configuration/rules.md
+- https://learn.chatgpt.com/docs/agent-configuration/agents-md.md
+- https://learn.chatgpt.com/docs/build-skills.md
+- https://learn.chatgpt.com/docs/extend/mcp.md
+- https://docs.vllm.ai/en/v0.34.0/serving/online_serving/
+- https://raw.githubusercontent.com/vllm-project/vllm/v0.34.0/vllm/envs.py
+- https://recipes.vllm.ai/openai/gpt-oss-120b
+- https://docs.litellm.ai/docs/response_api
