@@ -1,87 +1,88 @@
 ---
 name: airgap-transfer
-description: Use when an air-gapped design already has a transfer manifest (docs/airgap/transfer-manifest.json from airgap-architect) and its artifacts must be collected, packed, carried or checked - pulling and saving container images for one platform, downloading model weights, fetching packages, recording checksums, splitting a bundle across USB disks or other removable media, sending it through a data diode or staging host, or verifying and loading a bundle inside the network
+description: Packs the transfer manifest of an air-gapped design into a bundle that checks itself inside the network. Use when an air-gapped design already has a transfer manifest (docs/airgap/transfer-manifest.md from airgap-architect) and its artifacts must be collected, packed, carried or checked - pulling and saving container images for one platform, downloading model weights, fetching packages, recording checksums, splitting a bundle across USB disks or other removable media, sending it through a data diode or staging host, or verifying and loading a bundle inside the network
 ---
 
 # Airgap Transfer
 
 ## Overview
 
-Turn the transfer manifest that `airgap-architect` wrote into a bundle that checks itself: a fetch script for the connected side, checksums, a split across media, an inventory for the people who approve the transfer, and the scripts and instructions for the inside.
+Turn the transfer manifest that `airgap-architect` wrote into a bundle that checks itself: fetch commands for the connected side, a checksum list, a split across media, an inventory for the people who approve the transfer, and a runbook or agent rules for the inside.
 
-You ask, plan, wait for approval and hand off. Scripts download, hash, split and check. Every name, version, URL and image reference comes from `transfer-manifest.json`, never from memory.
+Why the skill exists: a transfer fails in two expensive ways. Hundreds of gigabytes get downloaded before anyone agreed on what to carry; or a file arrives damaged and nothing inside can tell, so the fault shows up at installation and costs another trip. So nothing is downloaded before the user approves the plan, and nothing leaves without a checksum list the inside can check with `sha256sum` alone.
+
+Paths in this skill are relative to the folder that holds this file. `docs/` is in the user's project.
 
 ## When to use
 
-- `docs/airgap/transfer-manifest.json` exists and someone asks to prepare, fetch, pack, split, carry or send its artifacts.
-- Someone is inside the network with a bundle and asks how to check or load it: point them to `INSIDE.md` (or `AGENTS-INSIDE.md`), `verify.sh` and `load.sh` in the bundle.
+- `docs/airgap/transfer-manifest.md` exists and someone asks to prepare, fetch, pack, split, carry or send its artifacts.
+- Someone is inside the network with a bundle and asks how to check or load it: point them to `INSIDE.md` (or `AGENTS-INSIDE.md`) in the bundle.
 
-Not for deciding what to carry: without a manifest, or when the design itself must change, that is `airgap-architect`. Not for one tool's own offline install; catalog entries name per-tool skills for that.
+Not for deciding what to carry: without a manifest, or when the design itself must change, that is `airgap-architect`. Not for one tool's own offline install: catalog entries name per-tool skills for that.
 
-## The pipeline
+## Workflow
 
-Paths to `references/`, `scripts/` and `templates/` are relative to the skill root, the folder that holds this SKILL.md; `docs/` is in the project root.
+Copy this checklist into your reply and tick it off as you go:
 
-| # | Step | What you do | Read |
-|---|---|---|---|
-| 1 | Inputs | Run `plan.py` once. Exit 2 naming airgap-architect: stop and send the user there | |
-| 2 | Questions | Fill `answers` in `docs/airgap/transfer.json`, one question per message, only those `plan.py` lists | `references/questions.md` |
-| 3 | Plan | Run `plan.py` until it exits 0; it writes `plan` and `<bundle>/fetch.sh` | `references/channels.md` |
-| 4 | Approval | Send the plan message of `references/fetch.md` and end your turn. Stop until the user approves | `references/fetch.md` |
-| 5 | Fetch | The user runs `sh <bundle>/fetch.sh`, or you run it after approval. Exit 1: show the `FAILED` lines of `fetch.log`, fix, run it again | `references/fetch.md` |
-| 6 | Manual items | For every manual item: the user adds files under `<bundle>/manual/`, or marks it not needed with a reason | `references/questions.md` |
-| 7 | Pack | Run `pack.py`. When the blueprint's `language` is not `en`: translate the prose of `INSIDE.md` and `AGENTS-INSIDE.md`, keep every command line, file name and key exactly as written, then run `pack.py --refresh-sums` | `references/bundle-layout.md`, `references/inside.md` |
-| 8 | Check | Run `check.py`; fix and repeat until it exits 0. It reports B7 for a command line that went missing in a translation, B2 for a translation whose hash was not recorded | `references/bundle-layout.md` |
-| 9 | Volumes | `pack.py --write-volume N --to <folder>` for each volume, one medium at a time | `references/channels.md` |
-| 10 | Hand-off | Say what to carry, what the inside does first, and what is still manual | `references/inside.md` |
-
-"Prepare everything" ends at step 4. Steps 1 to 4 download nothing.
-
-The state of one transfer lives in `docs/airgap/transfer.json`. The bundle lives in the folder of `bundle.path`, outside the git repository: it can be hundreds of gigabytes.
-
-## Scripts
-
-`${CLAUDE_SKILL_DIR}` is the folder that holds this SKILL.md. Claude Code fills it in only when it loads the skill itself; if you see it written out, put that folder's path in its place. The scripts need Python 3.11 or newer and nothing else. Run them from the project root:
-
-```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/plan.py"
-python3 "${CLAUDE_SKILL_DIR}/scripts/pack.py"
-python3 "${CLAUDE_SKILL_DIR}/scripts/check.py"
-python3 "${CLAUDE_SKILL_DIR}/scripts/pack.py" --write-volume 1 --to /media/usb1
+```
+Air-gap transfer:
+- [ ] 1. Inputs match
+- [ ] 2. Questions
+- [ ] 3. Plan file
+- [ ] 4. Approval: send the plan message, then wait
+- [ ] 5. Fetch and check what arrived
+- [ ] 6. Manual items settled
+- [ ] 7. Pack: sizes, split, volumes, documents, checksums
+- [ ] 8. Self-check, until every item holds
+- [ ] 9. Write the volumes, one medium at a time
+- [ ] 10. Hand-off
 ```
 
-Each takes `--project-root` when you run it from elsewhere, and lists its options with `--help`.
-
-| Exit code | Meaning | What you do |
-|---|---|---|
-| 0 | Done | Continue |
-| 1 | `check.py` found errors (B1 to B8), or a volume did not read back | Fix each one and run it again |
-| 2 | A file is missing or stale, an answer is missing or invalid, or the bundle cannot be packed yet | Do what the message says: another skill's step, a question, a fetch, a manual item |
-| 3 | A tool is missing, or Python is older than 3.11 | Tell the user which tool and what needs it |
-
-Warnings (BW1, BW2) do not change the exit code; tell the user about them.
+1. **Inputs.** Read the manifest and the blueprint its `Blueprint:` line names. Every component and version in the blueprint's decision table must appear in the manifest and the other way round, and the manifest must name a platform. If not, the manifest is out of date: send the user back to `airgap-architect` and stop.
+2. **Questions.** Read `references/questions.md`; ask only what this transfer needs.
+3. **Plan.** Write `docs/airgap/transfer-plan.md` (`references/bundle.md`, "The plan file"), one item per row of the manifest. Read `references/channels.md` for how the channel splits and orders files.
+4. **Approval.** Send the plan message of `references/fetch.md` and end your turn. "Prepare everything" ends here.
+5. **Fetch.** After the yes, run the commands of `references/fetch.md` (or the user runs them), record every item's status, and run its checks of what arrived.
+6. **Manual items.** For each one, the user adds files under `<bundle>/manual/` or marks it not needed with a reason (`references/questions.md`).
+7. **Pack.** Follow `references/bundle.md`, "Packing, in order", and write the inside documents from `references/inside.md`.
+8. **Self-check.** Check every item below; fix what fails and check again.
+9. **Volumes.** `references/bundle.md`, "Writing the volumes".
+10. **Hand-off.** Below.
 
 ## Rules
 
-1. Never run `fetch.sh`, and download nothing else, before the user's approval of the plan in this conversation: it downloads hundreds of gigabytes. A `docker pull`, a `git clone`, a checksum file, a bandwidth test or a download started in the background is a download too; reading a model's page for its commit hash is not (`references/fetch.md`, "The approval rule").
-2. Every name, version, URL and image reference comes from `transfer-manifest.json`, at the manifest's version: no file from a branch such as `main` when the manifest pins a release. A file the manifest does not name goes in only as a manual item the user adds. To change one, change the design with `airgap-architect` and run its `manifest.py` again, then `plan.py`.
-3. No token, password or key in any file. A Hugging Face token comes only from `HF_TOKEN` in the environment of `fetch.sh`; never ask for it in the conversation.
-4. A bundle is finished only when `check.py` exits 0. A bundle without its checksums is not finished, even when the skip is written down.
-5. Nothing inside the network needs internet or an LLM: no step in the runbook or the agent rules downloads, and every step is a command with an expected output.
-6. Write nothing outside `docs/airgap/` in the project and the bundle folder.
+1. **Download nothing before the user approves the plan in this conversation.** A `docker pull`, a `git clone`, a checksum file, a bandwidth test, or a download started in the background is a download too; reading a model's page for its commit hash is not. The plan is cheap to change; hundreds of gigabytes of the wrong files are not.
+2. **Every name, version, URL and image reference comes from the transfer manifest**, at the manifest's version: no file from a branch such as `main` when the manifest pins a release. A file the manifest does not name goes in only as a manual item the user adds. To change what is carried, change the design with `airgap-architect`.
+3. **No token, password or key in any file.** A Hugging Face token comes only from `HF_TOKEN` in the environment; never ask for it in the conversation.
+4. **A bundle without its checksum list is not finished**, even when the skip is written down: inside, nothing could tell a damaged copy from a good one.
+5. **Nothing inside the network needs internet or an LLM.** Every step of the runbook is a command with the output to expect.
+6. **Write nothing outside `docs/airgap/` in the project and the bundle folder.**
 
-## Common mistakes
+## Self-check
 
-| Mistake | Instead |
-|---|---|
-| Taking "prepare everything" as the approval and starting downloads while you write the rest | Send the plan message and end your turn; the yes to that message is the approval |
-| Skipping the checksums because time is short, and recording the skip as a deviation | Inside, nothing can then tell a damaged copy from a good one. Checksums cost no extra step: `fetch.sh` checks them, `pack.py` writes `SHA256SUMS` (`references/fetch.md`, "When time is short") |
-| Writing the `docker save` one-liner that was asked for | After the yes, the one command is `sh <bundle>/fetch.sh`; it pins the platform and records each image's digest |
+Before writing the volumes, check each item; fix what fails and check all of them again.
+
+1. Every item of the plan is `fetched` with its files in the bundle, or is a manual item marked `added` or `not needed` with a reason.
+2. `cd B && sha256sum -c --quiet SHA256SUMS` prints nothing, and every file of the bundle except the parts and the volume files is listed in `SHA256SUMS`.
+3. No file or part on a volume is larger than the part size, and no volume holds more than its capacity (`references/bundle.md`).
+4. Every image was fetched for the manifest's platform and has a digest; every package with publisher checksums matched them.
+5. No model carries pickle-based weights without the user's permission.
+6. The runbook or agent rules that `inside.operator` calls for exist, in the blueprint's language, and every file and folder their commands name exists in the bundle.
+7. `grep -rIlE 'hf_[A-Za-z0-9]{20,}' B docs/airgap` finds nothing, nor does a search for the value of `HF_TOKEN` when it is set.
 
 ## Hand-off
 
 Tell the user, in their language:
 
-1. What to carry: the volumes and what `VOLUME.txt` on each says, or for a data diode the files of `SEND-ORDER.txt`, in that order.
-2. What the inside does first: copy the volumes into one folder, `sh verify.sh <folder>`, then `sh load.sh <folder> <model folder>`, as `INSIDE.md` or `AGENTS-INSIDE.md` says.
-3. What is still manual: the items marked not needed and their reasons, and the warnings `check.py` reported.
+1. What to carry: the volumes and the "volume N of TOTAL" label of each, or for a data diode the files of `SEND-ORDER.txt`, in that order.
+2. What the inside does first: copy the volumes into one folder and follow `INSIDE.md` (or `AGENTS-INSIDE.md`), which checks every file before anything is loaded.
+3. What is still open: manual items marked not needed and their reasons, packages without publisher checksums, and anything the self-check had to accept.
+
+## Common mistakes
+
+| Mistake | Instead |
+|---|---|
+| Taking "prepare everything" as the approval and starting downloads while writing the rest | Send the plan message and end your turn; the yes to that message is the approval |
+| Skipping the checksums because time is short, and recording the skip as a deviation | Checksums add no step for the user: the fetch commands check publisher sums, and `SHA256SUMS` is one command (`references/fetch.md`, "When time is short") |
+| Writing the `docker save` one-liner that was asked for | After the yes, use the image commands of `references/fetch.md`: they pin the platform and record each image's digest |
+| Letting the inside improvise when a file is missing | The runbook stops, names the file and its volume from `VOLUMES.txt`, and the file is carried in again from outside |

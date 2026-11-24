@@ -1,78 +1,87 @@
 # Blueprint template
 
-Write the blueprint to the path stored in `blueprint_path`. Copy everything below the line, then fill each section.
-
-Rules:
-
-1. Keep every `<!-- airgap:section ... -->` marker exactly as written and in this order. Lint finds the sections by these markers, so headings and text may be in the user's language.
-2. Component IDs, question IDs and versions stay as they are in `blueprint.json` and the catalog.
-3. Every number comes from `blueprint.json`. Copy; do not recompute.
-4. In section 4, each chosen component gets one table row that contains both its ID and its version.
-5. Add the "Isolation design" subsection, with its marker, only when `tier.requirements.isolation_design_section` is true.
+Copy everything below the line into the blueprint file and fill each section. Headings and prose may be in the user's language; question IDs, choice values, component IDs and versions stay exactly as the interview and the catalog write them.
 
 ---
 
-<!-- airgap:section context -->
-## 1. Context
+# PROJECT NAME: air-gapped blueprint
 
-Who the system is for and what constrains it: users, departments, isolation, audit, downtime tolerance, who operates it, what already exists, how files enter the network. State each as a fact from `answers`. List every answer that was "unknown" and the default that was used.
+Status: draft. Date: YYYY-MM-DD. Language: the code of the conversation's language, for example en. Oldest catalog entry used: YYYY-MM-DD (component ID).
 
-<!-- airgap:section tier -->
+## 1. Context and answers
+
+Who the system is for and what constrains it, in a short paragraph.
+
+| Question | Answer | From |
+|---|---|---|
+| `org.users_total` | 180 | the user |
+| `org.isolation` | `per_department` | `unknown`, default |
+
+One row per question of `references/interview.md` that has an answer. "From" is the user, a file (name it), or "`unknown`, default".
+
+Open questions: the GPU model or vendor when it was not named, and anything else the user should still answer.
+
 ## 2. Tier, floors and overrides
 
-Base tier and what it means. The floor of each layer as a table. Every entry of `tier.reasons`. Every decision that carries an override, with its reason, and every custom component.
+The base tier and why. A table of the eight layers and their floors. Every raised floor with the answer that raised it, every obligation, every override with the user's reason, and every custom part.
 
-<!-- airgap:section architecture -->
 ## 3. Architecture overview
 
-One paragraph, then a component diagram (Mermaid or plain text) that shows users, UI, gateway, engine, identity, state, observability and registry, with the chosen component named in each box.
+One paragraph, then a component diagram (Mermaid or plain text): users, UI, gateway, engine, identity, state, observability, registry, with the chosen component in each box.
 
-<!-- airgap:section decisions -->
 ## 4. Layer decisions
-
-One subsection per layer, in the order of `decisions`. Start with this table, one row per chosen component:
 
 | Layer | Component | Version | Evidence |
 |---|---|---|---|
+| `llm-serving` | `vllm` | `v0.34.0` | estimate |
+| `llm-serving` | `sglang` (benchmark only) | `v0.5.23` | estimate |
 
-Then, for each layer: the rationale, the alternatives considered, the caveats from the catalog entry that apply, and what is reused from existing infrastructure. A layer with nothing to deploy still gets its rationale.
+One row per component, versions copied from the catalog. Evidence is the decision's label (the weakest of its guide's case and its components), not the catalog entry's own. Then one subsection per layer, in this order: `llm-serving`, `llm-gateway`, `ui`, `identity`, `observability`, `orchestration`, `state`, `registry`.
 
-<!-- airgap:section isolation-design -->
+### `llm-serving`
+
+- Components: catalog IDs with versions, or none
+- Existing: infrastructure that already runs and is reused, or none
+- Custom: parts with no catalog entry, or none
+- Benchmark only: engines carried in only to be measured, or none
+- Rationale: why this choice, with the caveats from the catalog entry that apply
+- Alternatives considered: each option weighed, with why it lost
+- Evidence: `estimate`, `docs` or `field`
+- Override: none, or the user's reason for going below a floor or accepting hardware that does not fit
+
 ### Isolation design
 
-Only when required. How classification levels are kept apart: which engine instances, keys, networks and stores are separate per level, and who may cross a boundary.
+Only when `org.isolation` is `multi_level`: which engine instances, keys, networks and stores are separate per classification level, and who may cross a boundary.
 
-<!-- airgap:section sizing -->
 ## 5. Sizing
 
-Inputs (users, usage shares, the context per group when `workload.context_tokens` was given, models, GPUs). The concurrency range. Per model: GPUs per replica, replicas, KV-cache status, the KV cache needed at peak (`kv.demand_gb`), how many requests one replica holds (`kv.sequences`) and the context per group (`kv.context_by_usage`). Totals: GPUs, servers, power. Whether the hardware fits. Every entry of `sizing.warnings` and of each model's `notes`. The full `assumptions` list as a table with ID, value and evidence.
+Inputs: users, usage shares, contexts per group, models, GPUs. Then every step of `references/sizing.md` with its numbers, so that a reader can check each one. Then:
 
-<!-- airgap:section transfer -->
-## 6. Air-gap transfer plan
+| Model | GPUs per replica | Replicas | GPUs | KV cache |
+|---|---|---|---|---|
 
-How artifacts enter the network (`transfer.channel`, `transfer.cadence`), who carries them, where they land first, and how they are checked. Link to `docs/airgap/transfer-manifest.md` for the list itself. The manifest's `Hardware:` line must match the design's GPUs; when it says unknown, carry only the image rows for the hardware. Its `Platform:` line must match `hardware.cpu_arch`. Name the telemetry settings that must be off before first start.
+Concurrency as a range; total GPUs, servers, whole-system power; whether the hardware fits; every note and warning. Last, the assumptions table, with its value and evidence label for each row: one row per interview answer that was `unknown` (with the default used), and one per constant the steps used, the GPU group sizes and the KV type included.
 
-Who carries out the steps inside the network (`inside.operator`) and what they receive: for `people`, the runbook `INSIDE.md`; for `local_agent`, the agent rules `AGENTS-INSIDE.md`; for `people_then_agent`, both, the runbook for the first day and the rules once the agent runs. Every step inside works without internet and without an LLM. Name `airgap-transfer` as the next step: it turns the manifest into a checked bundle, the inside scripts and these instructions.
+## 6. Air-gap transfer
 
-<!-- airgap:section data-flow -->
+How files enter the network (`transfer.channel`, `transfer.cadence`), who carries them, where they land first and how they are checked. Link `docs/airgap/transfer-manifest.md`, the list of everything to carry in. The telemetry and egress settings to switch off before first start, copied from its section 4. Who works inside (`inside.operator`) and what they receive: a runbook for people, rules for an agent, or both. The next step is `airgap-transfer`, which turns the manifest into a checked bundle.
+
 ## 7. Data flow
 
-The path of one request from the user to the model and back, naming each component it crosses. The authentication path: where identity is checked, how a request is tied to a person and a department, and where that is logged.
+The path of one request from the user to the model and back, naming every component it crosses. Where identity is checked, how a request is tied to a person and a department, and where that is logged.
 
-<!-- airgap:section operations -->
 ## 8. Failure modes and operations
 
-What happens when each component fails and how it is noticed. Backups of state. How upgrades are carried in and applied without internet access, and who applies them (`inside.operator`): people following a runbook, or the agent inside under the rules in `AGENTS.md`.
+What happens when each component fails and how it is noticed. Backups of state. How upgrades are carried in and applied without internet, and by whom.
 
-<!-- airgap:section verification -->
 ## 9. Verification plan
 
-1. Benchmark before production: measure tokens per second and time to first token at `concurrency.high` on the real hardware, and KV-cache capacity when sizing reported it as unknown.
-2. One entry per decision whose evidence is `estimate`: write the layer ID, what the estimate is, and how to check it.
-3. `org.kubernetes_experience`, as a risk, when `tier.requirements.kubernetes_risk_note` is true.
-4. Any benchmark a decision table asked for. Each engine a benchmark names is in that decision's `benchmark`, so the transfer manifest carries it, marked "(benchmark only)".
+1. Benchmark before production: tokens per second and time to first token at `concurrency.high` on the real hardware, and KV-cache capacity where sizing could not compute it, with the load generator the transfer manifest lists.
+2. One entry per decision whose evidence is `estimate`: the layer ID, what the estimate is, and how to check it.
+3. `org.kubernetes_experience` as a risk, when the orchestration floor is T3 and the team does not run Kubernetes.
+4. Every benchmark a layer guide asked for, naming the engine.
+5. Every chosen catalog entry last verified more than 180 days before the blueprint's date: re-check its sources before relying on it.
 
-<!-- airgap:section out-of-scope -->
-## 10. Out of scope and later layers
+## 10. Out of scope
 
-What this blueprint does not decide: deployment files, the choice of model, data, CI/CD and security layers, compliance mapping.
+What this blueprint does not decide: deployment files, the choice of model, data, CI/CD, security layers, compliance mapping.

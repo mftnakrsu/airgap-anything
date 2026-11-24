@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "airgap-anything",
+  "version": "0.3.0",
+  "description": "Agent skills for air-gapped environments: airgap-architect designs the system and lists what to carry in; airgap-transfer packs that list into a bundle that checks itself inside.",
+  "author": {
+    "name": "mftnakrsu",
+    "url": "https://github.com/mftnakrsu"
+  },
+  "homepage": "https://airgap-anything.mefby.com",
+  "repository": "https://github.com/mftnakrsu/airgap-anything",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "air-gapped",
+    "on-premises",
+    "architecture",
+    "llm",
+    "sizing"
+  ]
+}

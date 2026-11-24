@@ -1,48 +1,92 @@
 {
-  "deterministic": {
-    "tier": {
-      "base": "T3",
-      "floors": {
-        "llm-serving": "T3",
-        "llm-gateway": "T3",
-        "ui": "T3",
-        "identity": "T3",
-        "observability": "T3",
-        "orchestration": "T3",
-        "state": "T3",
-        "registry": "T3"
-      },
-      "requirements": {
-        "gateway_non_empty": true,
-        "isolation_design_section": false,
-        "two_engine_replicas": true,
-        "kubernetes_risk_note": false
-      }
+  "tier": {
+    "base": "T3",
+    "floors": {
+      "llm-serving": "T3",
+      "llm-gateway": "T3",
+      "ui": "T3",
+      "identity": "T3",
+      "observability": "T3",
+      "orchestration": "T3",
+      "state": "T3",
+      "registry": "T3"
     },
-    "sizing": {
-      "concurrency": { "low": 164, "high": 280 },
-      "models": [{ "gpus_per_replica": 1, "replicas": 18, "kv_status": "computed" }],
-      "total_gpus": 18,
-      "servers": 3,
-      "power_kw": 22.7,
-      "fits": true
+    "requirements": {
+      "gateway_non_empty": true,
+      "isolation_design_section": false,
+      "two_engine_replicas": true,
+      "kubernetes_risk_note": false
     }
   },
+  "sizing": {
+    "concurrency": {
+      "low": 164,
+      "high": 280
+    },
+    "models": [
+      {
+        "gpus_per_replica": 1,
+        "replicas": 18,
+        "kv_status": "computed"
+      }
+    ],
+    "total_gpus": 18,
+    "servers": 3,
+    "power_kw": 22.7,
+    "fits": true
+  },
   "decisions": {
-    "llm-serving": { "components": ["vllm"] },
-    "llm-gateway": { "includes": ["litellm"], "mentions": ["kong"] },
-    "ui": { "components": ["open-webui"] },
-    "identity": { "empty": false },
-    "observability": { "components": ["prometheus", "grafana"] },
-    "orchestration": { "mentions": ["openshift"] },
-    "state": { "includes": ["postgresql", "valkey"] },
-    "registry": { "components": ["harbor"] }
+    "llm-serving": {
+      "components": [
+        "vllm"
+      ]
+    },
+    "llm-gateway": {
+      "includes": [
+        "litellm"
+      ],
+      "mentions": [
+        "kong"
+      ]
+    },
+    "ui": {
+      "components": [
+        "open-webui"
+      ]
+    },
+    "identity": {
+      "empty": false
+    },
+    "observability": {
+      "components": [
+        "prometheus",
+        "grafana"
+      ]
+    },
+    "orchestration": {
+      "mentions": [
+        "openshift"
+      ]
+    },
+    "state": {
+      "includes": [
+        "postgresql",
+        "valkey"
+      ]
+    },
+    "registry": {
+      "components": [
+        "harbor"
+      ]
+    }
   },
   "process": [
-    "docs/airgap/blueprint.json exists and lint.py exits 0",
-    "docs/airgap/transfer-manifest.md exists",
+    "the blueprint exists at the path SKILL.md names and every self-review item holds",
+    "docs/airgap/transfer-manifest.md exists and copies its rows from the catalog entries of the chosen components",
+    "the sizing section writes out each step's numbers, and they match the sizing of this file",
     "the blueprint contains a benchmark-before-production step",
-    "sizing shows at least two engine replicas",
-    "no deployment file was written and nothing was installed"
+    "the verification section lists every decision that rests on an estimate",
+    "no deployment file was written and nothing was installed",
+    "sizing shows at least two engine replicas"
   ]
 }

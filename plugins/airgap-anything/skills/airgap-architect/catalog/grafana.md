@@ -1,0 +1,101 @@
+# Grafana (`grafana`)
+
+Open-source web application for dashboards, queries and alerting over data sources such as Prometheus.
+
+| Field | Value |
+|---|---|
+| Layer | `observability` |
+| Version | `13.3.1` |
+| License | AGPL-3.0 |
+| Tiers | T1, T2, T3 |
+| Requires | none |
+| Evidence | docs |
+| Last verified | 2026-11-22 |
+
+## Choose when
+
+- Dashboards and alert visualization over Prometheus or PostgreSQL data sources are needed: the Prometheus and PostgreSQL data sources ship with the Grafana distribution.
+
+## Avoid when
+
+- SAML sign-in, team sync or active LDAP sync is required and an Enterprise license will not be bought: these are available in Grafana Enterprise and Grafana Cloud, not in Grafana open source.
+
+## Alternatives
+
+none.
+
+## Caveats
+
+- Editions: Grafana Open Source (image grafana/grafana, AGPLv3) and Grafana Enterprise (image grafana/grafana-enterprise, Grafana Labs License). The documentation calls Enterprise the recommended default and says it is free and includes all the features of the OSS edition, with an option to upgrade to the full Enterprise feature set; this entry carries the open-source image. Features of the full Enterprise set include SAML, team sync, active LDAP sync, and query caching, and need an Enterprise license.
+- If an Enterprise license is used: the license token is renewed every 24 hours by calling the Grafana API, which requires internet access and auto_refresh_license = true; for an instance that cannot reach the internet the documentation says to contact the Grafana Labs account team for other renewal options. Set license_server to true in an entry that carries the Enterprise image.
+- High availability (T3): Grafana stores users and dashboards in an embedded sqlite3 database by default; for high availability two or more servers need a shared MySQL or Postgres database, which the guide says must itself be configured as highly available (out of its scope), plus extra alerting high-availability steps. Optional dependency: postgresql, not a requirement of the default setup.
+- Authentication: the documentation's list of supported methods includes LDAP, Generic OAuth, Okta, GitHub, GitLab, Google, Entra ID, JWT proxy and auth proxy; only SAML, team sync and active LDAP sync are stated to be unavailable in Grafana open source.
+
+## Carry in
+
+### Images
+
+| Image | Hardware | Digest |
+|---|---|---|
+| `grafana/grafana:13.3.1` | any | not recorded |
+
+### Packages
+
+None.
+
+### Runtime downloads to stage in advance
+
+- Default preinstalled plugins: unless disabled, Grafana installs a default list of plugins from the Grafana plugin catalog on startup, in the background. At v13.3.1 the list in pkg/setting/setting_plugins.go is grafana-lokiexplore-app, grafana-pyroscope-app, grafana-exploretraces-app, grafana-metricsdrilldown-app, elasticsearch, prometheus, tempo, zipkin, opentsdb, stackdriver, mssql, jaeger, loki, mysql, influxdb, cloudwatch, grafana-advisor-app, grafana-postgresql-datasource and grafana-pyroscope-datasource. Preinstalled plugins without a pinned version are also updated to the latest version on startup (preinstall_auto_update, default true).
+- Missing bundled plugins: the documentation states that Grafana downloads any missing bundled plugin from grafana.com on startup, and that on an air-gapped host the bundled_plugins directory decides whether the bundled data sources work at all. Slim image variants (suffix -slim) do not include the plugins bundled with the standard images.
+- Plugin signature public key: Grafana downloads the public key used to verify plugin signatures (on startup if public_key_retrieval_on_startup is true, otherwise every 10 days) unless public_key_retrieval_disabled is true, in which case it uses the hard-coded key.
+- Plugins you add yourself: installation from the catalog needs an internet connection; for an air-gapped host, download the plugin ZIP from the Grafana.com API download link (https://grafana.com/api/plugins/<plugin id>/versions/<version>/download) on a connected machine, carry it in, and extract it into the plugin directory (unzip my-plugin-0.2.0.zip -d YOUR_PLUGIN_DIR/my-plugin) or give a custom ZIP URL as plugin_id@version@url in the preinstall setting (GF_PLUGINS_PREINSTALL in Docker).
+
+### Telemetry and egress to switch off before the first start
+
+1. Anonymous usage statistics (counters of running instances, versions, dashboards and errors, no IP addresses) sent to stats.grafana.org every 24 hours; on by default.
+   Switch off: [analytics] reporting_enabled = false
+2. Check for new Grafana versions every ten minutes, with a notice in the UI; on by default.
+   Switch off: [analytics] check_for_updates = false
+3. Check for new versions of installed plugins at grafana.com every ten minutes, with a notice in the UI; on by default.
+   Switch off: [analytics] check_for_plugin_updates = false
+4. Gravatar profile images for users, fetched from https://secure.gravatar.com/avatar (the default of [security] gravatar_url); on by default ([security] disable_gravatar = false in conf/defaults.ini at v13.3.1). The configuration page and defaults.ini do not say whether the Grafana server or the user's browser fetches the images.
+   Switch off: [security] disable_gravatar = true
+5. Default preinstalled plugins, downloaded from grafana.com when an instance first starts (see the air-gap notes).
+   Switch off: [plugins] preinstall_disabled = true, and carry the plugins you need as ZIP files.
+
+### License server
+
+None: no license check needs connectivity.
+
+### Air-gap notes
+
+Telemetry, update checks and Gravatar profile images are on by default and reach grafana.com, stats.grafana.org, GitHub or secure.gravatar.com; switch them off before the instance first starts (see the telemetry list). Settings go in the [section] of grafana.ini or in environment variables named GF_<SECTION NAME>_<KEY>. To prevent the startup downloads, set [plugins] preinstall_disabled = true (all default preinstalled plugins; disable_plugins turns off one) and carry the plugins you need as ZIP files. Not verified: whether the Prometheus and PostgreSQL data sources still work offline on the grafana/grafana image with preinstall_disabled = true. Their plugins, prometheus and grafana-postgresql-datasource, are in the default preinstall list (pkg/setting/setting_plugins.go), and the bundled_plugins documentation says that the Prometheus and PostgreSQL data sources ship with the Grafana distribution; for the setting itself, the configuration page says only that it 'disables all preinstalled plugins', and the comment in defaults.ini that it 'has the same effect as setting preinstall to an empty list'. List this check in the verification steps of the blueprint: start the image with the setting and without network access, and confirm that both data sources can be added and queried. The check_for_updates documentation says the check goes to GitHub, while the comment in defaults.ini names grafana.com; block both when egress is filtered. Google Analytics, Rudderstack and PostHog reporting are off unless an ID or key is configured under [analytics]. The documentation does not say whether the [news] news_feed_enabled option makes an outbound request; it can be set to false. Package installs (deb, rpm) are also published on the download page. The OSS edition has no license check: license_server is false.
+
+## Per-tool skills
+
+- `prometheus-mimir-grafana` in `air-gapped/skills`
+- `prometheus-grafana-llm` in `ScaleDockHQ/llm-skills`
+
+## Evidence
+
+Level: docs.
+
+All values were read on 2026-11-21 from the pages in sources (the Gravatar settings of [security] and the preinstall and bundled_plugins statements of [plugins] were re-read on 2026-11-22 in conf/defaults.ini, the configuration page and pkg/setting/setting_plugins.go at v13.3.1); the documentation pages are the files of the repository at tag v13.3.1 (the version documented here), which the project publishes as grafana.com documentation. Version 13.3.1 is the latest GitHub release (published 2026-11-10) and the version on the project's download page; the tag 13.3.1 exists on Docker Hub. The entry is for the open-source edition (image grafana/grafana, AGPLv3 on the download page, AGPL-3.0 in the repository license file). The documentation recommends the Enterprise edition image as the default, but it is a different edition under the Grafana Labs License; see caveats.
+
+Sources:
+
+- https://github.com/grafana/grafana/releases/tag/v13.3.1
+- https://github.com/grafana/grafana/blob/main/LICENSE
+- https://grafana.com/grafana/download?edition=oss
+- https://grafana.com/grafana/download
+- https://hub.docker.com/v2/repositories/grafana/grafana/tags/13.3.1
+- https://github.com/grafana/grafana/blob/v13.3.1/docs/sources/setup-grafana/installation/docker/index.md
+- https://github.com/grafana/grafana/blob/v13.3.1/docs/sources/setup-grafana/configure-docker.md
+- https://github.com/grafana/grafana/blob/v13.3.1/docs/sources/setup-grafana/configure-grafana/_index.md
+- https://github.com/grafana/grafana/blob/v13.3.1/docs/sources/administration/plugin-management/plugin-install.md
+- https://github.com/grafana/grafana/blob/v13.3.1/docs/sources/administration/enterprise-licensing/_index.md
+- https://github.com/grafana/grafana/blob/v13.3.1/docs/sources/setup-grafana/configure-access/configure-authentication/_index.md
+- https://github.com/grafana/grafana/blob/v13.3.1/docs/sources/setup-grafana/set-up-for-high-availability.md
+- https://github.com/grafana/grafana/blob/v13.3.1/docs/sources/setup-grafana/installation/_index.md
+- https://github.com/grafana/grafana/blob/v13.3.1/conf/defaults.ini
+- https://github.com/grafana/grafana/blob/v13.3.1/pkg/setting/setting_plugins.go

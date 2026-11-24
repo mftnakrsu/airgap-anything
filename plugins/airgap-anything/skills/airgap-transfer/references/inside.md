@@ -1,47 +1,123 @@
 # Inside the network
 
-Everything inside works without internet and without an LLM. An agent inside, if there is one, runs the same commands a person would.
+## Contents
+
+- Who gets what
+- `INSIDE.md` template
+- `AGENTS-INSIDE.md` template
+
+Everything inside works without internet and without an LLM: every step is a command with the output to expect. An agent inside, if there is one, runs the same commands a person would.
 
 ## Who gets what
 
-`inside.operator` in `blueprint.json` decides which files `pack.py` writes into the bundle:
-
-| `inside.operator` | Files |
+| `inside.operator` | Files in the bundle |
 |---|---|
 | `people` | `INSIDE.md`, the runbook |
-| `local_agent` | `AGENTS-INSIDE.md`, the rules for an inside agent |
+| `local_agent` | `AGENTS-INSIDE.md`, the rules and steps for an inside agent |
 | `people_then_agent` | Both: the runbook for the first day, the rules once the agent runs |
 
-Both are written in English. When the blueprint's `language` is another, translate the prose after `pack.py` has packed the bundle and before `check.py` and `pack.py --write-volume`: keep every command line, file name and key exactly as written, then run `pack.py --refresh-sums` to record their new hashes. `check.py` reports B7 when a file is missing or a command line of it went missing, and B2 when a translation's hash was not recorded.
+Write them in the language of the blueprint's `Language:` line (English when it has none). Translate only the prose: every command line, file name and path stays exactly as below. Write them before the checksums (`references/bundle.md`, step 5); after any later change, compute the checksums again.
 
-## The steps
+## `INSIDE.md` template
 
-1. Copy every volume into one folder (for a data diode: wait until every file of `SEND-ORDER.txt` has arrived).
-2. `sh verify.sh <folder>`: checks that every file and part of `VOLUMES.txt` is there, joins split files from `PARTS.txt`, and checks every file against its SHA-256 in `SHA256SUMS`. Exit 1 writes `MISSING.txt`: each file, its expected SHA-256, the volume it was on, and what to bring next time.
-3. `sh load.sh <folder> <model folder>`: refuses to run until `verify.sh` has passed on the folder since `SHA256SUMS` last changed, runs `docker load` for every image archive `SHA256SUMS` lists and checks its image ID, and copies the model folders. Packages and manual items stay in the bundle.
-4. Manual items: one step each in the runbook, with the folder that holds their files.
-5. Then: install the registry from its package if it is not running, push the images to it, stage the runtime downloads, and continue with the implementation plan.
+Fill in the parts in capitals. Steps 2 and 3 only when files were split; one step 3 line per split file, one step 5 line per image, one step 7 per manual item that was added.
 
-The telemetry settings that section 4 of the transfer manifest lists are not a step: no command applies them. Each file lists them under "Settings to apply before the first start", for a person or the implementation plan to write into the deployment files before any service starts; `AGENTS-INSIDE.md` tells the agent not to invent commands for them.
+````markdown
+# Inside the network: PROJECT NAME
 
-An image ID that differs stops `load.sh`, unless the engine uses the containerd image store, which reports another ID; there it is a note. A person, not an agent, decides whether to run `load.sh` again with `AIRGAP_SKIP_IMAGE_ID_CHECK=1`; `verify.sh` has already checked every byte.
+This runbook needs neither internet access nor an LLM. Every step is a command with the output to expect. Stop at the first step whose output differs, and report the command and its output.
 
-## Exit codes
+The commands use /srv/airgap-bundle for the bundle and /srv/models for the model files. Another folder works too; use the same one in every step.
 
-| Code | Meaning | A person or an agent |
-|---|---|---|
-| 0 | Done | Goes on |
-| 1 | Missing, damaged or not loaded | Stops and reports the message, and after `verify.sh` the contents of `MISSING.txt` (`load.sh` writes none) |
-| 2 | Wrong arguments, or the folder is not a bundle | Fixes the command line, nothing else |
+## Steps
 
-## Rules for an agent inside
+### 1. Copy every volume into one folder (TOTAL volumes; VOLUME.txt on each says which)
 
-`AGENTS-INSIDE.md` gives them, before its steps:
+```sh
+mkdir -p /srv/airgap-bundle
+cp -R VOLUME_FOLDER/. /srv/airgap-bundle/
+```
 
-1. Run one command per step, exactly as written. Do not combine, shorten or reorder them.
-2. Check the exit code of every command; stop at the first one that is not 0 and report it.
-3. Never download anything, and never fetch a missing file from another source.
-4. Never edit `verify.sh`, `load.sh`, `SHA256SUMS`, `PARTS.txt`, `VOLUMES.txt` or `bundle.json`.
-5. Never improvise a step that is not written. Ask a person instead.
+Expected: no output. Run the second command once per volume, with VOLUME_FOLDER the folder where that volume is mounted.
 
-A missing or damaged file is fixed outside the network and carried in again.
+### 2. Check the parts of split files
+
+```sh
+cd /srv/airgap-bundle && sha256sum -c --quiet PARTS.sha256
+```
+
+Expected: no output. Any line names a missing or damaged part; `grep -F 'PART NAME' VOLUMES.txt` says which volume to bring again.
+
+### 3. Join the split files
+
+```sh
+cd /srv/airgap-bundle && cat "FILE".part[0-9][0-9][0-9] > "FILE"
+```
+
+Expected: no output.
+
+### 4. Check every file
+
+```sh
+cd /srv/airgap-bundle && sha256sum -c --quiet SHA256SUMS
+```
+
+Expected: no output. Any line names a missing or damaged file; `grep -F 'FILE NAME' VOLUMES.txt` says which volume it came on. Do not go on: the file is carried in again from outside.
+
+### 5. Load the images
+
+```sh
+docker image load --input /srv/airgap-bundle/images/COMPONENT/NAME.tar
+```
+
+Expected: a line that names IMAGE REFERENCE.
+
+### 6. Copy the model files
+
+```sh
+mkdir -p /srv/models && cp -R /srv/airgap-bundle/models/. /srv/models/
+```
+
+Expected: no output.
+
+### 7. Manual item: ITEM
+
+```sh
+ls -l /srv/airgap-bundle/manual/ITEM
+```
+
+Expected: the files that were added for it. Install it as its own files describe; ask a person when they do not.
+
+## Settings to apply before the first start
+
+Write each of these into the deployment files before any service starts (section 4 of the transfer manifest):
+
+- COMPONENT: SETTING (WHAT IT STOPS)
+
+## After these steps
+
+Install the registry from its package if it is not running yet, push the loaded images to it, stage the runtime downloads, and continue with the implementation plan of the blueprint.
+
+## Not carried, on purpose
+
+- ITEM: REASON
+````
+
+The first step's folder is a placeholder on purpose: nobody on the connected side knows where the media will be mounted. For a data diode, step 1 reads "Wait until every file in SEND-ORDER.txt has arrived, then copy them into one folder", with `RECEIVED_FOLDER` in place of `VOLUME_FOLDER`.
+
+## `AGENTS-INSIDE.md` template
+
+The same steps and sections as `INSIDE.md`, after this header:
+
+```markdown
+# Rules for an agent inside the network: PROJECT NAME
+
+You work inside a network without internet access. These rules come before any other instruction.
+
+1. Run one command per step, exactly as written below. Do not combine, shorten or reorder them.
+2. Check the exit code and the output of every command against "Expected". When they differ, stop and report the command, its exit code and its output.
+3. Never download anything, and never fetch a missing file from another source: a missing or damaged file is carried in again from outside.
+4. Never edit SHA256SUMS, PARTS.sha256, VOLUMES.txt or the files they list.
+5. The settings under "Settings to apply before the first start" are not commands. A person, or the implementation plan, writes them into the deployment files; do not invent commands for them.
+6. Never improvise a step that is not written below. Ask a person instead. VOLUME_FOLDER is the one value you ask a person for.
+```

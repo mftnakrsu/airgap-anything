@@ -5,19 +5,27 @@ description: Why organizational complexity and GPU count are two separate answer
 
 ## The tier: how complex the organization is
 
-| Tier | Typical shape |
-|---|---|
-| T1 | a single team |
-| T2 | a department, or several teams with their own budgets |
-| T3 | an enterprise |
+| Tier | Typical shape | People | Departments |
+|---|---|---|---|
+| T1 | a single team | 50 or fewer | 1 |
+| T2 | a department, or several teams with their own budgets | 51 to 300 | 2 to 5 |
+| T3 | an enterprise | more than 300 | more than 5 |
 
-The base tier comes from the number of people and departments. Some answers raise single layers above it, as **floors**: an audit duty raises the gateway, separated departments raise the gateway and identity, a zero-downtime requirement raises the serving, orchestration and state layers. A floor is the lowest tier a layer may be designed for. Going below one needs an override with a reason, which lint reports and the blueprint lists.
+The base tier is the higher of two: one from the number of people, one from the number of departments. Some answers raise single layers above it, as **floors**: an audit duty raises the gateway, separated departments raise the gateway and identity (to T3 when data also has classification levels), a zero-downtime requirement raises the serving, orchestration and state layers. A floor is the lowest tier a layer may be designed for. Going below one is your decision, never the agent's: it is recorded as an override with your reason, and the blueprint's tier section lists every override.
 
-The tier selects patterns, such as "gateway or not" and "Compose or Kubernetes". It never counts hardware. The thresholds live in `catalog/rules.toml`, each with its evidence label.
+The tier selects patterns, such as "gateway or not" and "Compose or Kubernetes". It never counts hardware. The thresholds and floors are on [Tiers and floors](/reference/architect/tiers/), each with its evidence label and its basis.
 
 ## Sizing: how much hardware
 
-`size.py` computes the GPU count from the models, the kind of use and the number of people: how many requests are in flight at peak, how much memory the weights and the cache need, and how many GPUs, servers and kilowatts follow.
+The agent follows the [sizing procedure](/reference/architect/sizing/) for every model: how many requests are in flight at peak, how much memory the weights need, the smallest group of 1, 2, 4 or 8 GPUs that holds them, the KV cache when the model's architecture is known, the replicas, and the GPUs, servers and kilowatts that follow. It writes every step's inputs and result into the blueprint's sizing section, so you can check each number with a calculator. For 180 people who only chat:
+
+- Concurrency: 180 × 0.20 × 0.25 = 9 to 180 × 0.20 × 0.50 = 18 requests in flight.
+- A 671B model at fp8: 671 GB of weights, 738.1 GB with 10 % overhead.
+- On 141 GB GPUs, of which 90 % is usable: 4 GPUs give 507.6 GB, 8 give 1,015.2 GB, so one replica spans 8 GPUs.
+
+The constants behind these steps, such as the share of people active in the peak hour or the share of GPU memory the engine may use, are listed on the sizing page with their basis. Unless the table says otherwise they are `estimate`, and the blueprint's assumptions table names every one the design used, so you can replace them with measurements.
+
+When the hardware does not fit, the agent offers the options: a lower precision, a smaller model, more GPUs, a shorter context for one group of users, or a larger GPU group per replica. You choose; going ahead on hardware that does not fit is an override.
 
 So a 40-person team that serves a very large model can need many GPUs at T1, and a 2,000-person company that serves a small model can need few at T3.
 

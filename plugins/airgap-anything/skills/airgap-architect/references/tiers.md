@@ -1,41 +1,48 @@
 # Tiers and floors
 
-Script, catalog and reference paths in this file are relative to the skill root, the folder that holds `SKILL.md`. Run a script by its full path (the skill root joined with `scripts/NAME.py`) from the project root, so that `docs/airgap/blueprint.json` resolves.
+The tier measures how complex the organization is: how many people, how many separate departments, how strict the rules. It says nothing about GPU count. A 40-person team that serves a 671B model needs many GPUs at T1; a 2,000-person company that serves an 8B model needs few at T3. GPUs come from `references/sizing.md`.
 
-Run:
+## Base tier
 
-```bash
-python3 scripts/tier.py --blueprint docs/airgap/blueprint.json
-```
+Work out a tier from users and one from departments, and take the higher of the two.
 
-It writes `tier` into `blueprint.json`. Do not work a tier out by hand.
+| Tier | Meaning | Users (`org.users_total`) | Departments (`org.departments`) |
+|---|---|---|---|
+| T1 | Single team | 50 or fewer | 1 |
+| T2 | Department | 51 to 300 | 2 to 5 |
+| T3 | Enterprise | more than 300 | more than 5 |
 
-## What the output means
+Example: 180 users (T2) in 4 departments (T2) is T2. 40 users (T1) in 6 departments (T3) is T3.
 
-| Field | Meaning |
-|---|---|
-| `base` | `T1` single team, `T2` department, `T3` enterprise. It comes from `org.users_total` and `org.departments` only. |
-| `floors` | One tier per layer. A floor is the lowest tier you may design that layer for. Most floors equal `base`; some answers raise single layers. |
-| `requirements` | Obligations that follow from the answers. See the next table. |
-| `reasons` | Why floors were raised. Quote them in the blueprint's tier section. |
+Where the thresholds come from:
 
-| Requirement | When it is true, you must |
-|---|---|
-| `gateway_non_empty` | Choose a gateway: the `llm-gateway` decision needs a component, an existing gateway or a custom entry. |
-| `isolation_design_section` | Add the "Isolation design" subsection to the blueprint, with its marker. |
-| `two_engine_replicas` | Nothing by hand: `size.py` already plans at least two replicas per model. |
-| `kubernetes_risk_note` | List `org.kubernetes_experience` as a risk in the verification section: the design needs Kubernetes and the team does not run it today. |
+| Threshold | Evidence | Basis |
+|---|---|---|
+| 50 users | docs | Three anchors converge on 50: the Open WebUI license allows changing its branding with "50 or fewer users in a 30-day period" (https://docs.openwebui.com/license/); its scaling guide has a row "Small team (< 50 users, single instance)" (https://docs.openwebui.com/getting-started/advanced-topics/scaling); the EU counts a small enterprise as fewer than 50 staff (https://single-market-economy.ec.europa.eu/smes/sme-fundamentals/sme-definition_en). |
+| 300 users | docs | The line where vendors start their enterprise plans: Microsoft 365 business plans are "designed for organizations with up to 300 users" (https://learn.microsoft.com/en-us/office365/servicedescriptions/office-365-platform-service-description/office-365-plan-options) and Google Workspace business plans have a "maximum of 300 users" (https://workspace.google.com/pricing). It is not a high-availability trigger: GitLab recommends HA from 3,000 users. |
+| 1 and 5 departments | estimate | A heuristic. No source found on 2026-11-21 uses a number of departments as a size boundary. |
+
+## Floors
+
+Every layer starts at the base tier. That is its floor: the lowest tier the layer may be designed for. Some answers raise single floors and switch on obligations:
+
+| Answer | Raises the floor of | To at least | Obligation |
+|---|---|---|---|
+| `org.audit_required` = true | `llm-gateway` | T2 | A gateway is required |
+| `org.isolation` = `per_department` | `llm-gateway`, `identity` | T2 | A gateway is required |
+| `org.isolation` = `multi_level` | `llm-gateway`, `identity` | T3 | A gateway is required, and the blueprint gets an "Isolation design" subsection |
+| `org.downtime_tolerance` = `none` | `orchestration`, `llm-serving`, `state` | T3 | At least 2 replicas of every model (`references/sizing.md`) |
+
+All four rows are `estimate`: they are the design's own judgment, not a documented rule.
+
+One more obligation follows from the floors: when the `orchestration` floor is T3 and `org.kubernetes_experience` is false, the design needs Kubernetes and the team does not run it today. List that as a risk in the verification section.
 
 ## Using a floor
 
-1. For a supporting layer, take the floor's column in `references/layers/supporting-defaults.md`.
-2. In a decision table, skip a row when the component's `tiers` list does not include the floor.
-3. Designing a layer above its floor needs no permission. Going below it needs an override on that decision: `"override": { "reason": "..." }`. Without it, lint reports error E3. With it, lint lists the override as note N1, and the blueprint's tier section must list it too.
+- A component fits a layer when its catalog entry's `Tiers` row includes the layer's floor. Skip the ones that do not.
+- Designing a layer above its floor needs no permission.
+- Going below a floor is the user's call, never yours. Record it in the decision as an override with the user's reason, and list every override in the blueprint's tier section, so that whoever reads the design sees what was knowingly accepted.
 
-## Tier and hardware are separate
+## What the blueprint shows
 
-The tier measures how complex the organization is. It says nothing about GPU count. A 40-person team that serves a very large model needs many GPUs at T1; a 2,000-person company that serves a small model needs few at T3. GPU count comes from `size.py`.
-
-## Exit code 2
-
-The script lists the question IDs that are missing or invalid. Go back to the interview for those, then run it again.
+The base tier, why (users and departments), the floor of each layer as a table, every raised floor with the answer that raised it, every obligation, and every override.

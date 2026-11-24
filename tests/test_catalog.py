@@ -1,400 +1,148 @@
-import tempfile
+"""The markdown catalog of airgap-architect: every entry has the fields and sections the skill
+reads, names only components and layers that exist, and carries an evidence label and sources."""
+import re
 import unittest
-from datetime import date, datetime
-from pathlib import Path
+from datetime import date
 
-from tests import support
-from airgap_lib.catalog import (
-    load_catalog,
-    validate_catalog,
-    validate_component,
-    validate_gpus,
-)
+from tests import CATALOG_DIR, EVIDENCE_LEVELS, LAYERS, SKILL_DIR
+
+SECTIONS = ["## Choose when", "## Avoid when", "## Alternatives", "## Caveats", "## Carry in", "## Per-tool skills", "## Evidence"]
+CARRY_IN = ["### Images", "### Packages", "### Runtime downloads to stage in advance",
+            "### Telemetry and egress to switch off before the first start", "### License server"]
+FIELDS = ["Layer", "Version", "License", "Tiers", "Requires", "Evidence", "Last verified"]
 
 
-def codes(findings):
-    return [finding.code for finding in findings]
+def entries():
+    return {path.stem: path.read_text(encoding="utf-8") for path in sorted(CATALOG_DIR.glob("*.md"))}
 
 
-class CatalogLoadingTest(unittest.TestCase):
+def fields(text):
+    table = {}
+    for line in text.splitlines():
+        match = re.match(r"\| (Layer|Version|License|Tiers|Requires|Evidence|Last verified) \| (.*) \|$", line)
+        if match:
+            table[match.group(1)] = match.group(2)
+    return table
+
+
+def ids(cell):
+    return re.findall(r"`([a-z0-9-]+)`", cell)
+
+
+class CatalogEntryTest(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
+        self.entries = entries()
 
-    def test_fixture_catalog_loads_and_validates(self):
-        catalog, findings = load_catalog(support.make_catalog(self.root))
-        self.assertEqual(findings, [])
-        self.assertEqual(len(catalog.components), 9)
-        self.assertEqual(validate_catalog(catalog, support.TODAY), [])
+    def test_there_are_entries_for_every_layer(self):
+        layers = {ids(fields(text)["Layer"])[0] for text in self.entries.values()}
+        self.assertEqual(layers, set(LAYERS))
 
-    def test_gpu_lookup_ignores_case_and_punctuation(self):
-        catalog = support.load_fixture_catalog(self.root)
-        self.assertEqual(catalog.gpu("tg-141")["vram_gb"], 141)
-        self.assertEqual(catalog.gpu("TEST GPU 141")["tdp_w"], 700)
-        self.assertIsNone(catalog.gpu("no such gpu"))
+    def test_the_title_names_the_file(self):
+        for component_id, text in self.entries.items():
+            with self.subTest(entry=component_id):
+                self.assertRegex(text.splitlines()[0], rf"^# .+ \(`{re.escape(component_id)}`\)$")
 
-    def test_file_name_must_match_id(self):
-        support.make_catalog(self.root)
-        entry = support.component("mismatch", "ui")
-        (self.root / "components" / "other-name.toml").write_text(
-            support.component_toml(entry), encoding="utf-8"
-        )
-        catalog, findings = load_catalog(self.root)
-        self.assertEqual(codes(findings), ["C2"])
-        self.assertNotIn("mismatch", catalog.components)
+    def test_every_field_is_there_and_valid(self):
+        for component_id, text in self.entries.items():
+            table = fields(text)
+            with self.subTest(entry=component_id):
+                self.assertEqual(list(table), FIELDS)
+                self.assertIn(ids(table["Layer"])[0], LAYERS)
+                self.assertRegex(table["Version"], r"^`[^`\s]+`$")
+                self.assertTrue(set(table["Tiers"].split(", ")) <= {"T1", "T2", "T3"})
+                self.assertIn(table["Evidence"], EVIDENCE_LEVELS)
+                verified = date.fromisoformat(table["Last verified"])
+                self.assertLessEqual(verified, date.today())
+                for required in ids(table["Requires"]):
+                    self.assertIn(required, self.entries)
 
-    def test_unparsable_file_is_c2(self):
-        support.make_catalog(self.root)
-        (self.root / "components" / "broken.toml").write_text("id = = 1\n", encoding="utf-8")
-        _, findings = load_catalog(self.root)
-        self.assertEqual(codes(findings), ["C2"])
+    def test_sections_come_in_the_order_the_skill_reads_them(self):
+        for component_id, text in self.entries.items():
+            with self.subTest(entry=component_id):
+                positions = [text.find("\n" + heading + "\n") for heading in SECTIONS + CARRY_IN]
+                self.assertNotIn(-1, positions)
+                self.assertEqual(positions[: len(SECTIONS)], sorted(positions[: len(SECTIONS)]))
 
-    def test_unreadable_file_is_c2_and_others_still_load(self):
-        support.make_catalog(self.root)
-        (self.root / "components" / "garbled.toml").write_bytes(b"\xff\xfe")
-        catalog, findings = load_catalog(self.root)
-        self.assertEqual(codes(findings), ["C2"])
-        self.assertIn("garbled.toml", findings[0].message)
-        self.assertNotIn("garbled", catalog.components)
-        self.assertEqual(len(catalog.components), 9)
+    def test_alternatives_are_catalog_entries(self):
+        for component_id, text in self.entries.items():
+            section = text.split("\n## Alternatives\n", 1)[1].split("\n## ", 1)[0]
+            for alternative in ids(section):
+                with self.subTest(entry=component_id, alternative=alternative):
+                    self.assertIn(alternative, self.entries)
 
-    def test_stale_entry_is_w1(self):
-        old = support.component("epsilon-ui", "ui", last_verified=date(2026, 1, 1))
-        components = [c for c in support.fixture_components() if c["id"] != "epsilon-ui"] + [old]
-        catalog = support.load_fixture_catalog(self.root, components)
-        findings = validate_catalog(catalog, support.TODAY)
-        self.assertEqual(codes(findings), ["W1"])
-        self.assertIn("epsilon-ui", findings[0].message)
+    def test_images_are_pinned_references(self):
+        for component_id, text in self.entries.items():
+            section = text.split("\n### Images\n", 1)[1].split("\n### ", 1)[0]
+            for ref in re.findall(r"^\| `([^`]+)` \|", section, re.M):
+                with self.subTest(entry=component_id, image=ref):
+                    self.assertRegex(ref, r":[^/]+$|@sha256:[0-9a-f]{64}$")
+                    self.assertNotRegex(ref, r":latest$")
 
-    def test_datetime_last_verified_is_c1_and_does_not_crash(self):
-        entry = support.component(
-            "epsilon-ui", "ui", last_verified=datetime(2026, 11, 20, 10, 0, 0)
-        )
-        components = [c for c in support.fixture_components() if c["id"] != "epsilon-ui"] + [entry]
-        catalog, findings = load_catalog(support.make_catalog(self.root, components))
-        self.assertEqual(findings, [])
-        result = validate_catalog(catalog, support.TODAY)
-        self.assertEqual(codes(result), ["C1"])
-        self.assertIn("last_verified", result[0].message)
+    def test_evidence_has_sources(self):
+        for component_id, text in self.entries.items():
+            section = text.split("\n## Evidence\n", 1)[1]
+            with self.subTest(entry=component_id):
+                self.assertRegex(section, r"\n- https://")
 
-
-class GpuValidationTest(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
-
-    def check(self, row_toml):
-        """Findings from validate_gpus for one [[gpu]] row, loaded through a catalog."""
-        gpus_toml = "schema_version = 1\n\n[[gpu]]\n" + row_toml
-        catalog, findings = load_catalog(support.make_catalog(self.root, gpus_toml=gpus_toml))
-        self.assertEqual(findings, [])
-        return validate_gpus(catalog.gpus)
-
-    def row(self, **replace):
-        """A valid row as TOML lines, with some keys replaced (None drops the key)."""
-        fields = {
-            "model": '"Test GPU 141"',
-            "aliases": '["TG141"]',
-            "vendor": '"nvidia"',
-            "vram_gb": "141",
-            "tdp_w": "700",
-            "evidence": '"estimate"',
-            "notes": '"Synthetic row for tests."',
-            "last_verified": "2026-11-20",
-        }
-        fields.update(replace)
-        return "".join(f"{key} = {value}\n" for key, value in fields.items() if value is not None)
-
-    def test_valid_row(self):
-        self.assertEqual(self.check(self.row()), [])
-
-    def test_tdp_is_optional(self):
-        self.assertEqual(self.check(self.row(tdp_w=None)), [])
-
-    def test_unknown_key_is_c1(self):
-        findings = self.check(self.row(vram="80"))
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertIn("unknown key 'vram'", findings[0].message)
-
-    def test_missing_model_is_c1(self):
-        self.assertEqual(codes(self.check(self.row(model=None))), ["C1"])
-
-    def test_aliases_must_be_strings(self):
-        findings = self.check(self.row(aliases="[1, 2]"))
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertIn("aliases", findings[0].message)
-
-    def test_missing_vram_is_c1(self):
-        findings = self.check(self.row(vram_gb=None))
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertIn("vram_gb", findings[0].message)
-
-    def test_non_positive_vram_is_c1(self):
-        findings = self.check(self.row(vram_gb="0"))
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertIn("vram_gb", findings[0].message)
-
-    def test_bad_tdp_is_c1(self):
-        for bad in ("-5", '"700"', "true"):
-            with self.subTest(tdp_w=bad):
-                findings = self.check(self.row(tdp_w=bad))
-                self.assertEqual(codes(findings), ["C1"])
-                self.assertIn("tdp_w", findings[0].message)
-
-    def test_quoted_last_verified_is_c1(self):
-        findings = self.check(self.row(last_verified='"2026-11-20"'))
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertIn("last_verified", findings[0].message)
-
-    def test_datetime_last_verified_is_c1_and_does_not_crash(self):
-        gpus_toml = "schema_version = 1\n\n[[gpu]]\n" + self.row(last_verified="2026-11-20T10:00:00")
-        catalog, findings = load_catalog(support.make_catalog(self.root, gpus_toml=gpus_toml))
-        self.assertEqual(findings, [])
-        result = validate_catalog(catalog, support.TODAY)
-        self.assertEqual(codes(result), ["C1"])
-        self.assertIn("last_verified", result[0].message)
-
-    def test_docs_without_a_source_is_c4(self):
-        self.assertEqual(codes(self.check(self.row(evidence='"docs"'))), ["C4"])
-
-    def test_vendor_is_required_and_limited(self):
-        for bad in (None, '"apple"', "1"):
-            with self.subTest(vendor=bad):
-                findings = self.check(self.row(vendor=bad))
-                self.assertEqual(codes(findings), ["C1"])
-                self.assertIn("vendor must be one of nvidia, amd, intel", findings[0].message)
-                self.assertIn("gpu[0]", findings[0].message)
-
-    def test_each_vendor_is_accepted(self):
-        for vendor in ("nvidia", "amd", "intel"):
-            with self.subTest(vendor=vendor):
-                self.assertEqual(self.check(self.row(vendor=f'"{vendor}"')), [])
-
-    def check_rows(self, *row_tomls):
-        """Findings from validate_gpus for several [[gpu]] rows, in file order."""
-        gpus_toml = "schema_version = 1\n" + "".join("\n[[gpu]]\n" + row for row in row_tomls)
-        catalog, findings = load_catalog(support.make_catalog(self.root, gpus_toml=gpus_toml))
-        self.assertEqual(findings, [])
-        return validate_gpus(catalog.gpus)
-
-    def test_non_finite_numbers_are_c1(self):
-        for key, bad in (("vram_gb", "nan"), ("vram_gb", "inf"), ("tdp_w", "inf")):
-            with self.subTest(key=key, value=bad):
-                findings = self.check(self.row(**{key: bad}))
-                self.assertEqual(codes(findings), ["C1"])
-                self.assertEqual(
-                    findings[0].message,
-                    f"gpus.toml: gpu[0]: {key} must be a number above 0",
-                )
-
-    def test_placeholder_in_a_row_is_c1(self):
-        findings = self.check(self.row(notes='"<notes>"'))
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertEqual(findings[0].message, "gpus.toml: gpu[0]: notes still holds a placeholder")
-
-    def test_placeholder_paths_in_lists(self):
-        findings = self.check(self.row(aliases='["<alias>"]'))
-        self.assertIn(
-            "gpus.toml: gpu[0]: aliases[0] still holds a placeholder",
-            [finding.message for finding in findings],
-        )
-
-    def test_shared_alias_is_c1_on_the_later_row(self):
-        findings = self.check_rows(
-            self.row(model='"A100 40GB"', aliases='["A100"]'),
-            self.row(model='"A100 80GB"', aliases='["A100"]'),
-        )
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertEqual(
-            findings[0].message,
-            "gpus.toml: gpu[1]: name 'A100' is already used by gpu[0]",
-        )
-
-    def test_names_collide_after_normalization(self):
-        findings = self.check_rows(
-            self.row(model='"A100 40GB"', aliases='["A100"]'),
-            self.row(model='"A100 80GB"', aliases='["a-100"]'),
-        )
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertEqual(
-            findings[0].message,
-            "gpus.toml: gpu[1]: name 'a-100' is already used by gpu[0]",
-        )
-
-    def test_variants_without_a_shared_name_are_fine(self):
-        findings = self.check_rows(
-            self.row(model='"A100 40GB"', aliases='[]'),
-            self.row(model='"A100 80GB"', aliases='[]'),
-        )
-        self.assertEqual(findings, [])
-
-    def test_name_without_letters_or_digits_is_c1(self):
-        findings = self.check(self.row(aliases='["--"]'))
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertEqual(
-            findings[0].message,
-            "gpus.toml: gpu[0]: name '--' has no letters or digits",
-        )
-
-    def test_same_name_twice_within_one_row_is_fine(self):
-        findings = self.check(self.row(model='"H200"', aliases='["H200", "NVIDIA H200"]'))
-        self.assertEqual(findings, [])
+    def test_skill_md_lists_every_entry_under_its_layer(self):
+        listing = {}
+        for line in (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").splitlines():
+            match = re.match(r"\| `([a-z-]+)` \| (`catalog/.*)\|$", line)
+            if match:
+                listing.update({stem: match.group(1) for stem in re.findall(r"catalog/([a-z0-9-]+)\.md", match.group(2))})
+        self.assertEqual(set(listing), set(self.entries))
+        for component_id, layer in listing.items():
+            with self.subTest(entry=component_id):
+                self.assertEqual(ids(fields(self.entries[component_id])["Layer"])[0], layer)
 
 
-class ComponentValidationTest(unittest.TestCase):
-    def check(self, entry, known=("x",)):
-        return validate_component(entry, set(known))
+class GuidesTest(unittest.TestCase):
+    def test_components_a_guide_names_are_in_the_catalog(self):
+        catalog = set(entries())
+        used = set()
+        for path in sorted((SKILL_DIR / "references" / "layers").glob("*.md")):
+            text = path.read_text(encoding="utf-8")
+            line = next(l for l in text.splitlines() if l.startswith("Components used in this file:"))
+            for component_id in ids(line):
+                with self.subTest(guide=path.name, component=component_id):
+                    self.assertIn(component_id, catalog)
+                    self.assertGreaterEqual(text.count(f"`{component_id}`"), 2)
+                used.add(component_id)
+        self.assertEqual(used, catalog)
 
-    def test_valid_component(self):
-        self.assertEqual(self.check(support.component("x", "ui")), [])
+    def test_every_guide_row_has_an_evidence_label(self):
+        for path in sorted((SKILL_DIR / "references" / "layers").glob("*.md")):
+            rows = [[c.strip() for c in l.strip().strip("|").split("|")] for l in path.read_text(encoding="utf-8").splitlines() if l.startswith("|")]
+            column = rows[0].index("Evidence")
+            for row in rows[2:]:
+                with self.subTest(guide=path.name, row=row[0]):
+                    self.assertIn(row[column], EVIDENCE_LEVELS)
 
-    def test_latest_is_not_a_version(self):
-        self.assertIn("C1", codes(self.check(support.component("x", "ui", version="latest"))))
 
-    def test_placeholder_values_are_rejected(self):
-        findings = self.check(support.component("x", "ui", version="<exact version>"))
-        self.assertTrue(any(f.code == "C1" and "placeholder" in f.message for f in findings))
+class GpuTableTest(unittest.TestCase):
+    def test_every_row_has_memory_vendor_and_a_source(self):
+        text = (SKILL_DIR / "references" / "gpus.md").read_text(encoding="utf-8")
+        rows = re.findall(r"^\| ([^|]+) \| [^|]* \| (nvidia|amd|intel) \| (\d+(?:\.\d+)?) \| (\d+|unknown) \| (\w+) \| (\d{4}-\d{2}-\d{2}) \|$", text, re.M)
+        self.assertGreaterEqual(len(rows), 10)
+        for model, _, _, _, evidence, _ in rows:
+            with self.subTest(gpu=model):
+                self.assertIn(evidence, EVIDENCE_LEVELS)
+                self.assertRegex(text.split(f"\n### {model}\n", 1)[1].split("\n### ", 1)[0], r"\n- https://")
 
-    def test_nested_placeholder_is_rejected(self):
-        entry = support.component("x", "ui", airgap={"images": [{"ref": "<registry/repository:tag>", "digest": ""}]})
-        findings = self.check(entry)
-        self.assertTrue(any("airgap.images[0].ref" in f.message for f in findings))
 
-    def image_findings(self, image):
-        entry = support.component("x", "ui", airgap={"images": [image]})
-        return self.check(entry)
 
-    def test_image_hardware_is_accepted(self):
-        for hardware in (["nvidia"], ["nvidia", "cpu"], ["amd", "intel"]):
-            with self.subTest(hardware=hardware):
-                image = {"ref": "r.example.test/a:1", "digest": "", "hardware": hardware}
-                self.assertEqual(self.image_findings(image), [])
+class TransferFixtureTest(unittest.TestCase):
+    """The finished designs the airgap-transfer evals start from name what the catalog says today."""
 
-    def test_bad_image_hardware_is_c1(self):
-        message = "airgap.images[0].hardware must be a non-empty list of: nvidia, amd, intel, cpu"
-        for bad in ([], ["nvidia", "nvidia"], ["tpu"], "nvidia", [1]):
-            with self.subTest(hardware=bad):
-                image = {"ref": "r.example.test/a:1", "digest": "", "hardware": bad}
-                findings = self.image_findings(image)
-                self.assertEqual(codes(findings), ["C1"])
-                self.assertEqual(findings[0].message, f"x: {message}")
-
-    def test_unknown_image_key_is_c1(self):
-        findings = self.image_findings({"ref": "r.example.test/a:1", "digest": "", "arch": "x"})
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertEqual(findings[0].message, "x: unknown key 'airgap.images[0].arch'")
-
-    def package_findings(self, *rows):
-        return self.check(support.component("x", "ui", airgap={"packages": list(rows)}))
-
-    def test_package_rows_are_accepted(self):
-        rows = (
-            support.package("x-1.0-amd64.tgz"),
-            support.package("x-1.0-arm64.tgz", "arm64", "https://downloads.example.test/SHA256SUMS"),
-            support.package("install.sh", "any"),
-        )
-        self.assertEqual(self.package_findings(*rows), [])
-
-    def test_packages_must_be_tables(self):
-        for packages in (["x-1.0-amd64.tgz"], "x.tgz", [support.package("a"), "b"]):
-            with self.subTest(packages=packages):
-                findings = self.check(support.component("x", "ui", airgap={"packages": packages}))
-                self.assertEqual(codes(findings), ["C1"])
-                self.assertEqual(
-                    findings[0].message,
-                    "x: airgap.packages must be a list of { file, arch, url, checksums } tables",
-                )
-
-    def test_unknown_package_key_is_c1(self):
-        row = dict(support.package("a"), hardware=["cpu"])
-        findings = self.package_findings(row)
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertEqual(findings[0].message, "x: airgap.packages[0]: unknown key 'hardware'")
-
-    def test_c5_missing_fields(self):
-        row = support.package("a")
-        for key in ("file", "arch", "url"):
-            for value in (None, "", "  ", 3):
-                with self.subTest(key=key, value=value):
-                    broken = dict(row)
-                    if value is None:
-                        del broken[key]
-                    else:
-                        broken[key] = value
-                    findings = self.package_findings(broken)
-                    self.assertEqual(codes(findings), ["C5"])
-                    self.assertEqual(findings[0].message, f"x: airgap.packages[0] lacks {key}")
-
-    def test_c5_arch_outside_the_three_values(self):
-        findings = self.package_findings(support.package("a", "x86_64"))
-        self.assertEqual(codes(findings), ["C5"])
-        self.assertEqual(
-            findings[0].message, "x: airgap.packages[0].arch must be one of amd64, arm64, any"
-        )
-
-    def test_c6_url_must_be_full_https(self):
-        for url in ("http://downloads.example.test/a", "downloads.example.test/a", "https://localhost/a", "https://a b.test/x"):
-            with self.subTest(url=url):
-                findings = self.package_findings(dict(support.package("a"), url=url))
-                self.assertEqual(codes(findings), ["C6"])
-                self.assertEqual(findings[0].message, "x: airgap.packages[0].url must be a full https:// URL")
-
-    def test_c6_checksums_url_or_empty(self):
-        self.assertEqual(self.package_findings(support.package("a", checksums="")), [])
-        for checksums in ("md5sum", "ftp://downloads.example.test/md5sum", 5):
-            with self.subTest(checksums=checksums):
-                findings = self.package_findings(dict(support.package("a"), checksums=checksums))
-                self.assertEqual(codes(findings), ["C6"])
-                self.assertEqual(
-                    findings[0].message,
-                    "x: airgap.packages[0].checksums must be a full https:// URL or empty",
-                )
-
-    def test_schema_version_must_be_2(self):
-        findings = self.check(support.component("x", "ui", schema_version=1))
-        self.assertEqual(codes(findings), ["C1"])
-        self.assertEqual(findings[0].message, "x: schema_version must be 2")
-
-    def test_unknown_layer_and_tier(self):
-        self.assertIn("C1", codes(self.check(support.component("x", "no-such-layer"))))
-        self.assertIn("C1", codes(self.check(support.component("x", "ui", tiers=["T4"]))))
-        self.assertIn("C1", codes(self.check(support.component("x", "ui", tiers=[]))))
-
-    def test_unknown_key_is_c1(self):
-        entry = support.component("x", "ui")
-        entry["telemetery"] = []
-        findings = self.check(entry)
-        self.assertTrue(any("unknown key 'telemetery'" in f.message for f in findings))
-
-    def test_missing_table_is_c1(self):
-        entry = support.component("x", "ui")
-        del entry["airgap"]
-        self.assertTrue(any("[airgap]" in f.message for f in self.check(entry)))
-
-    def test_quoted_date_is_c1(self):
-        entry = support.component("x", "ui", last_verified="2026-11-20")
-        self.assertTrue(any("last_verified" in f.message for f in self.check(entry)))
-
-    def test_docs_needs_a_url(self):
-        entry = support.component("x", "ui", evidence={"level": "docs", "sources": []})
-        self.assertEqual(codes(self.check(entry)), ["C4"])
-
-    def test_field_needs_verifier_and_notes(self):
-        entry = support.component("x", "ui", evidence={"level": "field", "sources": []})
-        self.assertEqual(codes(self.check(entry)), ["C4", "C4"])
-
-    def test_estimate_needs_notes(self):
-        entry = support.component("x", "ui", evidence={"level": "estimate", "sources": [], "notes": " "})
-        self.assertEqual(codes(self.check(entry)), ["C4"])
-
-    def test_unknown_reference_is_c3(self):
-        entry = support.component("x", "ui", requires=["ghost"], choose={"alternatives": ["phantom"]})
-        self.assertEqual(codes(self.check(entry)), ["C3", "C3"])
-
-    def test_bad_id_is_c1(self):
-        self.assertIn("C1", codes(self.check(support.component("Bad_ID", "ui"), known=("Bad_ID",))))
+    def test_every_manifest_row_matches_its_catalog_entry(self):
+        catalog = entries()
+        for manifest in sorted((CATALOG_DIR.parents[3] / "evals" / "transfer-scenarios").glob("*/project/docs/airgap/transfer-manifest.md")):
+            text = manifest.read_text(encoding="utf-8")
+            section = text.split("\n## 1. Container images\n", 1)[1].split("\n## ", 1)[0]
+            for component, version, image in re.findall(r"^\| `([a-z0-9-]+)`(?: \(benchmark only\))? \| `([^`]+)` \| `([^`]+)` \|", section, re.M):
+                with self.subTest(scenario=manifest.parents[3].name, image=image):
+                    self.assertEqual(fields(catalog[component])["Version"], f"`{version}`")
+                    self.assertIn(f"| `{image}` |", catalog[component])
 
 
 if __name__ == "__main__":

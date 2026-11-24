@@ -61,6 +61,22 @@ class ManifestTest(unittest.TestCase):
         icon = PLUGIN_DIR / plugin()["icon"]
         self.assertEqual(icon.read_bytes(), (REPO_ROOT / "assets" / "brand" / "icons" / "icon-512.png").read_bytes())
 
+    def test_every_agent_manifest_names_the_same_plugin_and_version(self):
+        # Codex reads .agents/plugins/marketplace.json and the portable plugin.json
+        # (https://developers.openai.com/plugins/build/plugins); Cursor reads
+        # .cursor-plugin/marketplace.json and the same plugin.json (https://cursor.com/docs/plugins/building).
+        portable = json.loads((PLUGIN_DIR / "plugin.json").read_text(encoding="utf-8"))
+        self.assertEqual(portable["$schema"], "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json")
+        self.assertEqual((portable["name"], portable["version"]), (plugin()["name"], plugin()["version"]))
+        codex = json.loads((REPO_ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
+        cursor = json.loads((REPO_ROOT / ".cursor-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+        self.assertEqual([e["name"] for e in codex["plugins"]], [plugin()["name"]])
+        entry = codex["plugins"][0]
+        self.assertEqual(entry["source"], {"source": "local", "path": "./plugins/airgap-anything"})
+        self.assertTrue({"installation", "authentication"} <= set(entry["policy"]) and entry["category"])
+        self.assertEqual(cursor["owner"]["name"], marketplace()["owner"]["name"])
+        self.assertEqual([(e["name"], e["source"]) for e in cursor["plugins"]], [(plugin()["name"], "./plugins/airgap-anything")])
+
     def test_license_is_mit(self):
         text = (REPO_ROOT / "LICENSE").read_text(encoding="utf-8")
         self.assertTrue(text.startswith("MIT License"))
@@ -68,14 +84,11 @@ class ManifestTest(unittest.TestCase):
 
 # The rules below are the ones Anthropic's directory applies to a plugin folder submitted by an
 # organization that is not Verified (developer portal validation, 2026-11-22, and
-# https://claude.com/docs/plugins/pre-submission-checklist): no scripts with #!, no SVG other than
-# the icon, no package-manager files, no commands that download and run code, even in
-# documentation. Python, TOML and shell files are the exception: the portal accepts them only from
-# a Verified organization (it blocked the catalog's first TOML file), and the skills need them
-# (airgap-transfer copies its POSIX sh templates into every bundle), so a directory listing waits
-# for Verified status. See docs/packaging-facts.md, Q8. A .sh file still never starts with #!:
-# the inside runs it as `sh verify.sh`.
-ALLOWED_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".py", ".toml", ".sh"}
+# https://claude.com/docs/plugins/pre-submission-checklist): only Markdown, text, JSON, YAML and
+# images; no scripts with #!; no SVG other than the icon; no package-manager files; no commands
+# that download and run code, even in documentation. Since 0.3 the skills ship markdown only, so
+# the plugin meets them without Verified status. See docs/packaging-facts.md, Q8.
+ALLOWED_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
 PACKAGE_FILES = {"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-workspace.yaml", "requirements.txt",
                  "pyproject.toml", "uv.lock", "bun.lock", "bun.lockb", ".npmrc", "bunfig.toml", "uv.toml"}
 DOWNLOAD_AND_RUN = re.compile(r"(curl|wget)[^\n|]*\|\s*(ba|z)?sh\b|\b(npx|bunx|uvx|pnpm dlx|yarn dlx|pipx run)\s", re.I)
@@ -112,7 +125,7 @@ class DirectoryRulesTest(unittest.TestCase):
 
     def test_no_text_downloads_and_runs_code(self):
         for path in plugin_files():
-            if path.suffix in {".md", ".txt", ".json", ".yaml", ".yml", ".py", ".toml"}:
+            if path.suffix in {".md", ".txt", ".json", ".yaml", ".yml"}:
                 with self.subTest(path=path.relative_to(PLUGIN_DIR).as_posix()):
                     self.assertIsNone(DOWNLOAD_AND_RUN.search(path.read_text(encoding="utf-8")))
 

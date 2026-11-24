@@ -149,8 +149,9 @@ class ReadmeTest(unittest.TestCase):
         self.assertIn(f"/plugin marketplace add {self.owner}/airgap-anything", self.text)
         self.assertIn("/plugin install airgap-anything@airgap-anything-marketplace", self.text)
         self.assertIn(f"npx skills add {self.owner}/airgap-anything", self.text)
+        self.assertIn(f"codex plugin marketplace add {self.owner}/airgap-anything", self.text)
         self.assertIn("git archive", self.text)
-        self.assertIn("Python 3.11", self.text)
+        self.assertNotIn("Python 3.11", self.text, "the skills need no Python since 0.3")
 
     def test_no_owner_token_is_left(self):
         self.assertNotIn("GITHUB_OWNER", self.text)
@@ -166,7 +167,6 @@ class ReadmeTest(unittest.TestCase):
     def test_it_has_the_house_style_parts(self):
         self.assertIn('<img src="assets/brand/icon-tile-animated.svg"', self.text)
         self.assertIn('<h1 align="center">airgap-anything</h1>', self.text)
-        self.assertIn("assets/demo/terminal-dark.svg", self.text)
         self.assertIn("assets/brand/how-it-works.svg", self.text)
         self.assertIn(f"{self.owner}/airgap-anything/actions/workflows/ci.yml/badge.svg", self.text)
         self.assertIn("\n## Türkçe\n", self.text)
@@ -182,7 +182,7 @@ class ReadmeTest(unittest.TestCase):
         images = re.findall(r'<img[^>]*\ssrc="([^"]+)"', self.text)
         images += re.findall(r"!\[[^\]]*\]\(([^)\s]+)\)", self.text)
         local = [i for i in images if not i.startswith(("http://", "https://"))]
-        self.assertIn("assets/demo/terminal-dark.svg", local)
+        self.assertIn("assets/brand/how-it-works.svg", local)
         for image in local:
             with self.subTest(image=image):
                 path = REPO_ROOT / image
@@ -191,7 +191,6 @@ class ReadmeTest(unittest.TestCase):
     def test_the_background_check_rejects_a_transparent_image(self):
         self.assertFalse(paints_own_background(REPO_ROOT / "assets/brand/hero-light.svg"))
         self.assertFalse(paints_own_background(REPO_ROOT / "assets/brand/pipeline-dark.svg"))
-        self.assertTrue(paints_own_background(REPO_ROOT / "assets/demo/terminal-light.svg"))
         self.assertTrue(paints_own_background(REPO_ROOT / "assets/brand/fallback/pipeline-dark.png"))
 
     def test_the_two_page_check_reads_what_is_drawn(self):

@@ -17,25 +17,25 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 OUTPUT = REPO_ROOT / "assets" / "brand" / "how-it-works.svg"
 
 INK = "#121417"  # brand ink
-SUBTLE = "#57606A"  # secondary text, on white and on the script fill
+SUBTLE = "#57606A"  # secondary text, on white and on the chip fill
 LINE = "#7D8590"  # connectors: 3.7:1 on white, 5.1:1 on #0d1117
 BORDER = "#8C959F"  # card borders: 3.0:1 on white, 6.2:1 on #0d1117
 YELLOW = "#FFC800"  # Gap Yellow, the air gap
 MODEL_FILL = "#FFFFFF"
-SCRIPT_FILL = "#EEF1F4"
+CHIP_FILL = "#EEF1F4"
 
 SANS = "system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
 MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
 
 # (who, name, what) for the eight steps on the connected workstation.
 STEPS = [
-    ("MODEL", "1  Interview", "asks, one by one"),
-    ("SCRIPT", "2  Tier", "org complexity"),
-    ("SCRIPT", "3  Sizing", "GPUs and power"),
-    ("MODEL", "4  Decisions", "one per layer"),
-    ("SCRIPT", "5  Manifest", "what to carry in"),
-    ("MODEL", "6  Blueprint", "the plan and why"),
-    ("SCRIPT", "7  Lint", "checks the files"),
+    ("AGENT", "1  Interview", "asks, one by one"),
+    ("AGENT", "2  Tier", "org complexity"),
+    ("AGENT", "3  Sizing", "every step shown"),
+    ("AGENT", "4  Decisions", "one per layer"),
+    ("AGENT", "5  Manifest", "what to carry in"),
+    ("AGENT", "6  Blueprint", "the plan and why"),
+    ("AGENT", "7  Self-review", "until it all holds"),
     ("YOU", "8  Hand-off", "after you approve"),
 ]
 BUILD_LINES = ("No internet.", "People or an agent", "follow the runbook", "and the files", "carried in.")
@@ -46,9 +46,9 @@ ROWS = (100, 220)
 GAP_X = 744  # left edge of the air gap band
 BUILD_X, BUILD_Y, BUILD_W, BUILD_H = 780, 100, 180, 204
 
-TITLE = "How airgap-architect works"
+TITLE = "How airgap-anything works"
 DESC = (
-    "Eight steps on a connected workstation, done by the model, the scripts and you; "
+    "Eight steps on a connected workstation, done by the agent and you; "
     "the files cross the air gap, and the people or the agent inside build the system without internet."
 )
 
@@ -60,7 +60,7 @@ def _card_x(column):
 def _chip(x, text):
     width = (len(text) * 7 + 16 + 3) // 4 * 4  # 10px mono with 0.1em tracking
     return [
-        f'<rect x="{x}" y="44" width="{width}" height="24" rx="4" fill="{SCRIPT_FILL}"/>',
+        f'<rect x="{x}" y="44" width="{width}" height="24" rx="4" fill="{CHIP_FILL}"/>',
         f'<text x="{x + 8}" y="60" font-family="{MONO}" font-size="10" font-weight="600" '
         f'letter-spacing="0.1em" fill="{INK}">{text}</text>',
     ]
@@ -103,7 +103,7 @@ def render():
 
     for index, (who, name, what) in enumerate(STEPS):
         x, y = _card_x(index % 4), ROWS[index // 4]
-        fill = SCRIPT_FILL if who == "SCRIPT" else MODEL_FILL
+        fill = MODEL_FILL
         dash = ' stroke-dasharray="5,4"' if who == "YOU" else ""
         out.append(
             f'<rect x="{x}" y="{y}" width="{CARD_W}" height="{CARD_H}" rx="6" fill="{fill}" '

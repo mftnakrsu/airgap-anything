@@ -1,0 +1,85 @@
+# Prometheus (`prometheus`)
+
+Open-source monitoring system that scrapes metrics over HTTP, stores them in a local time-series database and evaluates alerting rules.
+
+| Field | Value |
+|---|---|
+| Layer | `observability` |
+| Version | `v3.16.0` |
+| License | Apache-2.0 |
+| Tiers | T1, T2, T3 |
+| Requires | none |
+| Evidence | docs |
+| Last verified | 2026-11-21 |
+
+## Choose when
+
+- A metrics and alerting server is needed that runs as a single binary with no external dependencies inside the isolated network.
+
+## Avoid when
+
+- Metrics must be stored in a clustered or replicated store: Prometheus local storage is not clustered or replicated.
+
+## Alternatives
+
+none.
+
+## Caveats
+
+- Prometheus's local storage is not clustered or replicated, so it is not arbitrarily scalable or durable in the face of drive or node outages and should be managed like any other single-node database; snapshots are recommended for backups (storage documentation). A T3 design that needs durable or scalable metric storage needs more than this entry covers.
+- The main Prometheus server runs standalone as a single monolithic binary and has no external dependencies (FAQ).
+- Alertmanager, exporters and the Pushgateway are separate Prometheus components with their own releases and are not part of this entry.
+
+## Carry in
+
+### Images
+
+| Image | Hardware | Digest |
+|---|---|---|
+| `prom/prometheus:v3.16.0` | any | not recorded |
+
+### Packages
+
+None.
+
+### Runtime downloads to stage in advance
+
+None.
+
+### Telemetry and egress to switch off before the first start
+
+None documented.
+
+### License server
+
+None: no license check needs connectivity.
+
+### Air-gap notes
+
+No telemetry documentation found on 2026-11-21; vet before adoption. Outbound calls by default: the installation page runs the image with a sample configuration, and that file (documentation/examples/prometheus.yml, copied to /etc/prometheus/prometheus.yml by the Dockerfile) makes Prometheus scrape only itself at localhost:9090; its Alertmanager target list is empty and it configures no remote write, remote read or tracing. Outbound connections come from what the operator configures in the configuration file: scrape_configs and service discovery, alerting.alertmanagers, remote_write, remote_read and tracing. No update check or usage reporting is documented. The installation page names both Docker Hub (prom/prometheus) and Quay.io (quay.io/prometheus/prometheus, the same tag v3.16.0 exists there); the entry lists the Docker Hub name. For installs without the image, the GitHub release has prometheus-3.16.0.linux-amd64.tar.gz, prometheus-3.16.0.linux-arm64.tar.gz and sha256sums.txt. The download page also marks the 3.13 line as LTS (3.13.5, released 2026-10-21); the entry follows the latest stable release, as the procedure requires.
+
+## Per-tool skills
+
+- `prometheus-mimir-grafana` in `air-gapped/skills`
+- `prometheus-grafana-llm` in `ScaleDockHQ/llm-skills`
+
+## Evidence
+
+Level: docs.
+
+All values were read from the pages in sources on 2026-11-21. Version v3.16.0 is the latest GitHub release (published 2026-11-05, not a prerelease); the image tag is written the way the project's registries write it (v3.16.0), and the tag exists on Docker Hub and Quay. The telemetry finding is negative: the repository at tag v3.16.0 (docs, cmd and web code) and the documentation pages in sources were searched for 'telemetry', 'phone home', 'usage statistics', 'update check', 'analytics', 'air-gap' and 'offline'; the only hits were OpenTelemetry integrations and a flag description, not a reporting feature.
+
+Sources:
+
+- https://github.com/prometheus/prometheus/releases/tag/v3.16.0
+- https://github.com/prometheus/prometheus/blob/main/LICENSE
+- https://prometheus.io/download/
+- https://prometheus.io/docs/prometheus/latest/installation/
+- https://hub.docker.com/v2/repositories/prom/prometheus/tags/v3.16.0
+- https://quay.io/api/v1/repository/prometheus/prometheus/tag/?specificTag=v3.16.0
+- https://github.com/prometheus/prometheus/blob/v3.16.0/Dockerfile
+- https://github.com/prometheus/prometheus/blob/v3.16.0/documentation/examples/prometheus.yml
+- https://github.com/prometheus/prometheus/blob/v3.16.0/docs/configuration/configuration.md
+- https://prometheus.io/docs/introduction/faq/
+- https://prometheus.io/docs/prometheus/latest/storage/
+- https://prometheus.io/docs/operating/security/

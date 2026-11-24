@@ -20,21 +20,23 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-<div class="figure"><img src="/how-it-works.svg" alt="Eight steps on a connected workstation, done by the model, the scripts and you. The files cross the air gap, and the people or the agent inside build the system without internet." /></div>
+<div class="figure"><img src="/how-it-works.svg" alt="Eight steps on a connected workstation, done by the agent and you. The files cross the air gap, and the people or the agent inside build the system without internet." /></div>
 
 Install it once, then ask your agent in your own words, for example *"Design an air-gapped LLM platform for my organization."* Claude Code picks the skill by itself; you can also start it with `/airgap-anything:airgap-architect`.
+
+The skills are plain markdown that your agent reads: no scripts, no dependencies. They work in Claude Code, Codex, Cursor and any agent that reads Agent Skills.
 
 <CardGrid>
   <Card title="Interviews you" icon="comment">
     One question at a time, in your language: people, departments, privacy, models, hardware, how files get in. It skips what your files already answer.
   </Card>
   <Card title="Sizes the hardware" icon="setting">
-    Scripts compute the tier, the GPU count, servers and power. Nothing is worked out from memory.
+    The agent follows a written sizing procedure and puts every step's numbers in the blueprint: tier, GPU count, servers and power. You can check each one with a calculator.
   </Card>
   <Card title="Lists what to carry in" icon="document">
-    Container images, models, packages, settings to switch off, and what each tool would try to download.
+    Container images, models, packages, settings to switch off, and what each tool would try to download. `airgap-transfer` packs them into a bundle that the inside checks with `sha256sum` alone.
   </Card>
   <Card title="Checks itself" icon="approve-check">
-    A linter checks the blueprint against the catalog and the scripts before you approve it.
+    Before you approve, the agent goes through a self-review list: every layer decided, every version copied from the catalog, every number following from the steps shown.
   </Card>
 </CardGrid>

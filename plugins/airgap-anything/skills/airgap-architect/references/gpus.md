@@ -1,0 +1,141 @@
+# GPU table
+
+## Contents
+
+- The table
+- Notes and sources per row
+
+## The table
+
+Memory and power per GPU, for `references/sizing.md`. Each row was read from the vendor page in its sources; nothing here comes from memory.
+
+Match the user's GPU name against `Model` and `Aliases`. A name that fits several variants with different memory (`H100`, `A100`) matches no row on purpose: ask which variant it is, or ask for the memory and the vendor. A GPU that is not here needs its memory per GPU from the user, and its power if the power estimate is wanted.
+
+| Model | Aliases | Vendor | Memory (GB) | Power (W) | Evidence | Last verified |
+|---|---|---|---|---|---|---|
+| H200 | NVIDIA H200, H200 SXM, H200 NVL | nvidia | 141 | 700 | docs | 2026-11-22 |
+| H100 SXM | NVIDIA H100 SXM | nvidia | 80 | 700 | docs | 2026-11-22 |
+| H100 NVL | NVIDIA H100 NVL | nvidia | 94 | 400 | docs | 2026-11-22 |
+| A100 40GB | NVIDIA A100 40GB, A100 40GB PCIe | nvidia | 40 | 250 | docs | 2026-11-22 |
+| A100 80GB | NVIDIA A100 80GB, A100 80GB PCIe, A100 80GB SXM | nvidia | 80 | 500 | docs | 2026-11-22 |
+| L40S | NVIDIA L40S | nvidia | 48 | 350 | docs | 2026-11-22 |
+| L4 | NVIDIA L4 | nvidia | 24 | 72 | docs | 2026-11-22 |
+| RTX 6000 Ada | NVIDIA RTX 6000 Ada Generation, RTX 6000 Ada Generation | nvidia | 48 | 300 | docs | 2026-11-22 |
+| RTX A6000 | NVIDIA RTX A6000 | nvidia | 48 | 300 | docs | 2026-11-22 |
+| RTX 5090 | GeForce RTX 5090, NVIDIA GeForce RTX 5090 | nvidia | 32 | 575 | docs | 2026-11-22 |
+| RTX 4090 | GeForce RTX 4090, NVIDIA GeForce RTX 4090 | nvidia | 24 | 450 | docs | 2026-11-22 |
+| B200 | NVIDIA B200 | nvidia | 180 | 1000 | docs | 2026-11-22 |
+| B300 | NVIDIA B300 | nvidia | 288 | unknown | docs | 2026-11-22 |
+| RTX PRO 6000 Blackwell | NVIDIA RTX PRO 6000 Blackwell, RTX PRO 6000 Blackwell Server Edition, RTX PRO 6000 Blackwell Workstation Edition | nvidia | 96 | 600 | docs | 2026-11-22 |
+| MI300X | AMD Instinct MI300X, Instinct MI300X | amd | 192 | 750 | docs | 2026-11-22 |
+| MI325X | AMD Instinct MI325X, Instinct MI325X | amd | 256 | 1000 | docs | 2026-11-22 |
+| MI355X | AMD Instinct MI355X, Instinct MI355X | amd | 288 | 1400 | docs | 2026-11-22 |
+
+## Notes and sources per row
+
+### H200
+
+The page lists 141GB for both form factors; power is 700W (configurable) for SXM and 600W (configurable) for NVL, so the highest is used. The page marks these as preliminary specifications.
+
+- https://www.nvidia.com/en-us/data-center/h200/
+
+### H100 SXM
+
+Up to 700W (configurable). The H100 NVL has a different memory size and its own row; there is no bare H100 name.
+
+- https://www.nvidia.com/en-us/data-center/h100/
+
+### H100 NVL
+
+94GB per card (product brief, memory size 94 GB); the product page lists 350-400W (configurable) and the brief names 400W as the maximum TDP. The page text also mentions 188GB for the NVLink-bridged setup; sizing needs the per-card figure.
+
+- https://www.nvidia.com/en-us/data-center/h100/
+- https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/h100/PB-11773-001_v01.pdf
+
+### A100 40GB
+
+A100 40GB PCIe product brief: memory size 40 GB HBM2, TDP level 250 W. There is no bare A100 name. The row describes the PCIe card: the vendor page used for it gives no 40 GB SXM figures.
+
+- https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/A100-PCIE-Prduct-Brief.pdf
+
+### A100 80GB
+
+80GB HBM2e for PCIe and SXM. Max TDP is 300W (PCIe) and 400W (SXM, standard configuration); the page footnote says the HGX A100-80GB custom thermal solution SKU supports up to 500W, and the highest figure is used.
+
+- https://www.nvidia.com/en-us/data-center/a100/
+
+### L40S
+
+48GB GDDR6 with ECC; max power consumption 350W.
+
+- https://www.nvidia.com/en-us/data-center/l40s/
+
+### L4
+
+24GB; max thermal design power 72W.
+
+- https://www.nvidia.com/en-us/data-center/l4/
+
+### RTX 6000 Ada
+
+48GB GDDR6 with ECC; max power consumption 300W.
+
+- https://www.nvidia.com/en-us/design-visualization/rtx-6000/
+
+### RTX A6000
+
+48GB GDDR6 with ECC; max power consumption 300W.
+
+- https://www.nvidia.com/en-us/design-visualization/rtx-a6000/
+
+### RTX 5090
+
+32GB GDDR7; the page states total graphics power 575W, used as tdp_w.
+
+- https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/
+
+### RTX 4090
+
+24GB GDDR6X; the page states total graphics power 450W, used as tdp_w.
+
+- https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/
+
+### B200
+
+HGX B200 reference table: memory per GPU 180GB HBM3e. HGX B200 summary: each B200 GPU has 180 GB, max thermal design power per individual GPU configurable up to 1000 W. NVIDIA's Blackwell Ultra developer blog table lists 192 GB as the Blackwell chip maximum; the product figure is used here.
+
+- https://docs.nvidia.com/enterprise-reference-architectures/hgx-ai-factory/latest/components.html
+- https://images.nvidia.com/aem-dam/Solutions/documents/HGX-B200-PCF-Summary.pdf
+
+### B300
+
+NVIDIA states 288 GB per GPU in three places: the developer blog 'Inside NVIDIA Blackwell Ultra' ('With 288 GB of HBM3e per GPU'), the HGX reference table (memory per GPU 288GB HBM3e; Table 2: up to 2304 GB per eight-GPU baseboard) and the DGX B300 user guide (8 x 288 GB = 2.3 TB). The blog footnote says 'Blackwell Ultra GPUs contain up to 160 SMs and 288GB HBM3E Memory. Available SM count and HBM capacity varies by SKU', so 288 is a maximum: confirm the part. The HGX and DGX B300 product pages state only 2.1 TB total. 8 x 288 GB = 2,304 GB, which is about 2.1 TiB, so that figure may be in binary units; no NVIDIA page confirms this reading. No per-GPU power figure found on a product or documentation page, so tdp_w is left out.
+
+- https://docs.nvidia.com/enterprise-reference-architectures/hgx-ai-factory/latest/components.html
+- https://docs.nvidia.com/dgx/dgxb300-user-guide/introduction-to-dgxb300.html
+- https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/
+
+### RTX PRO 6000 Blackwell
+
+Server Edition page: 96GB GDDR7, up to 600W (configurable). Workstation Edition datasheet: 96 GB GDDR7 and a 600W power design. Both editions share one row.
+
+- https://www.nvidia.com/en-us/data-center/rtx-pro-6000-blackwell-server-edition/
+- https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/quadro-product-literature/workstation-datasheet-blackwell-rtx-pro6000-x-nvidia-us-3519208-web.pdf
+
+### MI300X
+
+Dedicated memory size 192 GB HBM3; typical board power (TBP) 750W peak.
+
+- https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html
+
+### MI325X
+
+Dedicated memory size 256 GB HBM3E; typical board power (TBP) 1000W peak.
+
+- https://www.amd.com/en/products/accelerators/instinct/mi300/mi325x.html
+
+### MI355X
+
+Dedicated memory size 288 GB HBM3E; typical board power (TBP) 1400W.
+
+- https://www.amd.com/en/products/accelerators/instinct/mi350/mi355x.html
