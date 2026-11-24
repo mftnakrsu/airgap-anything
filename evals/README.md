@@ -1,8 +1,8 @@
 # Skill behavior evals
 
-These evals check what an agent does with and without the skill. They need a model, so they are run by hand before each release, not in CI. The deterministic expectations in each scenario's `expected.json` are checked in CI by `tests/test_scenarios.py`.
+These evals check what an agent does with and without the skills. They need a model, so they are run by hand before each release, not in CI. The expected sizing of each scenario is checked in CI by `tests/test_sizing.py`, against the procedure of `references/sizing.md`.
 
-The method is the one in `superpowers:writing-skills`: watch an agent fail without the skill, write the skill for those failures, watch it pass, close loopholes.
+The method is the one in `superpowers:writing-skills`: watch an agent fail without the skill, write the skill for those failures, watch it pass, close loopholes. Anthropic's checklist asks for at least three evaluations and for tests with Haiku, Sonnet and Opus, so every release runs the scenarios on all three.
 
 ## Scenarios
 
@@ -12,16 +12,16 @@ Each folder under `scenarios/` has:
 |---|---|
 | `prompt.md` | What the user says. Given to the agent as is. |
 | `answers.json` | The answers a correct interview extracts from the prompt. |
-| `expected.json` | `deterministic`: tier and sizing, checked in CI. `decisions` and `process`: what the agent's result is scored against. |
+| `expected.json` | `tier` and `sizing`: what the blueprint must show. `decisions` and `process`: what the agent's result is scored against. |
 
-`decisions` in `expected.json` uses four checks per layer:
+`decisions` in `expected.json` uses four checks per layer, read from the blueprint's decision table and its subsection for the layer:
 
 | Key | Passes when |
 |---|---|
-| `components` | The decision's `components` equal this list, in any order |
-| `includes` | The decision's `components` contain every listed ID |
-| `mentions` | Every listed word appears in the decision's `components` or `existing`, ignoring case |
-| `empty` | `true`: `components`, `existing` and `custom` are all empty. `false`: at least one is not. |
+| `components` | The decision's components equal this list, in any order |
+| `includes` | The decision's components contain every listed ID |
+| `mentions` | Every listed word appears in the decision's components or existing infrastructure, ignoring case |
+| `empty` | `true`: components, existing and custom parts are all "none". `false`: at least one is not. |
 
 ## Runs
 
@@ -36,6 +36,8 @@ Every run uses a fresh agent with no memory of earlier runs, working in a new em
 `SKILL_DIR` is the absolute path of a copy of the skill outside this repository, for example a `git archive` of `plugins/airgap-anything/skills/airgap-architect` at the commit under test. Record that commit in the results file.
 
 Every prompt ends with: "Work in the directory RUN and do not read files outside it. When you reach a point where you need the user's approval, stop and report what you produced." In runs with the skill, the first sentence reads "Work in the directory RUN, and read files only in RUN and SKILL_DIR." RUN is a new empty directory for the run. Every run also gets a second new empty directory, TMP, next to RUN, and the prompt adds, after its first sentence: "Put any temporary file in TMP and nowhere else; you may read it there."
+
+Run the with-skill rows on Haiku, Sonnet and Opus, and record the model of every run. The baseline runs of 2026-11-22 and 2026-11-23 did not use a skill, so they stay valid when only the skills change.
 
 ## Harness notes
 
@@ -63,18 +65,13 @@ Record one row per run in a file under `results/`, named by date.
 | F8 | Said nothing about telemetry or phone-home settings |
 | F9 | Ran two interviews, or asked for something the prompt already stated |
 
-For runs with the skill, also record:
+For runs with the skill, also record, from the blueprint and the transfer manifest the run wrote:
 
-1. Whether `lint.py` exits 0 on the result.
-2. Each `decisions` check in `expected.json`: pass or fail. `score.py` prints them.
-3. Each `process` line in `expected.json`: pass or fail.
-
-With `RUN` set to the directory the agent worked in and `NAME` to the scenario:
-
-```bash
-python3 plugins/airgap-anything/skills/airgap-architect/scripts/lint.py --blueprint "$RUN/docs/airgap/blueprint.json" --project-root "$RUN"
-python3 evals/score.py --blueprint "$RUN/docs/airgap/blueprint.json" --expected "evals/scenarios/$NAME/expected.json"
-```
+1. Each self-review item of `SKILL.md`: holds or not.
+2. The tier and the sizing against `expected.json`: the base tier and the floors; the concurrency range; per model the GPUs per replica, the replicas and whether KV capacity was computed; total GPUs, servers, power and whether the hardware fits. A number that differs is a failure even when the arithmetic shown is consistent.
+3. Each `decisions` check in `expected.json`: pass or fail.
+4. Each `process` line in `expected.json`: pass or fail.
+5. Every version and image reference in the blueprint and the manifest against its catalog entry.
 
 Quote the agent's own words wherever it justifies a failure. Those quotes are what the skill's wording is fixed against.
 
@@ -84,10 +81,11 @@ Quote the agent's own words wherever it justifies a failure. Those quotes are wh
 - A failure both show: fix the skill, run again.
 - A failure the baseline does not show in any scenario: the part of `SKILL.md` aimed at it is removed.
 - A failure that only the skill can cause, such as running two interviews (F9), cannot show in the baseline; the runs with the skill test it, and the part of `SKILL.md` aimed at it stays.
+- A failure that only a smaller model shows (wrong arithmetic on Haiku, for example): make the procedure or its worked example clearer, not the rule louder.
 
 ## airgap-transfer
 
-The second skill is evaluated the same way, on the scenarios in `transfer-scenarios/`. Each has `architect.json` (a finished design), `transfer.json` (the transfer answers its prompt gives), `prompt.md` (the plan phase: up to the user's approval, no download) and `prompt-pack.md` (the pack phase, on a fake fetched bundle of small files). `tests/test_transfer_scenarios.py` packs and checks all three in CI.
+The second skill is evaluated the same way, on the scenarios in `transfer-scenarios/`. Each has `project/` (a finished design: `docs/airgap/blueprint.md` and `docs/airgap/transfer-manifest.md`), `transfer.json` (the transfer answers its prompt gives), `prompt.md` (the plan phase: up to the user's approval, no download) and `prompt-pack.md` (the pack phase, on a fake fetched bundle of small files).
 
 Build a run's directory with the fixture tool, then replace `BUNDLE` and `MEDIA` in the prompt with `RUN/bundle` and `RUN/media` as absolute paths:
 
@@ -113,15 +111,10 @@ Pressure runs: the `department` plan phase, five times without the skill and fiv
 | T7 | A step inside the network needs internet or an LLM |
 | T8 | A name, version, URL or image reference does not come from the transfer manifest |
 
-For runs with the skill, also record, with `T=plugins/airgap-anything/skills/airgap-transfer`:
+For runs with the skill, also record:
 
-```bash
-python3 $T/scripts/plan.py --project-root "$RUN/project"; echo "plan exit: $?"       # plan phase
-find "$RUN/bundle" -type f | sort                                                    # plan phase: only fetch.sh
-python3 $T/scripts/check.py --project-root "$RUN/project"; echo "check exit: $?"     # pack phase
-V=$(mktemp -d); for d in "$RUN"/media "$RUN"/media/*/; do cp -R "$d"/. "$V"/ 2>/dev/null; done
-sh "$V/verify.sh" "$V"; echo "verify exit: $?"                                        # pack phase
-```
+- Plan phase: `docs/airgap/transfer-plan.md` exists with one item per manifest row, and `find "$RUN/bundle" -type f` lists nothing (no download before approval).
+- Pack phase: in the bundle, `sha256sum -c --quiet SHA256SUMS` exits 0; every self-check item of `SKILL.md` holds; and the inside runbook works as written: copy every folder under `RUN/media` into one new folder and run the runbook's checking steps there (parts, join, `SHA256SUMS`), each of which must exit 0.
 
 ## Triggering
 
@@ -130,7 +123,7 @@ The runs above tell the agent to read `SKILL.md`, so they do not show whether Cl
 | Cases | The message | Passes when |
 |---|---|---|
 | `auto-*` | A natural request in English or Turkish that does not name the skill | Claude calls the Skill tool for `airgap-architect`, and its reply starts the interview instead of answering from memory |
-| `auto-*` for `airgap-transfer` | A request to prepare, carry or check a bundle for a design that has a transfer manifest | Claude calls the Skill tool for `airgap-transfer`, and its reply starts the transfer (or, inside, points to `verify.sh`) |
+| `auto-*` for `airgap-transfer` | A request to prepare, carry or check a bundle for a design that has a transfer manifest | Claude calls the Skill tool for `airgap-transfer`, and its reply starts the transfer (or, inside, points to the bundle's runbook and its `sha256sum -c` checks) |
 | `manual-*` | `/airgap-anything:airgap-architect` and a request | The skill's instructions load (the agent reads its `references/`), and the reply starts the interview |
 | `skip-*` | A request the skill must leave alone, including a near miss ("what does air-gapped mean") | Claude does not call the skill |
 
@@ -145,6 +138,6 @@ claude plugin eval plugins/airgap-anything --eval-dir evals/triggering --runs 3 
   --no-publish --trust-plugin --max-cost-usd 14 --json /tmp/triggering.json --threshold 0
 ```
 
-`--ablation none` skips the no-plugin arm, which can never call the skill and so tells nothing here. `--no-publish` keeps the report on your machine. Raw results land in `plugins/airgap-anything/evals/triggering/results/`, which git ignores; record the summary under `evals/results/`, with the model, the Claude Code version and the commit. Rerun when the `description` in `SKILL.md` changes.
+`--ablation none` skips the no-plugin arm, which can never call the skill and so tells nothing here. `--no-publish` keeps the report on your machine. Raw results land in `plugins/airgap-anything/evals/triggering/results/`, which git ignores; record the summary under `evals/results/`, with the model, the Claude Code version and the commit. Rerun when the `description` in a `SKILL.md` changes.
 
-CI runs the same suite from `.github/workflows/triggering.yml`: on a pull request that changes `SKILL.md`, the suite or the workflow, on a `v*` tag, and by hand (Actions > triggering > Run workflow). It needs a credential in the repository secrets: `ANTHROPIC_API_KEY`, an Anthropic API key billed per run, or `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, which bills a Claude subscription (not yet tried with `claude plugin eval`). Without either, the job leaves a notice and skips the suite rather than failing. A pull request from a fork gets no secrets, so the job is skipped there. A case passes at a score of 0.8: an `auto-*` or `manual-*` case survives one missed grader in three runs, a `skip-*` case fails on a single false start. The JSON result is kept as the run's artifact.
+CI runs the same suite from `.github/workflows/triggering.yml`: on a pull request that changes a `SKILL.md`, the suite or the workflow, on a `v*` tag, and by hand (Actions > triggering > Run workflow). It needs a credential in the repository secrets: `ANTHROPIC_API_KEY`, an Anthropic API key billed per run, or `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, which bills a Claude subscription (not yet tried with `claude plugin eval`). Without either, the job leaves a notice and skips the suite rather than failing. A pull request from a fork gets no secrets, so the job is skipped there. A case passes at a score of 0.8: an `auto-*` or `manual-*` case survives one missed grader in three runs, a `skip-*` case fails on a single false start. The JSON result is kept as the run's artifact.

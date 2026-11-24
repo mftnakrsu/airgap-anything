@@ -1,94 +1,120 @@
-"""Build a transfer scenario on disk: a finished architect project, and with --fetched a
-fake fetched bundle of small files, so that pack.py, check.py and verify.sh run without
-downloads. Used by tests/test_transfer_scenarios.py and by the behavior runs of evals/README.md.
+"""Build a transfer scenario on disk for the behavior runs of evals/README.md: a finished
+architect project, and with --fetched a fake fetched bundle of small files with its plan file,
+so that the pack phase runs without downloads.
 
     python3 evals/transfer_fixture.py --scenario department --out DIR [--variant fat32] [--fetched]
 
-DIR gets project/ (docs/airgap/blueprint.json, both manifest files, transfer.json) and,
-with --fetched, bundle/. Standard library only; the architect side is made by
-airgap-architect's own scripts with the shipped catalog.
+DIR gets project/ (docs/airgap/blueprint.md and transfer-manifest.md, copied from
+evals/transfer-scenarios/NAME/project/) and, with --fetched, bundle/ and
+project/docs/airgap/transfer-plan.md with every item fetched and every manual item settled.
+Repository tooling, standard library only; the skills themselves ship no code.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-import subprocess
-import sys
+import re
+import shutil
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCENARIOS = REPO_ROOT / "evals" / "transfer-scenarios"
-ARCHITECT = REPO_ROOT / "plugins" / "airgap-anything" / "skills" / "airgap-architect" / "scripts"
 FAT32_MAX_FILE_BYTES = 4 * 1024**3 - 1
-LAYERS = ("llm-serving", "llm-gateway", "ui", "identity", "observability", "orchestration", "state", "registry")
 
 
-def blueprint_of(scenario: dict) -> dict:
-    decisions = []
-    for layer in LAYERS:
-        chosen = scenario["decisions"].get(layer, {})
-        decision = {
-            "layer": layer,
-            "components": list(chosen.get("components", [])),
-            "existing": list(chosen.get("existing", [])),
-            "custom": list(chosen.get("custom", [])),
-            "rationale": f"Scenario fixture for {layer}.",
-            "alternatives_considered": [],
-            "evidence": "estimate",
-            "override": None,
-        }
-        if chosen.get("benchmark"):
-            decision["benchmark"] = list(chosen["benchmark"])
-        decisions.append(decision)
-    return {
-        "schema_version": 1,
-        "project": scenario["project"],
-        "created": "2026-11-22",
-        "language": scenario.get("language", "en"),
-        "blueprint_path": "docs/airgap/blueprint.md",
-        "answers": scenario["answers"],
-        "assumptions": [],
-        "tier": {},
-        "sizing": {},
-        "decisions": decisions,
-    }
+def safe_name(text: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]", "_", text).strip("._-")
+
+
+def table(manifest: str, heading: str) -> list[list[str]]:
+    section = manifest.split(f"\n## {heading}\n", 1)[1].split("\n## ", 1)[0]
+    rows = [[c.strip() for c in re.split(r"(?<!\\)\|", line.strip())[1:-1]] for line in section.splitlines() if line.startswith("| ")]
+    return rows[1:]  # without the header; the separator row starts with "|---"
+
+
+def plain(cell: str) -> str:
+    return cell.replace("`", "").replace(" (benchmark only)", "").strip()
 
 
 def build(name: str, out: Path, variant: str | None = None, fetched: bool = False) -> tuple[Path, Path]:
     folder = SCENARIOS / name
-    scenario = json.loads((folder / "architect.json").read_text(encoding="utf-8"))
     project, bundle = Path(out) / "project", Path(out) / "bundle"
-    target = project / "docs" / "airgap" / "blueprint.json"
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(blueprint_of(scenario), indent=2) + "\n", encoding="utf-8")
-    for script, extra in (("tier.py", []), ("size.py", []), ("manifest.py", ["--date", "2026-11-22"])):
-        subprocess.run([sys.executable, "-B", str(ARCHITECT / script), "--blueprint", str(target), *extra],
-                       check=True, capture_output=True, text=True)
+    shutil.copytree(folder / "project", project, dirs_exist_ok=True)
     if not fetched:
         return project, bundle
-    sys.path.insert(0, str(REPO_ROOT))
-    import tests  # noqa: F401  (puts both skills' scripts on sys.path)
-    from tests.transfer_projects import fake_fetch, settle_manual, write_state
-    from transfer_lib.inputs import channel_of
-    from transfer_lib.items import build_items
-
     answers = json.loads((folder / f"transfer{'-' + variant if variant else ''}.json").read_text(encoding="utf-8"))
-    answers["bundle.path"] = str(bundle.resolve())
+    manifest = (project / "docs" / "airgap" / "transfer-manifest.md").read_text(encoding="utf-8")
     bundle.mkdir(parents=True, exist_ok=True)
-    manifest = json.loads((target.parent / "transfer-manifest.json").read_text(encoding="utf-8"))
-    blueprint = json.loads(target.read_text(encoding="utf-8"))
-    items = build_items(manifest, answers)
-    plan = {"items": items, "tools": {}, "platform": manifest["platform"], "channel": channel_of(blueprint),
-            "planned": "2026-11-22T10:00:00Z"}
-    write_state(project, answers, plan=plan)
-    fake_fetch(bundle, items)
-    if variant == "fat32":
-        # One model file one byte over the FAT32 limit, as a sparse file: it takes no room.
-        model = next(item for item in items if item["kind"] == "model")
-        weights = bundle / model["path"] / "model.safetensors"
-        with weights.open("r+b") as handle:
-            handle.truncate(FAT32_MAX_FILE_BYTES + 1)
-    settle_manual(project)
+    items = []
+
+    def write(path: str, data: bytes) -> int:
+        target = bundle / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        return len(data)
+
+    for component, _, ref, *_ in table(manifest, "1. Container images"):
+        c, r = plain(component), plain(ref)
+        path = f"images/{safe_name(c)}/{safe_name(r)}.tar"
+        size = write(path, f"fake image archive {r}\n".encode())
+        write(path[:-4] + ".digest", ("sha256:" + hashlib.sha256(r.encode()).hexdigest() + "\n").encode())
+        items.append(("image", c, f"`{r}`", path, size, "fetched"))
+    for model, *_ in table(manifest, "2. Model artifacts"):
+        source = answers["models"][model]
+        path = f"models/{safe_name(model)}"
+        size = write(f"{path}/model.safetensors", f"fake weights {model}\n".encode())
+        size += write(f"{path}/config.json", b"{}\n")
+        if variant == "fat32":
+            with (bundle / path / "model.safetensors").open("r+b") as handle:  # sparse: takes no room
+                handle.truncate(FAT32_MAX_FILE_BYTES + 1)
+            size = FAT32_MAX_FILE_BYTES + 1 + 3
+        items.append(("model", "", f"`{source['repo']}` at `{source['revision']}`", path, size, "fetched"))
+    manual = []
+    for component, _, file, _, url, sums in table(manifest, "3. Packages and binaries"):
+        if component.startswith("custom: "):
+            manual.append((component.removeprefix("custom: "), "added"))
+            continue
+        c, f = plain(component), plain(file)
+        data = f"fake package {f}\n".encode()
+        path = f"packages/{safe_name(c)}/{f}"
+        size = write(path, data)
+        if sums.startswith("https://"):
+            write(f"packages/{safe_name(c)}/checksums/{safe_name(sums.rsplit('/', 1)[-1])}",
+                  f"{hashlib.sha256(data).hexdigest()}  {f}\n".encode())
+        items.append(("package", c, url, path, size, "fetched"))
+    for component, text in table(manifest, "5. Runtime downloads to stage in advance"):
+        manual.append((f"{plain(component)}: runtime download: {text[:60].rstrip()}", "not needed"))
+    for item, status in manual:
+        path = f"manual/{safe_name(item)[:60]}"
+        if status == "added":
+            size = write(f"{path}/README.txt", f"Files the user added for: {item}\n".encode())
+            items.append(("manual", "", item, path, size, "added"))
+        else:
+            items.append(("manual", "", item, "", 0, "not needed: the fixture's user says the inside already has it"))
+
+    header = re.search(r"^# Transfer manifest: (.*)$", manifest, re.M).group(1)
+    blueprint = (project / "docs" / "airgap" / "blueprint.md").read_text(encoding="utf-8")
+    answer = dict(re.findall(r"^\| `([a-z_.]+)` \| ([^|]+) \|", blueprint, re.M))
+    platform = re.search(r"^- Platform: (.*)$", manifest, re.M).group(1)
+    hardware = re.search(r"^- Hardware: (.*)$", manifest, re.M).group(1)
+    lines = [
+        f"# Transfer plan: {header}", "",
+        f"- Manifest: docs/airgap/transfer-manifest.md, generated {re.search(r'^- Generated: (.*)$', manifest, re.M).group(1)}",
+        "- Blueprint: docs/airgap/blueprint.md",
+        f"- Channel: {answer['transfer.channel'].strip()} · Inside: {answer['inside.operator'].strip()} · Platform: {platform} · Hardware: {hardware}",
+        f"- Bundle: {bundle.resolve()}",
+        "- Approved: 2026-11-24, \"yes, fetch everything\" (fixture)", "",
+        "## Answers", "", "| ID | Answer |", "|---|---|",
+    ]
+    for key, value in answers.items():
+        shown = str(bundle.resolve()) if key == "bundle.path" else (value if isinstance(value, str) else json.dumps(value))
+        lines.append(f"| `{key}` | {shown} |")
+    lines += ["", "## Items", "", "| # | Kind | Component | Source | Bundle path | Size | Status |", "|---|---|---|---|---|---|---|"]
+    for number, (kind, component, source, path, size, status) in enumerate(items, start=1):
+        lines.append(f"| {number} | {kind} | {f'`{component}`' if component else ''} | {source} | {f'`{path}`' if path else ''} | {size or ''} | {status} |")
+    lines += ["", "## Volumes", "", "Not packed yet.", ""]
+    (project / "docs" / "airgap" / "transfer-plan.md").write_text("\n".join(lines), encoding="utf-8")
     return project, bundle
 
 

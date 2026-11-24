@@ -130,5 +130,20 @@ class GpuTableTest(unittest.TestCase):
                 self.assertRegex(text.split(f"\n### {model}\n", 1)[1].split("\n### ", 1)[0], r"\n- https://")
 
 
+
+class TransferFixtureTest(unittest.TestCase):
+    """The finished designs the airgap-transfer evals start from name what the catalog says today."""
+
+    def test_every_manifest_row_matches_its_catalog_entry(self):
+        catalog = entries()
+        for manifest in sorted((CATALOG_DIR.parents[3] / "evals" / "transfer-scenarios").glob("*/project/docs/airgap/transfer-manifest.md")):
+            text = manifest.read_text(encoding="utf-8")
+            section = text.split("\n## 1. Container images\n", 1)[1].split("\n## ", 1)[0]
+            for component, version, image in re.findall(r"^\| `([a-z0-9-]+)`(?: \(benchmark only\))? \| `([^`]+)` \| `([^`]+)` \|", section, re.M):
+                with self.subTest(scenario=manifest.parents[3].name, image=image):
+                    self.assertEqual(fields(catalog[component])["Version"], f"`{version}`")
+                    self.assertIn(f"| `{image}` |", catalog[component])
+
+
 if __name__ == "__main__":
     unittest.main()
