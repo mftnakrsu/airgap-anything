@@ -2,6 +2,8 @@
 
 Status: draft, waiting for approval. Date: 2026-11-24. Oldest catalog entry used: 2026-11-21 (`open-webui`, `keycloak`, `prometheus`, `valkey`).
 
+This blueprint is a design aid built from public documentation and labelled estimates, not professional advice. Verify every number, choice and version, and run the benchmark in section 9, before buying hardware or deploying anything.
+
 ## 1. Context and answers
 
 An engineering division of 180 people in four departments gets a chat platform on one very large model (671 billion parameters, 8-bit) that runs on one server with eight GPUs inside an air-gapped network. Each department needs its own budget and must not see another department's prompts or data, and every request must be attributable to a person and kept for audit. A team of three without Kubernetes experience operates it; planned maintenance windows are acceptable, unplanned downtime should be rare. Active Directory exists; there is no API gateway, cluster or registry, and files enter on removable media. The user was not available for questions: everything the request did not state is `unknown` and takes the interview default.

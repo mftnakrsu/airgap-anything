@@ -216,6 +216,10 @@ The plugin is Markdown, JSON and an icon: no code, no server, nothing collected,
 
 The full policy is on the [privacy page](https://airgap-anything.mefby.com/project/privacy/).
 
+## Disclaimer
+
+airgap-anything is a design aid, not professional advice. Its sizing, component choices, versions and commands come from public documentation and from estimates, and every value is labelled as one or the other. They can be wrong, incomplete or out of date for your environment. Verify every number, choice, version and command, and run the benchmark step of the blueprint, before you buy hardware, sign an order or deploy anything. You use it at your own risk: the software is provided "as is", without warranty of any kind, under the MIT license, and the authors are not liable for any damage, loss or cost arising from its use.
+
 ## Contributing
 
 The catalog is the part that ages, and it is markdown: adding or re-verifying a component is a small pull request. [CONTRIBUTING.md](CONTRIBUTING.md) explains how. One rule above all: nothing is written from memory.
@@ -254,6 +258,8 @@ npx skills add mftnakrsu/airgap-anything -g
 ```
 
 İnternetsiz kurulum için yukarıdaki [Without internet](#without-internet) bölümüne bakın.
+
+**Sorumluluk reddi.** airgap-anything bir tasarım yardımcısıdır, profesyonel tavsiye değildir. Boyutlandırma, bileşen seçimleri, sürümler ve komutlar herkese açık dokümanlardan ve tahminlerden gelir ve hangisi olduğu her değerde yazılıdır; sizin ortamınız için yanlış, eksik ya da güncelliğini yitirmiş olabilirler. Donanım almadan, sipariş vermeden ya da kurulum yapmadan önce her sayıyı, seçimi, sürümü ve komutu doğrulayın ve blueprint'teki benchmark adımını çalıştırın. Kullanım sizin sorumluluğunuzdadır: yazılım MIT lisansıyla "olduğu gibi", hiçbir garanti olmadan sunulur ve kullanımından doğan hiçbir zarar, kayıp ya da maliyetten yazarlar sorumlu değildir.
 
 **Kullanım.** İnternete bağlı bir makinede agent'ınıza kendi cümlenizle sorun, örneğin:
 

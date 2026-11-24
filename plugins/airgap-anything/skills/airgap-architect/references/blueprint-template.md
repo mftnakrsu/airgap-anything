@@ -8,6 +8,8 @@ Copy everything below the line into the blueprint file and fill each section. He
 
 Status: draft. Date: YYYY-MM-DD. Language: the code of the conversation's language, for example en. Oldest catalog entry used: YYYY-MM-DD (component ID).
 
+This blueprint is a design aid built from public documentation and labelled estimates, not professional advice. Verify every number, choice and version, and run the benchmark in section 9, before buying hardware or deploying anything.
+
 ## 1. Context and answers
 
 Who the system is for and what constrains it, in a short paragraph.
