@@ -78,6 +78,14 @@ class HandOverTest(unittest.TestCase):
         self.assertIn("(from airgap-rag)", transfer)
         self.assertIn("docs/airgap/rag.md", transfer)
 
+    def test_skill_writes_no_programs_into_the_project(self):
+        rag = (RAG_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("never programs or scripts", rag)
+        self.assertIn("No program or script file was written", rag)
+        self.assertIn("never programs or scripts", rag.split("## Rules", 1)[1].split("## Self-check", 1)[0])
+        self.assertIn("Rule 10", read("interview.md"))
+        self.assertLess(len(rag.splitlines()), 200)
+
     def test_rag_md_lists_the_names_the_marked_rows_use(self):
         # Section-2 rows carry the Model name, not a catalog id: rag.md must list that name,
         # and the transfer must look for it in the Model cell, or it refuses the row.

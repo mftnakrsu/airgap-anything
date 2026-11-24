@@ -111,6 +111,7 @@ Last verified: 2026-11-24. Carry the pinned version, not a newer one.
 7. **Versions, paths and setting names come from the catalog and references**, not memory. Where they say "not documented", say so. For a custom platform invent no values; write `unverified`.
 8. **When the number of `rag` users differs from the blueprint,** tell the user to rerun the architect's sizing. Do not recompute it here.
 9. **Write nothing outside `docs/airgap/`, and install or download nothing.**
+10. **The skill writes configuration, runbooks and manifest rows, never programs or scripts** (`.py`, `.sh` or similar) into the user's project. The runbook uses the platform's own documented tools and commands. When a platform needs a loader or pipeline that the catalog does not cover, that is an open item for the user to decide (who writes it and who owns it), not something the skill writes.
 
 ## Self-check
 
@@ -125,6 +126,7 @@ Before the hand-over, check each item against the files you wrote. When one fail
 7. Manifest rows sit in sections 1 to 5 and 7 as the table shows, each is marked "(from airgap-rag)", every pinned version equals its catalog entry, `docs/airgap/rag.md` and `docs/airgap/rag/` are in section 3, and `rag.md` lists the component of every marked row (the Model cell's name for section 2).
 8. The folder to knowledge base to group map is in `rag.md` for the user to fill in, manual steps are marked MANUAL, and the five checks are in `rag.md` and section 7.
 9. Every default the interview used is an assumption, and a differing `rag` headcount is flagged.
+10. No program or script file was written under `docs/airgap/`; a loader or pipeline the catalog does not cover is an open item with its owner to decide.
 
 ## Hand-over
 
@@ -146,3 +148,4 @@ Tell the user, in their language:
 | Choosing the platform for the user because they said "set it up" | Ask it with the three options, recommend Open WebUI, and wait; defaults apply to the other questions, and a named platform is never swapped |
 | Treating a custom tool's behavior as known | Label it `unverified` and run the egress check |
 | Writing an API key into the runbook | The key stays in an environment variable |
+| Writing a loader or ingestion program (`load.py`) for a custom platform | Write the runbook with the platform's documented commands and put the loader in the open items: the user decides who writes and owns it |

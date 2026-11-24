@@ -46,6 +46,7 @@ When the user chooses something else:
 - Write a custom record in `rag.md`: the name, the version, the link to its documentation, who runs it and how the embedding and extraction reach it. Ask for the version and the link in the same message as the other questions; if the user does not give one, write "not given" for it, put it in the open items and continue. Do not wait for them.
 - Label every value that is not in this skill's catalog `unverified`: versions, settings, ports, image names, egress behavior. Do not fill a gap from memory.
 - The air-gap checklist still applies, as for the other options: the models it needs are staged (embedding, reranker, OCR, and anything it fetches at its first start), its telemetry and update checks are named and switched off or listed as open items, its images and files get manifest rows marked "(from airgap-rag)", and the egress check of [`references/verification.md`](/reference/rag/verification/) covers it.
+- Write no program or script for it, even a loader: the runbook uses the tool's own documented commands, and a loader the catalog does not cover is an open item for the user to decide (Rule 10 in `SKILL.md`).
 - This skill's catalog entries for the embedding and reranker models, `docling-serve`, `pgvector` and `qdrant` stay usable behind a custom tool, because they are independent services.
 
 ## Mapping answers
