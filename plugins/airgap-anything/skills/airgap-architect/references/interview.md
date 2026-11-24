@@ -1,43 +1,23 @@
 # Interview
 
-Goal: fill `answers` in `docs/airgap/blueprint.json`. Ask only what you cannot find out yourself.
-
-Paths such as `catalog/rules.toml` and `catalog/gpus.toml` are relative to the skill root, the folder that holds `SKILL.md`.
+Goal: an answer for every question below, recorded in the blueprint's Answers table (`references/blueprint-template.md`). Ask only what you cannot find out yourself.
 
 ## Before the first question
 
-1. Read what the user points you to (README, architecture notes, hardware inventory). Fill every answer those files already give.
-2. If `docs/airgap/blueprint.json` does not exist, create it with this content, replacing the three values in capitals:
-
-   ```json
-   {
-     "schema_version": 1,
-     "project": "PROJECT NAME",
-     "created": "TODAY AS YYYY-MM-DD",
-     "language": "LANGUAGE CODE OF THE CONVERSATION, FOR EXAMPLE en",
-     "blueprint_path": "",
-     "answers": {},
-     "assumptions": [],
-     "tier": {},
-     "sizing": {},
-     "decisions": []
-   }
-   ```
-
+1. Read what the user points you to (README, architecture notes, hardware inventory) and take every answer those files and the conversation already give.
+2. Create the blueprint file at its path (`SKILL.md`, "Where the blueprint goes") with the template's headings and the Answers table, and fill in what you have. The file is the design's only state: an interrupted interview resumes from it.
 3. Tell the user in one message which answers you already have and how many questions remain.
 
-## Rules
+## How to ask
 
-1. One question per message. Offer the choices from the table.
-2. Ask in the user's language. Store IDs and choice values exactly as written here.
-3. "I don't know" is an answer: store the string `"unknown"`. The scripts apply the default from `catalog/rules.toml` (`defaults.` followed by the question ID) and record it as an assumption. An optional question without a default (for example `workload.context_tokens`) counts as not answered.
-4. Four questions have no default and must be answered: `org.users_total`, `org.departments`, `workload.models`, `hardware.gpus`.
-5. Write each answer to `blueprint.json` before you ask the next question, so an interrupted interview can resume.
-6. Skip every question that the files or the conversation already answered.
+- One question per message, in the user's language. Offer the choices from the table.
+- Record each answer in the Answers table before you ask the next question. Keep IDs and choice values exactly as written here, whatever the language.
+- "I don't know" is an answer: record `unknown`, apply the default below, and add the default to the assumptions table with its evidence label. Four questions have no default and must be answered: `org.users_total`, `org.departments`, `workload.models`, `hardware.gpus`.
+- When the user is not available, a question the prompt does not answer is `unknown`.
 
 ## Questions, in order
 
-| # | ID | Ask | Store |
+| # | ID | Ask | Answer |
 |---|---|---|---|
 | 1 | `org.users_total` | How many people will use the platform? | whole number, 1 or more |
 | 2 | `org.departments` | How many departments or teams need their own budget or data boundary? | whole number, 1 or more |
@@ -46,14 +26,14 @@ Paths such as `catalog/rules.toml` and `catalog/gpus.toml` are relative to the s
 | 5 | `org.downtime_tolerance` | How much downtime is acceptable? | `accepted`, `planned_only`, `none` |
 | 6 | `org.ops_capacity` | Who will operate the system? | `part_time_one`, `small_team`, `platform_team` |
 | 7 | `org.kubernetes_experience` | Does the operating team run Kubernetes today? | `true` or `false` |
-| 8 | `inside.operator` | Inside the network, who will carry out the installation and later work? | `people` (no LLM inside), `local_agent` (an agent on a local model already runs inside), `people_then_agent` (people on the first day, then an agent on this platform's model) |
-| 9 | `workload.usage` | What will people use it for, in rough shares? | map of `chat`, `code_assistant`, `rag`, `batch` to shares that sum to 1 |
+| 8 | `inside.operator` | Inside the network, who installs and later operates it? | `people` (no LLM inside), `local_agent` (an agent on a local model already runs inside), `people_then_agent` (people on the first day, then an agent on this platform's model) |
+| 9 | `workload.usage` | What will people use it for, in rough shares? | shares of `chat`, `code_assistant`, `rag`, `batch` that sum to 1 |
 | 10 | `workload.models` | Which model or models will be served? | list, see below |
-| 11 | `workload.context_tokens` | How long is a typical request of each group, prompt and history together, in tokens? Ask it when the groups differ. Optional. | map of `chat`, `code_assistant`, `rag` to a whole number of tokens, see below |
-| 12 | `hardware.gpus` | Which GPUs exist or will be bought? | list, see below; `[]` when there is no GPU |
+| 11 | `workload.context_tokens` | How long is a typical request of each group, prompt and history together? Ask only when the groups differ. Optional. | tokens per group (`chat`, `code_assistant`, `rag`) |
+| 12 | `hardware.gpus` | Which GPUs exist or will be bought? | list, see below; `[]` when there is none |
 | 13 | `hardware.ram_gb` | How much system RAM does the server have? Ask only when there is no GPU. | number |
 | 14 | `hardware.power_budget_kw` | How much power is available for this system? Optional. | number |
-| 15 | `hardware.cpu_arch` | Which CPU architecture do the servers inside the network have? | `amd64` or `arm64` |
+| 15 | `hardware.cpu_arch` | Which CPU architecture do the servers inside have? | `amd64` or `arm64` |
 | 16 | `existing.identity` | Is there an identity provider already? | `none`, `ad_ldap`, `oidc` |
 | 17 | `existing.api_gateway` | Is there an API gateway already? | `none`, `kong`, `other` |
 | 18 | `existing.kubernetes` | Is there a cluster platform already? | `none`, `kubernetes`, `openshift` |
@@ -61,73 +41,51 @@ Paths such as `catalog/rules.toml` and `catalog/gpus.toml` are relative to the s
 | 20 | `transfer.channel` | How do files enter the network? | `removable_media`, `data_diode`, `staging_host`, `other` |
 | 21 | `transfer.cadence` | How often can updates be carried in? Optional. | `ad_hoc`, `monthly`, `quarterly` |
 
-Usage types: `chat` is conversation in a chat window. `code_assistant` covers agentic coding tools, which keep a request in flight most of the time; people who only use inline completion in an editor are counted under `chat`. That is a deliberate overestimate, not a sourced placement: the notes of `sizing.code_assistant.duty_low` and `sizing.code_assistant.duty_high` in `catalog/rules.toml` show that inline completion keeps a request in flight only a few percent of the time, far below `code_assistant` and far below the duty of `chat`. `rag` is question answering over documents. `batch` is unattended jobs.
+Usage groups: `chat` is conversation in a chat window. `code_assistant` is agentic coding tools, which keep a request in flight most of the time; count people who only use inline completion in an editor under `chat` (a deliberate overestimate: inline completion keeps a request in flight only a few percent of the time). `rag` is question answering over documents. `batch` is unattended jobs.
 
-`inside.operator`: when the answer is `local_agent` or `people_then_agent` and that agent will run on this platform's model, say so when you ask `workload.usage`, and count the agent's users under `code_assistant`: an agentic tool keeps a request in flight most of the time. `hardware.cpu_arch` decides which package files the transfer manifest lists (its `Platform:` line); "unknown" gives `amd64`, recorded as an assumption.
+When `inside.operator` is `local_agent` or `people_then_agent` and that agent will run on this platform's model, say so when you ask `workload.usage`, and count the agent's users under `code_assistant`.
+
+## Defaults for `unknown`
+
+All `estimate`. Each one goes into the assumptions table when it was used.
+
+| ID | Default | Why |
+|---|---|---|
+| `org.isolation` | `per_department` | Unknown privacy rules are treated as the stricter common case. |
+| `org.audit_required` | `true` | Unknown audit rules are treated as required. |
+| `org.downtime_tolerance` | `planned_only` | The middle option. |
+| `org.ops_capacity` | `part_time_one` | The smallest operating capacity keeps the design simple. |
+| `org.kubernetes_experience` | `false` | Kubernetes experience is not assumed. |
+| `inside.operator` | `people` | A runbook for people works whether or not an agent appears later. |
+| `workload.usage` | chat 1.0 | Chat only. |
+| `hardware.cpu_arch` | `amd64` | The most common server architecture; not sourced. A wrong value gives the wrong package files, so say it in the assumptions. |
+| `existing.identity`, `existing.api_gateway`, `existing.kubernetes` | `none` | No existing infrastructure is assumed. |
+| `transfer.channel` | `removable_media` | The most restrictive common channel. |
+
+An optional question without an answer (`workload.context_tokens`, `hardware.power_budget_kw`, `existing.registry`, `transfer.cadence`) is simply not used.
 
 ## `workload.models`
 
-One object per model.
+One entry per model:
 
 | Field | Required | Meaning |
 |---|---|---|
 | `role` | yes | `chat`, `code`, `embedding` or `rerank` |
-| `params_b` | one of three | Parameters in billions. Needs `precision`. |
-| `weights_gb` | one of three | Size of the weight files in GB. Use it when the user knows it; it overrides arithmetic. |
-| `size_class` | one of three | For a user who does not know the model yet: `S` up to 15B, `M` 16B to 80B, `L` 81B to 300B, `XL` above 300B |
-| `precision` | with `params_b` | `fp32`, `bf16`, `fp16`, `fp8`, `int8` or `int4`. With `size_class` it is optional: sizing then uses `sizing.default_precision`. |
+| `params_b` | one of three | Parameters in billions; needs `precision` |
+| `weights_gb` | one of three | Size of the weight files in GB, when the user knows it; it overrides arithmetic |
+| `size_class` | one of three | For a model not chosen yet: `S` up to 15B, `M` 16B to 80B, `L` 81B to 300B, `XL` above 300B |
+| `precision` | with `params_b` | `fp32`, `bf16`, `fp16`, `fp8`, `int8` or `int4` |
 | `name` | no | Free text |
-| `context_tokens` | no | Typical prompt plus history length in tokens. Sizing uses it for every user group that has no entry in `workload.context_tokens`. |
-| `arch` | no | `layers`, `kv_heads`, `head_dim` and optionally `kv_dtype` (one of the precision values; the default is `sizing.default_kv_dtype`). With these, sizing computes KV-cache capacity; without them it reports the capacity as unknown. |
+| `context_tokens` | no | Typical prompt plus history in tokens, for every group without its own entry in `workload.context_tokens` |
+| `arch` | no | `layers`, `kv_heads`, `head_dim`, optionally `kv_dtype`: from the model's `config.json`; with them sizing computes KV-cache capacity (`references/sizing.md`, step 5) |
 
-Give exactly one of `params_b`, `weights_gb` and `size_class`.
-
-The `arch` numbers come from the model's configuration file: the number of hidden layers (`num_hidden_layers`), the number of key-value heads (`num_key_value_heads`; when the field is absent, `num_attention_heads`), and the head dimension (`head_dim`; when the field is absent, `hidden_size` divided by `num_attention_heads`). Read `head_dim` from the file when it is there: it can differ from that division.
-
-Example:
-
-```json
-[
-  {
-    "name": "main chat model",
-    "role": "chat",
-    "params_b": 70,
-    "precision": "fp8",
-    "arch": { "layers": 80, "kv_heads": 8, "head_dim": 128 }
-  },
-  { "role": "embedding", "weights_gb": 2.5 },
-  { "role": "code", "size_class": "M" }
-]
-```
-
-## `workload.context_tokens`
-
-Optional. A map of `chat`, `code_assistant` and `rag` to the context of one request of that group, as a whole number of tokens above 0. `batch` is rejected: it has no interactive context.
-
-The context of a group's request is its entry here; without one, the model's `context_tokens`; without that, `sizing.default_context_tokens`. Sizing adds `sizing.default_output_tokens` to every request. A key for a group that has no share in `workload.usage` has no effect.
-
-Give it when the groups differ. Example, coding assistants 32k and chat 8k:
-
-```json
-{ "code_assistant": 32768, "chat": 8192 }
-```
+Example: a 70B chat model at fp8 with `arch` 80 / 8 / 128; an embedding model of 2.5 GB; a code model of class M.
 
 ## `hardware.gpus`
 
-One object per GPU model.
+One entry per GPU type: `model` and `count` (a planned purchase counts), plus `vram_gb` (and `tdp_w` for power) when the model is not in `references/gpus.md`, and `vendor` (`nvidia`, `amd`, `intel`) only as the user states it.
 
-| Field | Required | Meaning |
-|---|---|---|
-| `model` | yes | GPU model name, entered only as the user names it. When the user gives memory (and power) but no model, enter a descriptive name such as "unnamed 141 GB GPU" with `vram_gb` (and `tdp_w`), and `vendor` only if the user states it. A catalog row whose numbers match is a guess: do not enter its name as the answer. Name it as an open question in section 1, Context, of the blueprint, because it would also decide the manifest's hardware class and so the images carried in. |
-| `count` | yes | How many, 1 or more. A planned purchase counts: enter the number the user intends to buy. |
-| `vram_gb` | when the model is not in `catalog/gpus.toml` | Memory per GPU in GB |
-| `vendor` | no | `nvidia`, `amd` or `intel`, entered only as the user states it. The transfer manifest lists the container images for the blueprint's hardware class, taken from the vendor of the primary GPU (`cpu` when `hardware.gpus` is `[]`); a model in `catalog/gpus.toml` supplies its own vendor. When the vendor is unknown, the manifest's `Hardware:` line says unknown and it lists every vendor's image rows, each naming its hardware in the `For` column. That costs carry volume. Name the vendor as an open question in section 1, Context, of the blueprint, which asks the user for it. |
-| `tdp_w` | no | Power per GPU in watts, for the power estimate |
-
-A GPU name that fits several variants with different memory (for example `H100` or `A100`) matches no row of the GPU table, on purpose. Ask which variant it is, or ask for `vram_gb` and `vendor`.
-
-Example: `[{ "model": "example-gpu", "count": 8, "vram_gb": 48, "vendor": "nvidia" }]`. With no GPU, store `[]` and ask `hardware.ram_gb`.
-
-## After the last question
-
-Run `tier.py`, then `size.py`. Exit code 2 lists the question IDs to go back to.
+- Enter the model name only as the user names it. When the user gives memory but no name, enter a descriptive name such as "unnamed 141 GB GPU" with its memory. A table row whose numbers happen to match is a guess, not an answer: name the GPU model as an open question in the blueprint's context section, because it also decides which images are carried in.
+- A name that fits several variants with different memory (`H100`, `A100`) matches no row of the GPU table. Ask which variant it is, or ask for the memory and the vendor.
+- When the vendor is unknown, the transfer manifest has to list every vendor's image for the engine, which costs carry volume. Name the vendor as an open question too.
+- With no GPU, record `[]` and ask `hardware.ram_gb`.

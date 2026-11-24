@@ -1,0 +1,79 @@
+# Valkey (`valkey`)
+
+Open-source in-memory key-value store, a continuation of Redis OSS that speaks the RESP protocol.
+
+| Field | Value |
+|---|---|
+| Layer | `state` |
+| Version | `9.2.0` |
+| License | BSD-3-Clause |
+| Tiers | T1, T2, T3 |
+| Requires | none |
+| Evidence | docs |
+| Last verified | 2026-11-21 |
+
+## Choose when
+
+- Applications use Redis client libraries, or the data comes from Redis OSS 7.2 or earlier, and a Redis-compatible store under an open-source license is needed.
+
+## Avoid when
+
+- The existing data files were written by Redis Community Edition 7.4 or later, whose files Valkey cannot load.
+
+## Alternatives
+
+none.
+
+## Caveats
+
+- Compatibility as the project documents it: Valkey is a vendor-neutral continuation of Redis OSS that keeps compatibility with Redis OSS 7.2 and earlier versions (Valkey 7.2.4 is a fork of Redis OSS 7.2.4); it uses the RESP wire protocol (RESP2 and RESP3), and existing Redis client libraries can connect without code changes. Redis Community Edition 7.4 and later write data files that are not compatible with Valkey, and migrating from proprietary Redis versions needs another method.
+- 9.2.0 is the first stable release of the 9.2 line (release notes); the download page also lists current releases of the older lines 9.1 (9.1.4) and 9.0 (9.0.8).
+- Valkey includes certain 3-Clause BSD-licensed Redis code from Redis Ltd. and other source code (download page); the repository license file is BSD-3-Clause.
+
+## Carry in
+
+### Images
+
+| Image | Hardware | Digest |
+|---|---|---|
+| `valkey/valkey:9.2.0` | any | not recorded |
+
+### Packages
+
+None.
+
+### Runtime downloads to stage in advance
+
+None.
+
+### Telemetry and egress to switch off before the first start
+
+None documented.
+
+### License server
+
+None: no license check needs connectivity.
+
+### Air-gap notes
+
+No telemetry documentation found on 2026-11-21; vet before adoption. The documentation describes nothing that the server downloads while it runs. The image valkey/valkey:9.2.0 is on Docker Hub as named on the project's download page; other tags of the same release are 9.2.0-trixie, 9.2.0-alpine and 9.2.0-alpine3.24. For installs without the image, the download page lists binary tar.gz artifacts with .sha256 files (jammy and noble, arm64 and x86_64) at https://download.valkey.io/releases/, and the GitHub releases page has source tarballs.
+
+## Per-tool skills
+
+- `redis-to-valkey` in `air-gapped/skills`
+
+## Evidence
+
+Level: docs.
+
+All values were read from the pages in sources on 2026-11-21. Version 9.2.0 is the latest release on the GitHub releases page and on the project's download page (release date shown there: 2026-11-19; the release notes are dated 18 November 2026). The telemetry and air-gap findings are negative: they rest on searching a checkout of valkey-io/valkey-doc (the documentation repository) and of valkey-io/valkey at tag 9.2.0 for 'telemetry', 'phone home', 'analytics', 'update check', 'usage statistics', 'air-gap', 'airgap' and 'offline'; the only hits were unrelated (cluster slot statistics, analytics as a use case).
+
+Sources:
+
+- https://github.com/valkey-io/valkey/releases/tag/9.2.0
+- https://github.com/valkey-io/valkey/blob/unstable/COPYING
+- https://valkey.io/download/
+- https://valkey.io/topics/installation/
+- https://valkey.io/topics/migration/
+- https://hub.docker.com/v2/repositories/valkey/valkey/tags/9.2.0
+- https://github.com/valkey-io/valkey-doc
