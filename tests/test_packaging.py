@@ -91,7 +91,9 @@ class ManifestTest(unittest.TestCase):
 ALLOWED_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
 PACKAGE_FILES = {"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-workspace.yaml", "requirements.txt",
                  "pyproject.toml", "uv.lock", "bun.lock", "bun.lockb", ".npmrc", "bunfig.toml", "uv.toml"}
-DOWNLOAD_AND_RUN = re.compile(r"(curl|wget)[^\n|]*\|\s*(ba|z)?sh\b|\b(npx|bunx|uvx|pnpm dlx|yarn dlx|pipx run)\s", re.I)
+# The directory flags any "|" after curl or wget on the same line, a markdown table cell included
+# (developer portal validation of 2026-11-24, fetch.md).
+DOWNLOAD_AND_RUN = re.compile(r"(curl|wget)[^\n]*\||\b(npx|bunx|uvx|pnpm dlx|yarn dlx|pipx run)\s", re.I)
 
 
 def plugin_files():
