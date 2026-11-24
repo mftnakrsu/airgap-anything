@@ -91,9 +91,21 @@ class ManifestTest(unittest.TestCase):
 ALLOWED_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
 PACKAGE_FILES = {"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-workspace.yaml", "requirements.txt",
                  "pyproject.toml", "uv.lock", "bun.lock", "bun.lockb", ".npmrc", "bunfig.toml", "uv.toml"}
-# The directory flags any "|" after curl or wget on the same line, a markdown table cell included
-# (developer portal validation of 2026-11-24, fetch.md).
-DOWNLOAD_AND_RUN = re.compile(r"(curl|wget)[^\n]*\||\b(npx|bunx|uvx|pnpm dlx|yarn dlx|pipx run)\s", re.I)
+# Download-and-run patterns. In prose (outside code fences) the directory also flagged "curl" followed on
+# the same line by a table's "|" or a URL; developer portal validation of 2026-11-24, fetch.md, where
+# bisecting showed both. Code blocks with curl commands that download to a file were not flagged.
+DOWNLOAD_AND_RUN = re.compile(r"(curl|wget)[^\n|]*\|\s*(ba|z)?sh\b|\b(npx|bunx|uvx|pnpm dlx|yarn dlx|pipx run)\s", re.I)
+PROSE_DOWNLOAD = re.compile(r"\b(curl|wget)\b.*(\||https?://)", re.I)
+
+
+def prose_lines(text):
+    """Lines outside fenced code blocks."""
+    inside = False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            inside = not inside
+        elif not inside:
+            yield line
 
 
 def plugin_files():
@@ -128,8 +140,10 @@ class DirectoryRulesTest(unittest.TestCase):
     def test_no_text_downloads_and_runs_code(self):
         for path in plugin_files():
             if path.suffix in {".md", ".txt", ".json", ".yaml", ".yml"}:
+                text = path.read_text(encoding="utf-8")
                 with self.subTest(path=path.relative_to(PLUGIN_DIR).as_posix()):
-                    self.assertIsNone(DOWNLOAD_AND_RUN.search(path.read_text(encoding="utf-8")))
+                    self.assertIsNone(DOWNLOAD_AND_RUN.search(text))
+                    self.assertEqual([l for l in prose_lines(text) if PROSE_DOWNLOAD.search(l)], [])
 
     def test_the_only_manifest_folder_is_the_plugins_own(self):
         folders = [p for p in PLUGIN_DIR.rglob(".claude-plugin") if p.is_dir()]

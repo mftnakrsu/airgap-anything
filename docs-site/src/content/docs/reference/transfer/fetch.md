@@ -119,4 +119,4 @@ Every command line above was taken from these pages; a changed line needs its pa
 | `sha256sum`, `md5sum`, `sha512sum` | `-c` reads `HASH  FILE` lines and exits non-zero when a listed file cannot be read or does not match; `--quiet` prints only failures; `--ignore-missing` skips listed files that are absent | https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (sections "cksum invocation" and "md5sum invocation"), https://www.gnu.org/software/coreutils/manual/html_node/sha2-utilities.html |
 | `split` | `-b SIZE` bytes per part, `-a 3` three-digit suffixes, `--numeric-suffixes=1` counting from 1 | https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi (section "split invocation") |
 
-`curl` with `--fail --location --silent --show-error --output`: https://curl.se/docs/manpage.html.
+The downloads under Packages, with the options `--fail --location --silent --show-error --output`: https://curl.se/docs/manpage.html
