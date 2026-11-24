@@ -17,10 +17,10 @@ Pass: the archive's checksum matches and the tool prints its version, equal to t
 |---|---|---|
 | Qwen Code | `sha256sum -c SHA256SUMS --ignore-missing` with `SHA256SUMS` next to the archive | `qwen --version` |
 | opencode | `sha256sum -c SHA256SUMS --ignore-missing` with `SHA256SUMS` from the same release | `opencode --version` |
-| Codex CLI | the release lists no checksum file in the research; `.sigstore` files are carried but not verified by `airgap-transfer`. Record the SHA-256 of the archive when it is carried in and compare it here | `codex --version` |
-| Claude Code | the SHA-256 for the platform in `$version/manifest.json`; npm installs use the npm integrity value | `claude --version` |
+| Codex CLI | the release publishes no checksum file for this archive (`codex-package_SHA256SUMS` lists other archives); `.sigstore` files are carried but not verified by `airgap-transfer`. Record the SHA-256 of the archive when it is carried in and compare it here | `codex --version` |
+| Claude Code | `sha256sum -c SHASUMS256.txt --ignore-missing` with `SHASUMS256.txt` from the same release; for the bootstrap route the SHA-256 for the platform in `$version/manifest.json`; npm installs use the npm integrity value | `claude --version` |
 
-`--ignore-missing` skips the files of `SHA256SUMS` that are not in the folder, so one archive can be checked against the full list.
+`--ignore-missing` skips the files of `SHA256SUMS` that are not in the folder, so one archive can be checked against the full list (GNU coreutils: https://www.gnu.org/software/coreutils/manual/html_node/sha2-utilities.html, options in https://github.com/coreutils/coreutils/blob/v9.12/doc/coreutils.texi, section "cksum invocation").
 
 ## 2. Smoke test
 
@@ -74,7 +74,7 @@ For Codex CLI, also confirm whether an edit inside `workspace-write` asked for a
 
 ## 3. Egress check
 
-Run during the smoke test, on the same command. Pass: every address is the gateway, the engine, loopback or a local socket. Fail: any other address.
+Run during the smoke test, on the same command. Pass: every address is the gateway, the engine, the internal DNS resolver (port 53), loopback or a local socket. Fail: any other address.
 
 - Linux: run the smoke test command under `strace -f -e trace=connect -o egress.log`, as in `strace -f -e trace=connect -o egress.log <smoke test command>`, then read `egress.log`. `-f` follows child processes and `-e trace=connect` records only connection attempts. Both are documented in strace(1): https://man7.org/linux/man-pages/man1/strace.1.html. The log shows addresses, not names: compare them with the gateway's and the engine's addresses, and resolve any other address with the internal resolver before you judge it.
 - macOS and Windows, where strace is not available: the firewall's deny log for the developer machine during the smoke test must be empty. A deny entry is a fail.

@@ -1,6 +1,6 @@
 # Configuration templates
 
-Goal: the files the skill writes into `docs/airgap/agents/<tool>/`, one section per tool. Each template uses only keys that appear in the tool's catalog entry; the switch for every line, with its source, is in that entry's Egress table. Fill in the placeholders and change nothing else; where a value is not documented, the template says so.
+Goal: the files the skill writes into `docs/airgap/agents/<tool>/`, one section per tool. Each template uses only keys that appear in the tool's catalog entry; the switch for every line, with its source, is in that entry's Egress switches. Fill in the placeholders and change nothing else; where a value is not documented, the template says so.
 
 ## Contents
 
@@ -24,8 +24,9 @@ Keys always come from environment variables. No template holds a key, and `agent
 Layout of a tool's folder:
 
 - `docs/airgap/agents/<tool>/user/` holds the user file, to be placed at the path the section names.
-- `docs/airgap/agents/<tool>/central/` holds the central policy file, written when `central` is yes, to be placed at its documented path (`references/interview.md`).
-- The permission stance in the Qwen Code, Codex CLI and opencode templates is `edit with approval`; for another stance use the mapping in `references/decisions.md`. The Claude Code template sets no edit rules (see its notes).
+- `docs/airgap/agents/<tool>/central/` holds the central policy file, written when `central` is yes, to be placed at its documented path (the catalog entry's "Permissions and central policy").
+- The permission stance in the Qwen Code and Codex CLI templates is `edit with approval`; for another stance use the mapping in `references/decisions.md`. The opencode and Claude Code templates set no edit rules, because the action and tool names for edits are not in the research (see their notes): `agents.md` records the stance as an open item for them.
+- `agents.md` lists, per tool, which switches the central file enforces and which are only defaults a user can change; the host firewall is the backstop for both. Codex CLI's `managed_config.toml` and opencode's global user config hold defaults only.
 
 ## Qwen Code
 
@@ -96,7 +97,6 @@ web_search = "disabled"
 check_for_update_on_startup = false
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
-model_catalog_json = "/etc/codex/gateway-models.json"
 
 [model_providers.enterprise-gateway]
 name = "Organization Gateway"
@@ -113,10 +113,9 @@ enabled = false
 ```
 
 - Leave `[otel]` out. Leave `sandbox_workspace_write.network_access` unset: the sandbox then keeps network off.
-- `model_catalog_json` points to a local file the skill writes. The format of that file is not in the research: take it from https://learn.chatgpt.com/docs/enterprise/connect-to-a-gateway.md.
 - The context window setting is not documented in the research. Private CA: `CODEX_CA_CERTIFICATE`.
 
-Central files, placed at `/etc/codex/managed_config.toml` (defaults: the same lines as the user file above, without the provider block when users keep their own) and `/etc/codex/requirements.toml` (limits users cannot exceed):
+Central files, placed at `/etc/codex/managed_config.toml` and `/etc/codex/requirements.toml`. `managed_config.toml` holds the same lines as the user file above (without the provider block when users keep their own), but only as defaults: a user can still change `[analytics]`, `[feedback]` and `check_for_update_on_startup`, so `agents.md` lists them as defaults only. `requirements.toml` holds the limits users cannot exceed:
 
 ```toml
 allowed_approval_policies = ["on-request"]
@@ -132,7 +131,7 @@ allowed_web_search_modes = ["disabled"]
 
 Catalog: `catalog/opencode.md`. Chat Completions. Pinned to V2 2.4.1; V2 documents no switch for the `models.opencode.ai` fetch, so the egress check is mandatory.
 
-User file, placed at `~/.config/opencode/opencode.json`. `update` is read from the global config only, so it must be here:
+User file, placed at `~/.config/opencode/opencode.json`. `update` is read from the global config only, so it must be here. `update` and `share` live in this user file, not in `policies`, so they are defaults a user can change; `agents.md` lists them as defaults only:
 
 ```json
 {
@@ -177,6 +176,8 @@ Central file, placed at `/etc/opencode/opencode.json`. `policies` outrank user a
 ```
 
 The research gives the action names and says `permissions` entries are `{action, resource, effect}`; it shows no `policies` example, so the entry shape above is carried over from `permissions` and must be confirmed at https://opencode.ai/docs/policies/. macOS MDM: `ai.opencode.managed`. No sandbox is documented: enforce the network boundary on the host.
+
+The permission stance is not written for opencode: the base policy allows `*`, and the action and resource names for edits are not in the research (https://opencode.ai/docs/permissions/). `agents.md` records the stance as an open item, to be written once those names are confirmed.
 
 ## Claude Code
 

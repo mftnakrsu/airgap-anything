@@ -1,6 +1,6 @@
 # MCP servers and skills inside the network
 
-Goal: pick the MCP servers for the systems the user named in `internal_tools`, give an offline install route for each, and point to the per-tool skills worth carrying in. Versions were read on 2026-11-24. The packages and images go to sections 3 and 5 of the transfer manifest, the skills to section 6.
+Goal: pick the MCP servers for the systems the user named in `internal_tools`, give an offline install route for each, and point to the per-tool skills worth carrying in. Versions were read on 2026-11-24. Release binaries with a direct URL go to section 3 of the transfer manifest; pip and npm packages and images go to section 5 as manual items with the commands below; the skills go to section 6.
 
 ## Contents
 
@@ -32,11 +32,11 @@ Goal: pick the MCP servers for the systems the user named in `internal_tools`, g
 
 `fetch` (`mcp-server-fetch`) and web search stay off by default: fetching is the server's job, it refuses private, loopback and link-local addresses unless `--allow-private-ips` is set, and web search leaves the network. Add `fetch` only when the user names an internal target, and then limit it with `--allowed-hosts`.
 
-Also off: the claude.ai connectors and the official plugin marketplace of Claude Code, the `$skill-installer` of Codex CLI, and `codex mcp login` (the Egress table of each catalog entry).
+Also off: the claude.ai connectors and the official plugin marketplace of Claude Code, the `$skill-installer` of Codex CLI, and `codex mcp login` (the Egress switches of each catalog entry).
 
 ## Offline install routes
 
-None is documented in the servers' READMEs; these are the routes the research found. The skill writes them into the transfer manifest. A person runs them on the connected workstation through `airgap-transfer`.
+None is documented in the servers' READMEs; these are the routes the research found. `airgap-transfer` fetches by URL only, so a route that needs `pip download`, `npm pack` or `docker build` goes to section 5 of the manifest as a manual item, with its commands copied from below: a person runs them on the connected workstation and adds the files under the bundle's `manual/` folder.
 
 - Python packages (`mcp-server-git`, `mcp-atlassian`): PyPI ships `py3-none-any` wheels. Download them with `pip download`, carry the folder in, then run `pip install --no-index --find-links=DIR`. Python 3.10 or newer (Fetch needs 3.11.5 or newer). Source: https://pip.pypa.io/en/stable/user_guide/.
 - npm packages: the reference servers need Node 24 or newer. Each tarball has runtime dependencies (zod, `@modelcontextprotocol/server` and others) that must be mirrored too: get the tarballs with `npm pack` for the package and each dependency.

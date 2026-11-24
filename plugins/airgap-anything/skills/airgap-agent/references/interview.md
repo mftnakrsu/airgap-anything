@@ -4,7 +4,7 @@ Goal: an answer for each of the eight questions below, so that `docs/airgap/agen
 
 ## How to ask
 
-- Ask in the user's language, in one message that holds all eight questions with their defaults. Do not ask them one by one.
+- Ask only the questions the user's message and the blueprint leave open. When the user has asked you to set it up, state the defaults you take for the open ones, list them as assumptions in `docs/airgap/agents.md`, and continue. Otherwise ask them in one message, in the user's language, each with its default. Do not ask them one by one.
 - Read the model and the engine from the blueprint (`docs/airgap/blueprint.md`, or the path the architect used) when one exists, and tell the user which answers you already took from it. Questions 1 and 3 then need no asking.
 - A skipped or "I don't know" answer takes the default. List every default you used in the assumptions of `docs/airgap/agents.md`.
 - Keep the keys and the choice values exactly as written here, whatever the language of the conversation.
