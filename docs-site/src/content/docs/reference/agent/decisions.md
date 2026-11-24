@@ -13,11 +13,13 @@ Goal: choose the tools, state the reason for each choice and for each refusal, a
 | Situation | Tool | Catalog | Why |
 |---|---|---|---|
 | Default, open-weight model | Qwen Code (Apache-2.0) | [`catalog/qwen-code.md`](/reference/agent/catalog/qwen-code/) | Documented install from a release archive (`--archive`, `SHA256SUMS`); every outbound connection has a documented switch (usage statistics, models.dev catalog, web search) |
-| Strongest sandbox or central enforcement wanted, and the server's `/v1/responses` passes the smoke test | Codex CLI (Apache-2.0) | [`catalog/codex-cli.md`](/reference/agent/catalog/codex-cli/) | `requirements.toml` enforcement, bubblewrap sandbox; speaks only the Responses API |
+| Strongest sandbox or central enforcement wanted, and the server's `/v1/responses` passes the smoke test | Codex CLI (Apache-2.0) | [`catalog/codex-cli.md`](/reference/agent/catalog/codex-cli/) | `requirements.toml` enforcement, bubblewrap sandbox; speaks only the Responses API. Whether `/v1/responses` passes is known only inside, so Qwen Code is always carried as the fallback |
 | The team already uses opencode | opencode (MIT) | [`catalog/opencode.md`](/reference/agent/catalog/opencode/) | Central `policies`. Pinned to V2 2.4.1: the docs describe V2 while GitHub "latest" still returns V1 1.19.6. V2 documents no switch for its model-catalog fetch (models.opencode.ai, bundled fallback), so the egress check is mandatory |
 | `claude_route` is yes | Claude Code | [`catalog/claude-code.md`](/reference/agent/catalog/claude-code/) | Managed settings, sandbox, local marketplaces. Never with an open-weight model |
 
 More than one tool may be chosen. Each gets its own folder under `docs/airgap/agents/` and its own smoke test and egress check.
+
+When Codex CLI is chosen, Qwen Code is chosen with it as the fallback: its archive, configuration and checks are carried too, and `agents.md` says that if the `/v1/responses` check fails inside, the team switches to Qwen Code without a second transfer.
 
 ## Claude Code
 
@@ -25,7 +27,7 @@ Claude Code is never configured against an open-weight model. The reason, which 
 
 Claude Code is offered only when `claude_route` is yes: the organization reaches Claude models through a private route, for example a private Bedrock or Agent Platform endpoint behind its gateway, and holds a Claude account (Pro, Max, Ultra, Team, Enterprise or Console). Its use stays subject to Anthropic's terms regardless of the platform it is reached through.
 
-When the user insists on Claude Code with a local model, decline the pairing, give the reason above, and offer Qwen Code or opencode for that model. Likewise, when the user asks to leave telemetry on "just for now", decline: every switch in the catalog's Egress table is written, and the egress check proves it.
+When the user insists on Claude Code with a local model, decline the pairing, give the reason above, and offer Qwen Code or opencode for that model. Likewise, when the user asks to leave telemetry on "just for now", decline: every documented switch in the catalog's Egress switches is written, and the egress check proves it.
 
 ## Permission stance
 

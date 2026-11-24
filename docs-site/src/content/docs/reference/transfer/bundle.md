@@ -97,7 +97,7 @@ For the people who approve the transfer and for scanning stations, largest item 
 | Item | Kind | Component | Version | Source | License | Files | Size | Notes |
 |---|---|---|---|---|---|---|---|---|
 
-Source is the image reference and digest, the model repository and commit, or the URL. Notes name pickle files the user allowed, a package without publisher checksums, and manual items. The SHA-256 of every file is in `SHA256SUMS`.
+Source is the image reference and digest, the model repository and commit, the URL, or the project path. Notes name pickle files the user allowed, a package without publisher checksums, and manual items. The SHA-256 of every file is in `SHA256SUMS`.
 
 ## Writing the volumes
 

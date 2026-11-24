@@ -20,7 +20,7 @@ Anthropic's terminal coding agent. It speaks the Anthropic Messages API and is c
 
 ## Choose when
 
-- The organization reaches Claude models through a private route (for example a private Bedrock or Vertex endpoint behind its gateway) and holds a Claude account: Pro, Max, Ultra, Team, Enterprise or Console.
+- The organization reaches Claude models through a private route (for example a private Bedrock or Agent Platform endpoint behind its gateway) and holds a Claude account: Pro, Max, Ultra, Team, Enterprise or Console.
 - Managed settings, a sandbox and local plugin marketplaces are wanted.
 
 ## Avoid when
@@ -56,10 +56,10 @@ Non-interactive run (smoke test): `claude -p "<prompt>"` (or `--print`); a call 
 | `/feedback` and surveys | on | `DISABLE_FEEDBACK_COMMAND`; `CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY` | https://code.claude.com/docs/en/data-usage |
 | Release notes (raw.githubusercontent.com) | on | only the nonessential-traffic flag; a dedicated switch is not documented | https://code.claude.com/docs/en/network-config |
 | WebFetch domain check (api.anthropic.com), not affected by the nonessential-traffic flag | on | `skipWebFetchPreflight: true` | https://code.claude.com/docs/en/data-usage |
-| WebSearch, which "runs a query against Anthropic's web search backend" | available | deny `WebSearch` in `permissions.deny` | https://code.claude.com/docs/en/tools-reference |
+| WebSearch, which "runs a query against Anthropic's web search backend" | not documented | deny `WebSearch` in `permissions.deny` | https://code.claude.com/docs/en/tools-reference |
 | Official plugin marketplace (github.com) | auto-installs | `CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL=1` | https://code.claude.com/docs/en/env-vars https://code.claude.com/docs/en/network-config |
-| claude.ai connectors (mcp-proxy.anthropic.com) | on | `ENABLE_CLAUDEAI_MCP_SERVERS=false` or `disableClaudeAiConnectors` | https://code.claude.com/docs/en/network-config |
-| Artifacts (*.frame.claudeusercontent.com) | on | `CLAUDE_CODE_DISABLE_ARTIFACT=1` | https://code.claude.com/docs/en/network-config |
+| claude.ai connectors (mcp-proxy.anthropic.com) | not documented | `ENABLE_CLAUDEAI_MCP_SERVERS=false` or `disableClaudeAiConnectors` | https://code.claude.com/docs/en/network-config |
+| Artifacts (*.frame.claudeusercontent.com) | not documented | `CLAUDE_CODE_DISABLE_ARTIFACT=1` | https://code.claude.com/docs/en/network-config |
 | Plugin install counts (storage.googleapis.com) | on | not documented | https://code.claude.com/docs/en/network-config |
 | Docs lookups (code.claude.com) | on | not documented | https://code.claude.com/docs/en/network-config |
 | First-run connectivity check (api.anthropic.com, platform.claude.com) | on | not documented | https://code.claude.com/docs/en/network-config |
@@ -92,10 +92,14 @@ Non-interactive run (smoke test): `claude -p "<prompt>"` (or `--print`); a call 
 
 | File | Architecture | Source | Checksum |
 |---|---|---|---|
-| native `claude` binary, `$version/$platform/claude` | amd64, arm64 | https://downloads.claude.ai/claude-code-releases/bootstrap.sh names the download base; the base URL is not recorded here | `$version/manifest.json` lists a SHA256 per platform; `manifest.json.sig` (2.1.89 and later) is GPG-signed, fingerprint `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE` |
-| npm `@anthropic-ai/claude-code@2.1.331` with the per-platform packages `-linux-x64`, `-linux-arm64`, `-linux-x64-musl`, `-linux-arm64-musl` | amd64, arm64 | https://registry.npmjs.org/@anthropic-ai/claude-code/latest | npm integrity |
+| `claude-linux-x64.tar.gz` (variant `-musl`: the same URL with `-musl` before `.tar.gz`) | amd64 | https://github.com/anthropics/claude-code/releases/download/v2.1.331/claude-linux-x64.tar.gz | https://github.com/anthropics/claude-code/releases/download/v2.1.331/SHASUMS256.txt |
+| `claude-linux-arm64.tar.gz` (variant `-musl`: the same URL with `-musl` before `.tar.gz`) | arm64 | https://github.com/anthropics/claude-code/releases/download/v2.1.331/claude-linux-arm64.tar.gz | https://github.com/anthropics/claude-code/releases/download/v2.1.331/SHASUMS256.txt |
 
-The bootstrap script fetches the binary, checks it against `manifest.json`, then runs the binary's `install` subcommand. Linux needs Ubuntu 20.04 or newer, Debian 10 or newer, or Alpine 3.19 or newer.
+The URLs are the `browser_download_url` values of the GitHub release API for tag `v2.1.331`, read 2026-11-24; `SHASUMS256.txt` lists all four Linux archives, and the release also holds `SHASUMS256.txt.sig` (not checked by airgap-transfer). What the archive holds and how to install from it are not documented in the research.
+
+The documented route is the bootstrap script (https://downloads.claude.ai/claude-code-releases/bootstrap.sh): it fetches `$version/$platform/claude` from a download base not recorded here, checks it against `$version/manifest.json` (a SHA256 per platform; `manifest.json.sig`, 2.1.89 and later, is GPG-signed, fingerprint `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`), then runs the binary's `install` subcommand. Linux needs Ubuntu 20.04 or newer, Debian 10 or newer, or Alpine 3.19 or newer.
+
+The npm route, `@anthropic-ai/claude-code@2.1.331` with the per-platform packages `-linux-x64`, `-linux-arm64`, `-linux-x64-musl`, `-linux-arm64-musl` (deprecated, Node 22 or newer), has no direct URL here: it goes to section 5 of the manifest as a manual item, with the documented command `npm install -g @anthropic-ai/claude-code`; an offline npm procedure is not documented.
 
 ### Runtime downloads to stage in advance
 
@@ -108,6 +112,7 @@ All rows of Egress switches, in the managed settings file (`env` block). Set `CL
 ## Evidence
 
 - https://api.github.com/repos/anthropics/claude-code/releases/latest
+- https://api.github.com/repos/anthropics/claude-code/releases/tags/v2.1.331
 - https://registry.npmjs.org/@anthropic-ai/claude-code/latest
 - https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md
 - https://raw.githubusercontent.com/anthropics/claude-code/main/README.md

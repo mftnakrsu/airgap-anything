@@ -12,7 +12,10 @@
       "llm-gateway",
       "doesn't support routing Claude Code to non-Claude models"
     ],
-    "Qwen Code",
+    [
+      "Qwen Code",
+      "opencode"
+    ],
     "glm45"
   ],
   "files": [

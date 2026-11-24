@@ -45,13 +45,13 @@ Non-interactive run (smoke test): `opencode run "<prompt>"` (https://opencode.ai
 | Connection | Default | Switch | Source |
 |---|---|---|---|
 | Model catalog `models.opencode.ai` (5-minute TTL, bundled snapshot fallback) | on | not documented for V2 | https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/core/src/models-dev.ts |
-| Updates | on | `"update": "disable"`, read from the global config only | https://opencode.ai/docs/config/ |
+| Updates | not documented | `"update": "disable"`, read from the global config only | https://opencode.ai/docs/config/ |
 | Share | not documented | `"share": "disabled"` | https://opencode.ai/config.json |
 | Web search | not documented | `"websearch": false`; deny `websearch.use` in policies | https://opencode.ai/docs/websearch/ |
 | Free models and Console | not documented | `OPENCODE_DISABLE_FREE_MODELS=1`, or deny `integration.use` and `integration.connect` | https://opencode.ai/docs/enterprise/ |
 | URL entries in `instructions` | fetched | use file paths only | https://opencode.ai/docs/instructions/ |
 | URL entries in `skills` | fetched | use file paths only | https://opencode.ai/docs/skills/ |
-| Remote-MCP OAuth discovery and dynamic client registration | on | `"oauth": false` | https://opencode.ai/docs/mcp-servers/ |
+| Remote-MCP OAuth discovery and dynamic client registration | not documented | `"oauth": false` | https://opencode.ai/docs/mcp-servers/ |
 | npm plugins (installed in the background) | on when configured | configure none; deny `plugin.use` in policies | https://opencode.ai/docs/plugins/ |
 
 ## Permissions and central policy
@@ -69,7 +69,7 @@ Non-interactive run (smoke test): `opencode run "<prompt>"` (https://opencode.ai
 ## Caveats
 
 - Version split: the docs describe OpenCode 2 (V2). GitHub "latest" still returns V1 `1.19.6` (2026-11-17), and V1 gets critical fixes only. This entry pins V2 `v2.4.1` (2026-11-23).
-- V2 documents no switch for the `models.opencode.ai` catalog fetch and none for telemetry or error reporting. V1 documents `OPENCODE_DISABLE_MODELS_FETCH`, `OPENCODE_MODELS_PATH`, `OPENCODE_DISABLE_AUTOUPDATE` and `OPENCODE_DISABLE_LSP_DOWNLOAD` (V1 docs); do not assume they work in V2. Confirm with an egress capture.
+- V2 documents no switch for the `models.opencode.ai` catalog fetch and none for telemetry or error reporting. V1 documents `OPENCODE_DISABLE_MODELS_FETCH`, `OPENCODE_MODELS_PATH`, `OPENCODE_DISABLE_AUTOUPDATE` and `OPENCODE_DISABLE_LSP_DOWNLOAD` (V1 docs); do not assume they work in V2 and do not write them for V2. Confirm with an egress capture.
 - No documented offline install procedure and no documented sandbox.
 - The repository moved: `sst/opencode` resolves to `anomalyco/opencode`.
 
@@ -79,8 +79,10 @@ Non-interactive run (smoke test): `opencode run "<prompt>"` (https://opencode.ai
 
 | File | Architecture | Source | Checksum |
 |---|---|---|---|
-| `opencode-linux-x64.tar.gz` (variants `-baseline`, `-musl`) | amd64 | https://api.github.com/repos/anomalyco/opencode/releases/tags/v2.4.1 | `SHA256SUMS` in the same release |
-| `opencode-linux-arm64.tar.gz` (variant `-musl`) | arm64 | https://api.github.com/repos/anomalyco/opencode/releases/tags/v2.4.1 | `SHA256SUMS` in the same release |
+| `opencode-linux-x64.tar.gz` (variants `-baseline`, `-musl`, `-baseline-musl`: the same URL with the variant before `.tar.gz`) | amd64 | https://github.com/anomalyco/opencode/releases/download/v2.4.1/opencode-linux-x64.tar.gz | https://github.com/anomalyco/opencode/releases/download/v2.4.1/SHA256SUMS |
+| `opencode-linux-arm64.tar.gz` (variant `-musl`: the same URL with the variant before `.tar.gz`) | arm64 | https://github.com/anomalyco/opencode/releases/download/v2.4.1/opencode-linux-arm64.tar.gz | https://github.com/anomalyco/opencode/releases/download/v2.4.1/SHA256SUMS |
+
+The URLs are the `browser_download_url` values of the release API for the tag (Evidence), read 2026-11-24. The npm route (`@opencode/cli`) has no direct URL here: it goes to section 5 of the manifest as a manual item.
 
 ### Runtime downloads to stage in advance
 

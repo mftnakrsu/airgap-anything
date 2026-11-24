@@ -2,6 +2,9 @@
   "tools": [
     "codex-cli"
   ],
+  "fallback": [
+    "qwen-code"
+  ],
   "must_mention": [
     "/v1/responses",
     "requirements.toml",
