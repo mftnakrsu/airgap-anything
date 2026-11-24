@@ -35,7 +35,7 @@ The commands assume GNU coreutils and `find` (Linux). On macOS, install them or 
 | 2 | model | | `org/name` at `REVISION` | `models/main-chat` | | planned |
 | 3 | package | `k3s` | URL | `packages/k3s/FILE` | | planned |
 | 4 | manual | `vllm` | runtime download: compiled kernels | `manual/vllm-kernels` | | ask after the fetch |
-| 5 | file | `qwen-code` | `docs/airgap/agents/qwen-code/` | `files/agents/qwen-code/` | | planned |
+| 5 | file | `qwen-code` | `docs/airgap/agents/qwen-code/` | `files/docs/airgap/agents/qwen-code/` | | planned |
 
 ## Volumes
 
@@ -52,7 +52,7 @@ B/
 ├── images/COMPONENT/NAME.tar           and NAME.digest
 ├── models/MODEL/...                    as downloaded, at the pinned commit
 ├── packages/COMPONENT/FILE             and checksums/SUMSFILE
-├── files/PATH/...                      project folders, copied as they are
+├── files/<project path>/...            project files, copied with their project paths
 └── manual/ITEM/...                     files the user added
 ```
 

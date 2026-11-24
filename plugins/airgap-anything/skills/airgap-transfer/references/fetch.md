@@ -85,7 +85,13 @@ curl --fail --location --silent --show-error --output "B/packages/COMPONENT/chec
 
 The second line only when the manifest names a publisher checksum file for the package; `SUMSFILE` is the last part of its URL.
 
-**Project files.** A manifest row whose source is a path in the project (for example `docs/airgap/agents/qwen-code/`) is copied into the bundle under `files/` with its folder structure, and its files go into `SHA256SUMS` like any other. Nothing is downloaded.
+**Project files.** A manifest row whose source is a path in the project (for example `docs/airgap/agents/qwen-code/`) is copied into the bundle, not downloaded: its bundle path is `files/` followed by the full project-relative path, unchanged, so `files/docs/airgap/agents/qwen-code/`. `SRC` is that project path and `B` the bundle folder:
+
+```sh
+mkdir -p "B/files/SRC" && cp -R "SRC/." "B/files/SRC/"
+```
+
+Copying `B/files/` back onto the project root puts every file where it was. Its files go into `SHA256SUMS` like any other.
 
 ## Checking what arrived
 

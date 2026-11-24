@@ -65,6 +65,8 @@ class TransferCarriesProjectFilesTest(unittest.TestCase):
         self.assertRegex(fetch, r"(?i)copied into the bundle")
         self.assertIn("| file |", bundle)
         self.assertIn("files/", bundle)
+        self.assertIn("files/docs/airgap/agents/qwen-code/", bundle)
+        self.assertIn("cp -R", fetch)
 
 
 if __name__ == "__main__":
