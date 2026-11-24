@@ -1,0 +1,51 @@
+# Interview
+
+Goal: an answer for each of the eight questions below, so that `docs/airgap/rag.md` can say what was chosen and why. The interview is short: every question has a default, and a skipped question takes it.
+
+## How to ask
+
+- Ask only the questions the user's message and the blueprint leave open. When the user has asked you to set it up, state the defaults you take for the open ones, list them as assumptions in `docs/airgap/rag.md`, and continue. Otherwise ask them in one message, in the user's language, each with its default. Do not ask them one by one.
+- Read the blueprint (`docs/airgap/blueprint.md`, or the path the architect used) when one exists, and tell the user which answers you already took from it. Questions 7 and 8 then need no asking.
+- A skipped or "I don't know" answer takes the default. List every default you used in the assumptions of `rag.md`.
+- Keep the keys and the choice values exactly as written here, whatever the language of the conversation.
+- Never ask for a key or a password. Keys come from environment variables that the user sets inside; `rag.md` names them.
+
+The fast path, in its own paragraph: when the user's answers are short, or they say they are in a hurry or ask to go faster, stop asking. Offer the defaults, record every one of them as an assumption, and show the sizing as one summary table (`references/sizing.md`, "The fast path") instead of the step-by-step calculation. The step-by-step version stays in `rag.md`, so the user can read it later. Question 3 has no default for the volume: when the user gives no number, say that the sizing cannot be finished and put the volume in the open items.
+
+## Questions
+
+| # | Key | Question | Default |
+|---|---|---|---|
+| 1 | `platform` | Open WebUI knowledge bases, a standalone RAG server, or something else? | Open WebUI |
+| 2 | `consumers` | Who searches the documents: chat users, CLI and scripts, coding agents? | chat users |
+| 3 | `sources` | Where do the documents live (file share, folders, document system), and how many documents and pages? | asked; no default for the volume |
+| 4 | `doc_types` | What kinds of documents: digital PDF, scanned PDF, Word/PowerPoint, tables? | mostly digital PDF and Office |
+| 5 | `languages` | Which languages are in the documents? | the user's language and English |
+| 6 | `updates` | How many new or changed pages a day or week? | weekly batch |
+| 7 | `access` | Who may see what: one shared space, or a group per department? Read from `org.isolation` in the blueprint. | from the blueprint |
+| 8 | `hardware` | Is a GPU available for extraction and embeddings, or only CPU? Read from the blueprint (`hardware.gpus`). | from the blueprint |
+
+## The platform question
+
+Ask question 1 with three options, in this order, and say which one you recommend:
+
+1. **Open WebUI knowledge bases** (recommended). Open WebUI is already in the architect's blueprint, and knowledge bases grant Read or Write by group, with groups synced from LDAP or OAuth.
+2. **A standalone RAG server**, with RAGFlow as the default. Choose it when scanned or complex PDFs and tables are the core of the corpus and the user wants a separate server with its own UI and API. Its sharing is only "Only me" or "Team", so say that group permissions are not available (`catalog/ragflow.md`).
+3. **Something else**, the user's own tool or idea, for example an existing Elasticsearch.
+
+When the user chooses something else:
+
+- Write a custom record in `rag.md`: the name, the version, the link to its documentation, who runs it and how the embedding and extraction reach it. Ask for the version and the link; if the user has neither, write "not given" and put it in the open items.
+- Label every value that is not in this skill's catalog `unverified`: versions, settings, ports, image names, egress behavior. Do not fill a gap from memory.
+- The air-gap checklist still applies, as for the other options: the models it needs are staged (embedding, reranker, OCR, and anything it fetches at its first start), its telemetry and update checks are named and switched off or listed as open items, its images and files get manifest rows marked "(from airgap-rag)", and the egress check of `references/verification.md` covers it.
+- This skill's catalog entries for the embedding and reranker models, `docling-serve`, `pgvector` and `qdrant` stay usable behind a custom tool, because they are independent services.
+
+## Mapping answers
+
+- `platform`: Open WebUI follows `references/decisions.md` (platform table) and the files `references/extraction.md`, `references/models.md` and `references/ingestion.md`. A standalone RAG server writes `catalog/ragflow.md`'s settings instead of the Open WebUI ones. Something else: above.
+- `consumers`: chat users use Open WebUI's interface. CLI users and scripts need the API runbook (`references/ingestion.md`). Coding agents need the LLM wiki (`references/wiki.md`), because Open WebUI has no MCP server.
+- `sources` and `updates`: the volume feeds the sizing (`references/sizing.md`); the update rate decides whether `rag.md` needs the periodic-update runbook or only the first load. When the number of `rag` users differs from the blueprint's `rag` share, tell the user to rerun the architect's sizing. Do not recompute it here, so the arithmetic stays in one place.
+- `doc_types`: the tier of `references/extraction.md`. Mostly digital PDF and Office: the built-in extractor. Scanned or table-heavy: `catalog/docling-serve.md`.
+- `languages`: the OCR languages of docling-serve and the embedding model (`references/models.md`: a language not named for Qwen3 means bge-m3). Each language also becomes one OCR check inside (`references/verification.md`).
+- `access`: `none` gives one shared knowledge base. `per_department` gives one knowledge base and one group per department. `multi_level` gives one knowledge base per classification level, each with its own groups. In every case the user fills the folder to knowledge base to group map in `rag.md`.
+- `hardware`: no GPU means the docling-serve `-cpu` image, CPU extraction times in the sizing, and the embedding and reranker on CPU (not benchmarked in the research: say so and measure). A GPU gives the `-cu128` image and the GPU line of the sizing.
