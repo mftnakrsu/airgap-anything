@@ -17,7 +17,8 @@ Version 0.3 was merged into `main` on 2026-11-24 (pull request #18, merge c307ae
 
 ## Waiting for the maintainer
 
-- Submit to Anthropic's directory (Markdown, JSON and the icon only, so Verified status is not needed) and, if wanted, the Codex plugin directory and the Cursor marketplace. These are the maintainer's outward-facing actions.
+- **Anthropic's directory:** submitted for review on 2026-11-24 from the developer portal (claude.ai/directory/manage): `plugins/airgap-anything` on `main` at fec5bed, listed on Claude Code, Cowork and the Claude apps, auto-publish on. The portal's Validate passed with four notes, all fields the directory reads for the listing (`icon`, `supportUrl`, `documentationUrl`, `privacyPolicyUrl`). It waits for the security scan and a reviewer; the answer appears on the submission's page and by email. Bisecting with Validate showed that its download-and-run check flags `curl` followed on the same prose line by a `|` or a URL; `tests/test_packaging.py` now applies that rule.
+- **Codex plugin directory and Cursor marketplace:** not submitted yet.
 
 The triggering suite ran on the 0.3 descriptions on 2026-11-24: 12 of 12 cases pass, every skill check in every run, USD 5.65 (`evals/results/2026-11-24-triggering.md`).
 
