@@ -1,9 +1,5 @@
 {
   "tools": [],
-  "tools_one_of": [
-    "qwen-code",
-    "opencode"
-  ],
   "tools_not": [
     "claude-code"
   ],
@@ -15,21 +11,15 @@
     [
       "Qwen Code",
       "opencode"
-    ],
-    "glm45"
+    ]
   ],
-  "files": [
-    "docs/airgap/agents.md",
-    "docs/airgap/agents/"
-  ],
-  "manifest_sections": [
-    3,
-    4,
-    7
-  ],
+  "files": [],
+  "manifest_sections": [],
+  "stops_for_approval": true,
   "must_not": [
     "claude-code configured against an open-weight model",
     "an API key in a file",
-    "a file under docs/airgap/agents/claude-code/"
+    "a file under docs/airgap/agents/claude-code/",
+    "a different tool written as final files without the user's approval"
   ]
 }
