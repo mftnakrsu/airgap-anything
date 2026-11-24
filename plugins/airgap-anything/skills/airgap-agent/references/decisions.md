@@ -1,0 +1,57 @@
+# Decisions
+
+Goal: choose the tools, state the reason for each choice and for each refusal, and map the permission stance to every tool's settings. Every row names the catalog entry that holds the facts; read it before you write about the tool.
+
+## Tool choice
+
+| Situation | Tool | Catalog | Why |
+|---|---|---|---|
+| Default, open-weight model | Qwen Code (Apache-2.0) | `catalog/qwen-code.md` | Documented install from a release archive (`--archive`, `SHA256SUMS`); every outbound connection has a documented switch (usage statistics, models.dev catalog, web search) |
+| Strongest sandbox or central enforcement wanted, and the server's `/v1/responses` passes the smoke test | Codex CLI (Apache-2.0) | `catalog/codex-cli.md` | `requirements.toml` enforcement, bubblewrap sandbox; speaks only the Responses API |
+| The team already uses opencode | opencode (MIT) | `catalog/opencode.md` | Central `policies`. Pinned to V2 2.4.1: the docs describe V2 while GitHub "latest" still returns V1 1.19.6. V2 documents no switch for its model-catalog fetch (models.opencode.ai, bundled fallback), so the egress check is mandatory |
+| `claude_route` is yes | Claude Code | `catalog/claude-code.md` | Managed settings, sandbox, local marketplaces. Never with an open-weight model |
+
+More than one tool may be chosen. Each gets its own folder under `docs/airgap/agents/` and its own smoke test and egress check.
+
+## Claude Code
+
+Claude Code is never configured against an open-weight model. The reason, which you state whenever you decline the pairing: Anthropic "doesn't support routing Claude Code to non-Claude models through any gateway" (https://code.claude.com/docs/en/llm-gateway). The documentation describes gateways only in front of Claude models. vLLM documents a Claude Code integration; this skill does not use it.
+
+Claude Code is offered only when `claude_route` is yes: the organization reaches Claude models through a private route, for example a private Bedrock or Agent Platform endpoint behind its gateway, and holds a Claude account (Pro, Max, Ultra, Team, Enterprise or Console). Its use stays subject to Anthropic's terms regardless of the platform it is reached through.
+
+When the user insists on Claude Code with a local model, decline the pairing, give the reason above, and offer Qwen Code or opencode for that model. Likewise, when the user asks to leave telemetry on "just for now", decline: every switch in the catalog's Egress table is written, and the egress check proves it.
+
+## Permission stance
+
+`permissions` maps to each tool's documented settings. Network access from the sandbox stays off in every stance.
+
+| Stance | Qwen Code `tools.approvalMode` | Codex CLI | opencode `permissions` | Claude Code |
+|---|---|---|---|---|
+| read only | `plan` | `sandbox_mode = "read-only"`, `approval_policy = "on-request"` | effect `deny` on every write action | `permissions.deny` rules for the edit tools |
+| edit with approval | `default` | `sandbox_mode = "workspace-write"`, `approval_policy = "on-request"` | effect `ask` on write actions | `permissions.ask` rules |
+| edit freely in the workspace | `auto-edit` | `sandbox_mode = "workspace-write"`, `approval_policy = "never"` | effect `allow` on edits, `ask` on shell | `permissions.allow` rules for the edit tools, `ask` for shell |
+
+Notes per tool:
+
+- Qwen Code: always write `tools.approvalMode` explicitly. Its settings reference gives `auto` (an LLM classifier) as the default and the approval-mode page calls ask-first the initial mode; do not rely on either. `auto` and `yolo` are never written.
+- Codex CLI: whether edits inside `workspace-write` ask first under `on-request` is not documented in the research; confirm it in the smoke test. `untrusted` is no longer a supported `approval_policy`. Leave `sandbox_workspace_write.network_access` unset, so the sandbox keeps network off.
+- opencode: the base policy allows `*` and the last matching entry wins, so write the `ask` or `deny` entries after any `allow`. The action and resource names for edits are not in the research: see https://opencode.ai/docs/permissions/. No sandbox is documented and no setting restricts the tool's network access: enforce that on the host.
+- Claude Code: the permission mode names are not in the research; the rules are evaluated "deny, then ask, then allow". The tool names for edits are not in the research either: see https://code.claude.com/docs/en/permissions. `sandbox.network.allowedDomains` lists only the internal hosts the user names.
+- Qwen Code and opencode: the research documents no setting that keeps a sandbox off the network. Say in `agents.md` that the network boundary is the host's firewall.
+
+## Alternatives, one line each
+
+Not configured by this skill. Name them when the user asks, with the facts below, and stop.
+
+| Tool | One line | Source |
+|---|---|---|
+| Goose | Apache-2.0, now `aaif-goose/goose`; Chat Completions through `OPENAI_HOST` | https://github.com/block/goose |
+| Crush | FSL-1.1-MIT; provider `--type completions` for OpenAI-compatible APIs; metrics off with `CRUSH_DISABLE_METRICS=1` | https://github.com/charmbracelet/crush |
+| Aider | Apache-2.0; goes through LiteLLM with `openai/<model>` plus `OPENAI_API_BASE`; Chat Completions or Responses is not stated | https://aider.chat/docs/llms/openai-compat.html |
+| Cline | Apache-2.0 editor extension; the endpoint must "implement the OpenAI chat completions API" | https://docs.cline.bot/enterprise-solutions/configuration/remote-configuration/openai-compatible/admin-configuration.md |
+| Kilo Code | MIT; its CLI "is a fork of OpenCode"; Chat Completions, with Responses selectable | https://kilo.ai/docs/ai-providers/openai-compatible |
+| Continue | Apache-2.0; the repository is "no longer actively maintained and is read-only": do not recommend it | https://raw.githubusercontent.com/continuedev/continue/main/README.md |
+
+## No model ranking
+
+This skill ranks no models for agents. Most model cards omit SWE-bench Verified, card scores are self-reported, and the only cross-model board found (DeepSWE) is labelled "Flawed" by Epoch (https://epoch.ai/benchmarks/deepswe). A ranking would be out of date or unfounded within weeks. `references/serving.md` keeps a parser table instead: that is what decides whether an agent works at all. The model comes from the blueprint or from the user.
