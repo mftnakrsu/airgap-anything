@@ -57,9 +57,10 @@ class ReferencesTest(unittest.TestCase):
             with self.subTest(word=word):
                 self.assertIn(word, text)
         self.assertNotRegex(text, r"sk-[A-Za-z0-9]{8,}")
+        # The directory scanner's rule (tests/test_packaging.py, PROSE_DOWNLOAD): no curl followed on its
+        # line by a pipe or a URL. The source line of the man page holds curl only inside its own URL.
         for line in text.splitlines():
-            if "curl" in line:
-                self.assertNotRegex(line, r"\||https?://")
+            self.assertNotRegex(line, r"(?i)\bcurl\b.*(\||https?://)")
 
     def test_wiki_and_verification(self):
         self.assertIn("mcp-server-git", read("wiki.md"))
@@ -76,6 +77,14 @@ class HandOverTest(unittest.TestCase):
         self.assertIn("(from airgap-rag)", rag)
         self.assertIn("(from airgap-rag)", transfer)
         self.assertIn("docs/airgap/rag.md", transfer)
+
+    def test_rag_md_lists_the_names_the_marked_rows_use(self):
+        # Section-2 rows carry the Model name, not a catalog id: rag.md must list that name,
+        # and the transfer must look for it in the Model cell, or it refuses the row.
+        rag = (RAG_DIR / "SKILL.md").read_text(encoding="utf-8")
+        step9 = rag.split("9. **rag.md.**", 1)[1].split("10. **Manifest.**", 1)[0]
+        self.assertIn("Model names", step9)
+        self.assertIn("Model cell", (TRANSFER_DIR / "SKILL.md").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

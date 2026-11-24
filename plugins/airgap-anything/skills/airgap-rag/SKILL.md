@@ -55,10 +55,13 @@ Air-gap RAG:
 4. **Extraction.** Read `references/extraction.md` and `catalog/docling-serve.md`. Pick the tier by document type, write the OCR languages, and state the cloud rule with its reason in `rag.md`.
 5. **Models.** Read `references/models.md` and the entries of the embedding and reranker models. Write the vLLM commands, the Open WebUI settings with `OFFLINE_MODE`, and the model revisions.
 6. **Sizing.** Read `references/sizing.md`. Step by step, every number sourced or marked `estimate`; on the fast path, one summary table. Never skip it. The volume has no default: without it, put it in the open items.
-7. **Configuration.** Write `docs/airgap/rag/`: the Open WebUI settings, the vLLM commands, the docling-serve settings when chosen, the chunking settings, or RAGFlow's `.env` with its egress settings.
-8. **Runbook and wiki.** Read `references/ingestion.md` for the bulk load, the periodic update and the CLI queries, with the manual steps marked as manual. Read `references/wiki.md` when `consumers` includes coding agents.
-9. **rag.md.** Write `docs/airgap/rag.md`: decisions with reasons and alternatives, assumptions (every default used), the sizing, the folder to knowledge base to group map for the user to fill in, serving requirements, the environment variable that holds each key, whether `BYPASS_ADMIN_ACCESS_CONTROL` stays on, open items, the components added to the manifest (the catalog ids, and `airgap-rag` for the row of `rag.md` itself), and the checks to run inside. Say that the Open WebUI API values were read from source at tag v0.13.4.
-10. **Manifest.** Add rows to `docs/airgap/transfer-manifest.md` as the table below shows. Do not rewrite the blueprint. Mark every row you add by writing "(from airgap-rag)" after the component in its Component cell, for example `docling-serve` (from airgap-rag). In section 2 the marker goes after the name in the Model cell, and `rag.md` lists exactly the names the marked rows use. In section 3, Component is the catalog id, Version the pinned version, File the file name, Arch `amd64` or `arm64`, URL the direct download URL from the catalog's Packages table (or the project path for a project file), and Publisher checksums the checksum file URL (empty when none); for poppler-utils write "not documented" in Version and URL. Section 7 has no Component column, so append the marker to the step text there. `airgap-transfer` accepts rows so marked, without a blueprint row, when `rag.md` lists their component.
+7. **Configuration.** Write `docs/airgap/rag/`: the Open WebUI settings, the vLLM commands, the docling-serve settings when chosen, the chunking settings, or RAGFlow's `.env` with its egress settings. When the platform is Open WebUI, the PostgreSQL it already uses runs on `pgvector/pgvector:0.8.7-pg18` instead of the plain postgres image (the same PostgreSQL 18.7), and `PGVECTOR_DB_URL` stays unset, so it defaults to `DATABASE_URL`; the alternative is a separate pgvector database with `PGVECTOR_DB_URL` set (`catalog/pgvector.md`).
+8. **Runbook and wiki.** Read `references/ingestion.md` and write the bulk load, the periodic update and the CLI queries to `docs/airgap/rag/ingestion.md`, with the manual steps marked MANUAL. Read `references/wiki.md` when `consumers` includes coding agents.
+9. **rag.md.** Write `docs/airgap/rag.md`: decisions with reasons and alternatives, assumptions (every default used), the sizing, the folder to knowledge base to group map for the user to fill in, serving requirements, the environment variable that holds each key, whether `BYPASS_ADMIN_ACCESS_CONTROL` stays on, the pgvector image that replaces the plain postgres image (step 7), open items (with bge-m3, "Pickle files allowed: yes" in `airgap-transfer`: `catalog/bge-m3.md`), the components added to the manifest, and the checks to run inside. The component list holds the catalog ids (or `custom: NAME`) of the rows of sections 1 and 3 to 5; for section 2, the Model names exactly as written in the rows; and `airgap-rag` for the project-file rows. Say that the Open WebUI API values were read from source at tag v0.13.4.
+10. **Manifest.** Add rows to `docs/airgap/transfer-manifest.md` as the table below shows. Do not rewrite the blueprint. Mark every row you add by writing "(from airgap-rag)" after the component in its Component cell, for example `docling-serve` (from airgap-rag). Section 7 has no Component column, so append the marker to the step text there. `airgap-transfer` accepts rows so marked, without a blueprint row, when `rag.md` lists their component (for section 2, the name in the Model cell).
+    - Section 2: the Model cell holds the Hugging Face repo id followed by the marker, for example `Qwen/Qwen3-Embedding-0.6B` (from airgap-rag); Role is `embedding` or `reranker`; Files to carry holds the pinned revision and the entry's `hf download REPO --revision REVISION --local-dir DIR` form, so that the transfer's `models` question is answered from the manifest.
+    - Section 3: Component is the catalog id, Version the pinned version, File the file name, Arch `amd64`, `arm64` or `any`, URL the direct download URL from the entry's Packages table (only `catalog/ragflow.md` has one, for its source archive) or the project path for a project file, and Publisher checksums the checksum file URL (empty when none).
+    - No fetchable URL: poppler-utils and every image or file of a custom platform take the architect's `custom: NAME` row in section 3 (File "enumerate the artifacts by hand"; Version and URL "not documented" for poppler-utils, `unverified` values for a custom platform), which the transfer turns into a manual item. Docling's OCR models that are not baked in go to section 5 instead, as a manual item with the documented command `docling-tools models download --output-dir DIR` (`catalog/docling-serve.md`).
 11. **Verification.** Read `references/verification.md`. Put the five checks into `rag.md` and into section 7 of the manifest.
 12. **Self-check.** Check every item below; fix what fails and check again.
 13. **Hand-over.** Below.
@@ -85,16 +88,16 @@ Last verified: 2026-11-24. Carry the pinned version, not a newer one.
 | Path in the project | Holds |
 |---|---|
 | `docs/airgap/rag.md` | Decisions with reasons, assumptions, sizing, the group map, open items, the checks inside |
-| `docs/airgap/rag/` | The configuration of the chosen platform, the runbook and the wiki steps |
+| `docs/airgap/rag/` | The configuration of the chosen platform, the runbook (`ingestion.md`) and the wiki steps |
 | `docs/airgap/transfer-manifest.md` | The rows below |
 
 | Manifest section | Rows added |
 |---|---|
-| 1. Images | docling-serve, the RAGFlow stack, `pgvector/pgvector:0.8.7-pg18`, Qdrant |
-| 2. Models | The embedding and reranker models at their pinned revision; Docling's OCR models when not baked in |
-| 3. Packages and binaries | poppler-utils for the wiki; `docs/airgap/rag.md` and `docs/airgap/rag/` (project paths, copied, not fetched) |
+| 1. Images | docling-serve, the RAGFlow stack, `pgvector` (`pgvector/pgvector:0.8.7-pg18`), Qdrant; when `hardware.gpus` is empty, `vllm` with `vllm/vllm-openai-cpu:v0.34.0-x86_64` (`-arm64` on arm64) for the model instances (`references/models.md`) |
+| 2. Models | The embedding and reranker models: repo id in the Model cell, pinned revision and download form in Files to carry |
+| 3. Packages and binaries | The RAGFlow source archive; `custom: poppler-utils` for the wiki; `custom: NAME` for a custom platform's parts; `docs/airgap/rag.md` and `docs/airgap/rag/` (project paths, copied, not fetched) |
 | 4. Telemetry and egress | Every row of the chosen entries' Egress switches, one row each; a row without a documented switch reads "not documented; the egress check covers it" |
-| 5. Runtime downloads | What a component fetches on first use, from its "Carry in" section |
+| 5. Runtime downloads | What a component fetches on first use, from its "Carry in" section; Docling's OCR models when not baked in, as manual items |
 | 7. Verification | The five checks, each step text ending "(from airgap-rag)" |
 
 ## Rules
@@ -116,10 +119,10 @@ Before the hand-over, check each item against the files you wrote. When one fail
 1. `rag.md` records the platform with its reason and alternatives; a custom platform has its version, docs link and `unverified` labels, and the staged-models, telemetry, manifest and egress items.
 2. The cloud rule appears in `rag.md` with its reason, and no step sends internal documents outside.
 3. Every Egress switches row of each chosen entry with a documented switch is in `docs/airgap/rag/` and in section 4; each row without one is an open item and a "not documented" row.
-4. `OFFLINE_MODE`, the embedding and reranker endpoints, `VECTOR_DB=pgvector` and `PGVECTOR_INDEX_METHOD=hnsw` are written for Open WebUI; every model has its pinned revision, or "revision: record at download".
+4. When the platform is Open WebUI: `OFFLINE_MODE`, the embedding and reranker endpoints, `VECTOR_DB=pgvector` and `PGVECTOR_INDEX_METHOD=hnsw` are written; its PostgreSQL runs on `pgvector/pgvector:0.8.7-pg18` with `PGVECTOR_DB_URL` unset (or a separate pgvector database with it set), and `rag.md` records the substitution. Every model has its pinned revision, or "revision: record at download".
 5. The sizing is in `rag.md` with a source or `estimate` on every number, or the summary table on the fast path.
 6. `grep -rIE 'sk-[A-Za-z0-9]{8,}|hf_[A-Za-z0-9]{20,}' docs/airgap` finds nothing, and no runbook line holds a download command together with a URL or a pipe.
-7. Manifest rows sit in sections 1 to 5 and 7 as the table shows, each is marked "(from airgap-rag)", every pinned version equals its catalog entry, and `docs/airgap/rag.md` and `docs/airgap/rag/` are in section 3.
+7. Manifest rows sit in sections 1 to 5 and 7 as the table shows, each is marked "(from airgap-rag)", every pinned version equals its catalog entry, `docs/airgap/rag.md` and `docs/airgap/rag/` are in section 3, and `rag.md` lists the component of every marked row (the Model cell's name for section 2).
 8. The folder to knowledge base to group map is in `rag.md` for the user to fill in, manual steps are marked MANUAL, and the five checks are in `rag.md` and section 7.
 9. Every default the interview used is an assumption, and a differing `rag` headcount is flagged.
 

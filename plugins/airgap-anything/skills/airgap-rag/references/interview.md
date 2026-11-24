@@ -1,6 +1,6 @@
 # Interview
 
-Goal: an answer for each of the eight questions below, so that `docs/airgap/rag.md` can say what was chosen and why. The interview is short: every question has a default, and a skipped question takes it.
+Goal: an answer for each of the eight questions below, so that `docs/airgap/rag.md` can say what was chosen and why. The interview is short: every question except the volume of question 3 has a default, and a skipped question takes it. The platform (question 1) has a default too, but when it is unnamed it is still asked and waited for (below).
 
 ## How to ask
 
@@ -37,7 +37,7 @@ Ask question 1 with three options, in this order, and say which one you recommen
 
 When the user chooses something else:
 
-- Write a custom record in `rag.md`: the name, the version, the link to its documentation, who runs it and how the embedding and extraction reach it. Ask for the version and the link; if the user has neither, write "not given" and put it in the open items.
+- Write a custom record in `rag.md`: the name, the version, the link to its documentation, who runs it and how the embedding and extraction reach it. Ask for the version and the link in the same message as the other questions; if the user does not give one, write "not given" for it, put it in the open items and continue. Do not wait for them.
 - Label every value that is not in this skill's catalog `unverified`: versions, settings, ports, image names, egress behavior. Do not fill a gap from memory.
 - The air-gap checklist still applies, as for the other options: the models it needs are staged (embedding, reranker, OCR, and anything it fetches at its first start), its telemetry and update checks are named and switched off or listed as open items, its images and files get manifest rows marked "(from airgap-rag)", and the egress check of `references/verification.md` covers it.
 - This skill's catalog entries for the embedding and reranker models, `docling-serve`, `pgvector` and `qdrant` stay usable behind a custom tool, because they are independent services.

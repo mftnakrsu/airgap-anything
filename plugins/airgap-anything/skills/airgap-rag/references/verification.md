@@ -33,6 +33,7 @@ curl -X POST -H "Authorization: Bearer $VLLM_API_KEY" -H "Content-Type: applicat
 ```
 
   Pass: a `results` list with `index` and `relevance_score`. Fail: a 404 (the URL lacks `/v1/rerank`), or a different shape (a TEI `/rerank` was configured).
+- On a host with no GPU (the `vllm/vllm-openai-cpu` image), the two calls above are also the check that vLLM serves these pooling models on CPU, which its docs do not state (`unverified`, `references/models.md`). Pass: both instances start and both calls pass. Fail: an instance does not start or a call fails; record the error in `rag.md` and keep the models off CPU until a GPU host serves them.
 - The vector store has the extension at the pinned version: `SELECT extversion FROM pg_extension WHERE extname = 'vector';` returns `0.8.7` (`catalog/pgvector.md`).
 - Whether `RAG_OPENAI_API_BASE_URL` needs `/v1` is not documented (`references/models.md`): the first successful upload proves the form that works.
 
@@ -50,7 +51,7 @@ Upload a document with a known answer into a test knowledge base (`references/in
 Only when docling-serve is chosen. First `GET /v1/capabilities`:
 
 ```
-curl "$DOCLING_URL/v1/capabilities"
+curl -H "X-Api-Key: $DOCLING_API_KEY" "$DOCLING_URL/v1/capabilities"
 ```
 
 Pass: the engine set in `DOCLING_PARAMS` (`easyocr` by default) is listed. Then cut the network from the docling-serve host, and convert one scanned sample page for each language of the `languages` answer:

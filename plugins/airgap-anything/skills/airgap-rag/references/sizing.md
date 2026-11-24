@@ -26,7 +26,7 @@ Documents, average pages per document, scanned share, languages, new or changed 
 
 Notes on each step:
 
-- Step 1: take the row for the user's hardware. When the digital pages also go through docling-serve, the "without OCR" rates apply to them; when they go through pypdf, sample first. Add the time of the update batches (`updates` answer) as pages per batch at the same rates.
+- Step 1: take the row for the user's hardware. With no GPU, show the CPU time (3.1 s/page) and, next to it, the same pages at the L4 rate (0.49 s/page) as what a GPU would change, labeled as the alternative and not the plan, so the user can weigh buying one. When the digital pages also go through docling-serve, the "without OCR" rates apply to them; when they go through pypdf, sample first. Add the time of the update batches (`updates` answer) as pages per batch at the same rates.
 - Step 2: the 1024-character chunk is about 256 tokens at the roughly 4 characters per token that Open WebUI's own config comment assumes, so the Runpod passages (512 tokens) are heavier than ours and the time of step 3 is likely an upper bound (`estimate`).
 - Step 4: the text of the chunks is stored too: about chunks × 1,024 characters at most (`estimate`). Qdrant has its own parts and a 20 % headroom rule: `catalog/qdrant.md`.
 - Step 5: the research documents no memory beyond the weights (Qwen3 pair 1.19 GB each, bge pair 2.27 GB each). Measure the activation memory with a load test and write it as an open item.
@@ -53,7 +53,7 @@ When the user is in a hurry, or the answers were short, show the same calculatio
 |---|---|---|
 | Documents and pages | (user) | `sources` |
 | Scanned share | (user, or default mostly digital) | `doc_types` |
-| Extraction time | (hours, for the hardware) | step 1: 3.1 s/page CPU, 0.49 s/page L4; pypdf measured |
+| Extraction time | (hours, for the hardware; with no GPU, also the L4 hours as what a GPU would change) | step 1: 3.1 s/page CPU, 0.49 s/page L4; pypdf measured |
 | Chunks | (count) | step 2, `estimate` for characters per page |
 | Embedding time | (minutes) | step 3 |
 | Vectors on disk | (GB) | step 4; measure the HNSW index with `pg_relation_size` after the load |
