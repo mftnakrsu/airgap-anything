@@ -1,8 +1,14 @@
 # Handoff
 
-Where the project stands and how to continue. Last updated on 2026-11-24.
+Where the project stands and how to continue. Last updated on 2026-11-24 (version 0.4.0 prepared).
 
 ## Status
+
+Version 0.4.0 is prepared on branch `feat/airgap-agent` and is not merged, tagged or released. It adds the third skill, `airgap-agent`, and raises the version to 0.4.0 in all manifests (`.claude-plugin/marketplace.json`, `plugins/airgap-anything/.claude-plugin/plugin.json`, the portable `plugin.json`).
+
+- **Done on the branch.** The skill: `SKILL.md` (checklist, seven rules, seven-item self-check), a catalog of four tools (Qwen Code 0.28.4, Codex CLI 0.172.0, opencode 2.4.1 on the V2 line, Claude Code 2.1.331) with every value sourced, and six references (interview, decisions, serving, mcp, templates, verification). `airgap-transfer` carries `docs/airgap/agents.md` and `docs/airgap/agents/<tool>/{user,central}/` as project files. Triggering cases (15 in the suite) and behavior scenarios with expectations under `evals/agent-scenarios/`. README, a guide (`docs-site/src/content/docs/guides/coding-agents.md`), generated reference pages with the agent catalog, and the sidebar entries. 84 tests, all passing on 2026-11-24. `claude plugin validate plugins/airgap-anything` was run for the manifests.
+- **Rules the skill keeps.** Claude Code is never configured against an open-weight model (Anthropic "doesn't support routing Claude Code to non-Claude models through any gateway", https://code.claude.com/docs/en/llm-gateway); Qwen Code's `tools.approvalMode` is always written; every outbound switch of a tool is written and proved by the egress check; no key is written to a file.
+- **Waiting.** The eval runs of the new skill and the triggering suite on the 0.4 descriptions (Task 10, they need a model and cost money), the review, the pull request, then the maintainer's actions: merge, tag v0.4.0, the GitHub release with one archive per skill, and resubmitting the plugin to Anthropic's directory. None of these has been run. The documentation site build was not run locally (`node_modules` is absent); CI builds it.
 
 Version 0.3 was merged into `main` on 2026-11-24 (pull request #18, merge c307ae0) and released as v0.3.0 the same day, with one archive per skill and its SHA-256 file; the documentation site deployed it. Both skills are markdown only: no scripts, no TOML, no lint codes. The agent reasons and calculates from the references and writes its work out so that a reader can check it. Release 0.2.0 (2026-11-23) is the last version with scripts.
 
@@ -28,7 +34,7 @@ The triggering suite ran on the 0.3 descriptions on 2026-11-24: 12 of 12 cases p
 - The skills ship no scripts (the maintainer: "i dont wanna bunch of pyscript sh sciprt at my skills").
 - The catalog stays, as markdown, with every source; nothing is written from memory.
 - Simplifications against 0.2: decision tables became defaults with reasons; replicas pack whole requests per user group instead of first-fit packing (it reproduces all scenario numbers; mixed contexts can come out one replica higher); no image-ID check inside; one manifest file, markdown.
-- The project aims at a family of `airgap-<role>` skills in one plugin: `airgap-rag` (#11) and `airgap-agent` (#10) next, then the ideas of #12.
+- The project aims at a family of `airgap-<role>` skills in one plugin: `airgap-agent` (#10) is done on the 0.4 branch; `airgap-rag` (#11) is next, then the ideas of #12.
 
 ## Known limitations
 
@@ -41,7 +47,7 @@ The triggering suite ran on the 0.3 descriptions on 2026-11-24: 12 of 12 cases p
 
 ## Later
 
-- `airgap-rag` (#11) and `airgap-agent` (#10), each with its own design, in the same markdown-only form.
+- `airgap-rag` (#11), with its own design, in the same markdown-only form.
 - Eval scenarios that state `inside.operator` (`local_agent`, `people_then_agent`) and `hardware.cpu_arch = arm64`, and one whose hardware does not fit.
 - Turn the behavior evals into `claude plugin eval` cases, so that contributors can run them.
 - Split `code_assistant` into code completion and coding agent; make concurrency depend on organization size.
