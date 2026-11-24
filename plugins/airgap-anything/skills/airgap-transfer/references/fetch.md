@@ -87,13 +87,13 @@ The second line only when the manifest names a publisher checksum file for the p
 
 ## Checking what arrived
 
-1. **Publisher checksums.** For each package with a checksum file, in `B/packages/COMPONENT/`, check the file's line with the tool that matches the algorithm (the line names it, or the hash length tells: 32 hex characters md5, 64 SHA-256, 128 SHA-512):
+1. **Publisher checksums.** For each package with a checksum file, in `B/packages/COMPONENT/`, check it with the tool that matches the algorithm (the line names it, or the hash length tells: 32 hex characters md5, 64 SHA-256, 128 SHA-512):
 
    ```sh
-   cd B/packages/COMPONENT && grep -F "FILE" checksums/SUMSFILE | sha256sum -c -
+   cd B/packages/COMPONENT && sha256sum -c --ignore-missing checksums/SUMSFILE
    ```
 
-   Use `md5sum -c -` or `sha512sum -c -` for the other algorithms. A mismatch: delete the file, record the item as failed, and stop. A package without a publisher checksum file is recorded as such in the inventory: its first hash is the one taken on the connected side.
+   `--ignore-missing` skips the other files the publisher lists, so only the downloaded file is checked; when the list does not name it, the command fails with "no file was verified". Use `md5sum` or `sha512sum` the same way for the other algorithms. A mismatch: delete the file, record the item as failed, and stop. A package without a publisher checksum file is recorded as such in the inventory: its first hash is the one taken on the connected side.
 2. **Pickle files.** `find B/models \( -name '*.bin' -o -name '*.pt' -o -name '*.pth' -o -name '*.pkl' \)` lists nothing, except in the folders of models whose pickle files the user allowed.
 3. **Digests.** Every `.digest` file holds a digest (`sha256:` followed by 64 hex characters).
 
