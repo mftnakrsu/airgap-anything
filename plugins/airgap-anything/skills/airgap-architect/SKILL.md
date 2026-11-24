@@ -45,7 +45,7 @@ Air-gap design:
 6. **Blueprint.** Fill `references/blueprint-template.md` at the blueprint's path.
 7. **AGENTS.md.** Add the block of `references/agents-snippet.md`.
 8. **Self-review.** Check every item below; fix what fails and check again.
-9. **Hand-off.** Show the blueprint path, the tier, the GPU range, the eight decisions in one line each and the open questions, then the step after approval from the table below. Stop until the user approves.
+9. **Hand-off.** Show the blueprint path, the tier, the concurrency range and the GPU total, the eight decisions in one line each and the open questions, then the step after approval from the table below. Stop until the user approves.
 
 ## Where the blueprint goes
 
@@ -76,7 +76,7 @@ Every entry and every rule carries an evidence label: `field` (measured in a rea
 
 1. **Components, versions and image references come from the catalog**, never from memory, even when you are sure. A plausible tag that does not exist costs a trip back to the connected side. A part with no catalog entry is a custom part, labelled `estimate`.
 2. **Numbers come from the sizing procedure**, with every step written out. Give concurrency as a range, list the assumptions, and put a benchmark step in every blueprint: memory arithmetic says whether a model fits, not how fast it runs.
-3. **Before the user approves the blueprint, write nothing outside `docs/` and `AGENTS.md`, and install or download nothing.** No Compose file, no `.env`, no scripts. Deployment files fix decisions the user has not seen yet, and a hardware order based on them is hard to undo.
+3. **Before the user approves the blueprint, write nothing outside `docs/` and `AGENTS.md`, and install or download nothing.** No Compose file, no `.env`, no scripts. Deployment files fix decisions the user has not seen yet, and a hardware order based on them is hard to undo. A throwaway calculation in a temporary folder outside the project is fine; it is not part of the design.
 4. **Going below a floor, or accepting hardware that does not fit, is the user's decision.** Record it as an override with the user's reason.
 
 ## Self-review
@@ -87,10 +87,10 @@ Before the hand-off, check each item against the files you wrote. When one fails
 2. Each component is in `catalog/`, belongs to that layer, and its `Tiers` row includes the layer's floor, or the decision records the user's override.
 3. Each chosen component's `Requires` is chosen in its own layer or named under Existing.
 4. Each version in the blueprint's decision table matches its catalog entry exactly, and the same holds for every row of the transfer manifest.
-5. Every sizing number follows from the steps shown; concurrency is a range; the assumptions table lists every constant and default used; the hardware fits, or `llm-serving` records an override.
+5. Every sizing number follows from the steps shown; concurrency is a range; the assumptions table has a row for every interview answer that was `unknown` and for every constant the steps used; the hardware fits, or `llm-serving` records an override.
 6. The tier's obligations are met: a gateway when one is required, the isolation design subsection for `multi_level`, at least two replicas when no downtime is accepted.
 7. The verification section has the benchmark step, one entry for each decision labelled `estimate`, every benchmark engine, the Kubernetes risk when it applies, and every chosen entry last verified more than 180 days ago.
-8. The transfer manifest lists the images for the design's hardware class and the packages for its platform, and the blueprint's transfer section copies its telemetry settings.
+8. The transfer manifest lists the images for the design's hardware class and the packages for its platform, and every telemetry setting, runtime download and per-tool skill of each chosen entry, none left out; the blueprint's transfer section copies the telemetry settings.
 9. Each decision's evidence is the weakest label among its guide's case and its components.
 
 ## Common mistakes

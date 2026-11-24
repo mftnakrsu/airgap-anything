@@ -20,6 +20,8 @@
 5. LiteLLM's documentation contradicts itself on whether teams, keys, budgets and role-based access control need the enterprise license. A design that relies on them says so and lists "confirm with the vendor which team and key features run without a license" under verification. Do not state either answer as a fact.
 6. A LiteLLM license key works offline only if it passes the local signature check; otherwise LiteLLM calls `license.litellm.ai` and the paid features switch off when that fails (from the source at tag v1.110.2, not documented). A design with paid features says that a key which passes the offline check must be obtained before installation.
 7. `litellm` requires `postgresql`. When LiteLLM runs more than one worker or replica, add `valkey` to the `state` decision: without a shared Redis-protocol store, rate limits, budgets and cache hits are counted per worker. `valkey` is not in LiteLLM's Requires row, so nothing else reminds you.
-8. Evidence: the weakest of the case's label and the chosen components' labels.
+8. A self-hosted model is usually missing from LiteLLM's bundled cost map, and missing models price at 0 (`catalog/litellm.md`, runtime downloads), so a money budget on it never triggers. A design that promises per-team budgets sets a price for the model, for example an internal cost map through `LITELLM_MODEL_COST_MAP_URL`, or limits tokens and requests instead, and says which.
+9. The catalog documents no way for Open WebUI to pass the signed-in person or their department to LiteLLM. A design that needs per-person or per-department attribution at the gateway names the pattern it chose (one connection and key per department, for example) as a custom choice, and lists it under verification.
+10. Evidence: the weakest of the case's label and the chosen components' labels.
 
 Components used in this file: `kong`, `litellm`.

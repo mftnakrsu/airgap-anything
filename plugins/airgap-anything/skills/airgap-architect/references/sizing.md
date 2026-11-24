@@ -69,7 +69,7 @@ Usable memory of a group = GPUs in the group × memory per GPU × 0.90. Take the
 
 This step needs the model's architecture (`arch`: `layers`, `kv_heads`, `head_dim`, optionally `kv_dtype`) and applies only to generative models (`role` `chat` or `code`). An embedding or rerank model skips to step 6 with the minimum replicas.
 
-Without `arch`, KV capacity is unknown. Write that in the sizing section, use the minimum replicas in step 6, and put a KV-capacity benchmark in the verification section. Ask for the numbers when the user can get them: they are in the model's `config.json` (`num_hidden_layers`, `num_key_value_heads`, else `num_attention_heads`, and `head_dim`, else `hidden_size` ÷ `num_attention_heads`).
+Without `arch`, KV capacity is unknown. Write that in the sizing section, use the minimum replicas in step 6, and put a KV-capacity benchmark in the verification section. You may add, labelled as arithmetic, the largest KV cost per token the remaining memory allows at the peak (usable − required, divided by the peak requests × their tokens), and list the constants it uses. Ask for the numbers when the user can get them: they are in the model's `config.json` (`num_hidden_layers`, `num_key_value_heads`, else `num_attention_heads`, and `head_dim`, else `hidden_size` ÷ `num_attention_heads`).
 
 With `arch`:
 
@@ -96,7 +96,7 @@ With KV computed, repeat steps 5 and 6 for each larger group size that still fit
 
 - GPUs of a model = replicas × group. Total GPUs = the sum over the models.
 - Servers = total GPUs ÷ 8, rounded up, at least 1.
-- Power = total GPUs × power per GPU × 1.8 ÷ 1000 kW, rounded to one decimal. Unknown GPU power: say power is unknown. Compare it with `hardware.power_budget_kw` when given, and warn when it is above.
+- Whole-system power = total GPUs × power per GPU × 1.8 ÷ 1000 kW, rounded to one decimal: the factor 1.8 already covers the rest of the server. Unknown GPU power: say power is unknown. Compare it with `hardware.power_budget_kw` when given, and warn when it is above.
 
 ### 9. Fits
 
@@ -156,4 +156,4 @@ For 1 to 4, change the answer and size again. When the user goes ahead anyway (o
 
 ## A what-if
 
-To compare a variant, for example `org.downtime_tolerance` = `none`, size it next to the design and label it: "What-if, `org.downtime_tolerance` = `none`: …". A what-if never replaces the design's own numbers.
+To compare a variant, for example `org.downtime_tolerance` = `none`, or a recommendation that changes the numbers (running spare GPUs as more replicas, say), size it next to the design and label it: "What-if, `org.downtime_tolerance` = `none`: …". A what-if never replaces the design's own numbers.

@@ -60,6 +60,8 @@ None.
    Switch off: [analytics] check_for_plugin_updates = false
 4. Gravatar profile images for users, fetched from https://secure.gravatar.com/avatar (the default of [security] gravatar_url); on by default ([security] disable_gravatar = false in conf/defaults.ini at v13.3.1). The configuration page and defaults.ini do not say whether the Grafana server or the user's browser fetches the images.
    Switch off: [security] disable_gravatar = true
+5. Default preinstalled plugins, downloaded from grafana.com when an instance first starts (see the air-gap notes).
+   Switch off: [plugins] preinstall_disabled = true, and carry the plugins you need as ZIP files.
 
 ### License server
 

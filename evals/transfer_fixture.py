@@ -65,6 +65,8 @@ def build(name: str, out: Path, variant: str | None = None, fetched: bool = Fals
         path = f"models/{safe_name(model)}"
         size = write(f"{path}/model.safetensors", f"fake weights {model}\n".encode())
         size += write(f"{path}/config.json", b"{}\n")
+        size += write(f"{path}/tokenizer.json", b"{}\n")
+        size += write(f"{path}/LICENSE", f"License of {model} (fixture)\n".encode())
         if variant == "fat32":
             with (bundle / path / "model.safetensors").open("r+b") as handle:  # sparse: takes no room
                 handle.truncate(FAT32_MAX_FILE_BYTES + 1)
@@ -80,8 +82,10 @@ def build(name: str, out: Path, variant: str | None = None, fetched: bool = Fals
         path = f"packages/{safe_name(c)}/{f}"
         size = write(path, data)
         if sums.startswith("https://"):
-            write(f"packages/{safe_name(c)}/checksums/{safe_name(sums.rsplit('/', 1)[-1])}",
-                  f"{hashlib.sha256(data).hexdigest()}  {f}\n".encode())
+            name = safe_name(sums.rsplit("/", 1)[-1])
+            # The hash the publisher's file name promises: an md5sum list holds md5 hashes.
+            digest = hashlib.md5 if "md5" in name.lower() else hashlib.sha512 if "512" in name else hashlib.sha256
+            write(f"packages/{safe_name(c)}/checksums/{name}", f"{digest(data).hexdigest()}  {f}\n".encode())
         items.append(("package", c, url, path, size, "fetched"))
     for component, text in table(manifest, "5. Runtime downloads to stage in advance"):
         manual.append((f"{plain(component)}: runtime download: {text[:60].rstrip()}", "not needed"))

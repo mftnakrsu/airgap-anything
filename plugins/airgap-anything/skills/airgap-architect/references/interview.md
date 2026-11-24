@@ -43,6 +43,8 @@ Goal: an answer for every question below, recorded in the blueprint's Answers ta
 
 Usage groups: `chat` is conversation in a chat window. `code_assistant` is agentic coding tools, which keep a request in flight most of the time; count people who only use inline completion in an editor under `chat` (a deliberate overestimate: inline completion keeps a request in flight only a few percent of the time). `rag` is question answering over documents. `batch` is unattended jobs.
 
+`inside.operator` asks who works inside the network; `org.ops_capacity` asks who operates the system. A platform team that operates the system does not answer `inside.operator`.
+
 When `inside.operator` is `local_agent` or `people_then_agent` and that agent will run on this platform's model, say so when you ask `workload.usage`, and count the agent's users under `code_assistant`.
 
 ## Defaults for `unknown`
@@ -74,7 +76,7 @@ One entry per model:
 | `params_b` | one of three | Parameters in billions; needs `precision` |
 | `weights_gb` | one of three | Size of the weight files in GB, when the user knows it; it overrides arithmetic |
 | `size_class` | one of three | For a model not chosen yet: `S` up to 15B, `M` 16B to 80B, `L` 81B to 300B, `XL` above 300B |
-| `precision` | with `params_b` | `fp32`, `bf16`, `fp16`, `fp8`, `int8` or `int4` |
+| `precision` | with `params_b` | `fp32`, `bf16`, `fp16`, `fp8`, `int8` or `int4`. "8-bit" alone fits both `fp8` and `int8`: sizing is the same (1 byte), but the engine build is not, so record `fp8` for sizing and put the exact format in the open questions |
 | `name` | no | Free text |
 | `context_tokens` | no | Typical prompt plus history in tokens, for every group without its own entry in `workload.context_tokens` |
 | `arch` | no | `layers`, `kv_heads`, `head_dim`, optionally `kv_dtype`: from the model's `config.json`; with them sizing computes KV-cache capacity (`references/sizing.md`, step 5) |
