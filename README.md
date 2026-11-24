@@ -35,8 +35,9 @@ The skills are plain markdown: no scripts, no dependencies, nothing to install b
 |---|---|---|
 | [`airgap-architect`](plugins/airgap-anything/skills/airgap-architect/SKILL.md) | Interviews you, then writes the blueprint: one decision per layer with its reasons and alternatives, GPU sizing with every step shown, and the transfer manifest of what to carry in | A connected workstation |
 | [`airgap-transfer`](plugins/airgap-anything/skills/airgap-transfer/SKILL.md) | Turns the transfer manifest into a bundle that checks itself: fetch commands you approve first, a SHA-256 list, a split across media, an inventory, and a runbook or agent rules for the inside | A connected workstation; its runbook runs inside |
+| [`airgap-agent`](plugins/airgap-anything/skills/airgap-agent/SKILL.md) | Sets up a coding agent for the network without internet: picks the tool, writes its configuration and central policy with telemetry, updates and web access off, states what the model server must support, chooses MCP servers that work offline, and adds everything to the transfer manifest | A connected workstation; its checks run inside |
 
-Coming next: [`airgap-rag`](https://github.com/mftnakrsu/airgap-anything/issues/11) for document search inside the network and [`airgap-agent`](https://github.com/mftnakrsu/airgap-anything/issues/10) for coding agents on the local model. Ideas for more are in [#12](https://github.com/mftnakrsu/airgap-anything/issues/12).
+Coming next: [`airgap-rag`](https://github.com/mftnakrsu/airgap-anything/issues/11) for document search inside the network. Ideas for more are in [#12](https://github.com/mftnakrsu/airgap-anything/issues/12).
 
 ## Why
 
@@ -58,7 +59,7 @@ In a Claude Code session:
 /plugin install airgap-anything --marketplace mftnakrsu/airgap-anything
 ```
 
-Claude Code asks you to confirm the new marketplace, then lets you choose where to install. The plugin carries both skills. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
+Claude Code asks you to confirm the new marketplace, then lets you choose where to install. The plugin carries all three skills. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
 
 ```
 /plugin marketplace add mftnakrsu/airgap-anything
@@ -79,7 +80,7 @@ Then install airgap-anything from the plugin directory in Codex or the ChatGPT d
 npx skills add mftnakrsu/airgap-anything -g
 ```
 
-This installs both skills. To install one, add `--skill`, for example `npx skills add mftnakrsu/airgap-anything -g --skill airgap-transfer`.
+This installs all three skills. To install one, add `--skill`, for example `npx skills add mftnakrsu/airgap-anything -g --skill airgap-transfer`.
 
 `-g` installs them for your user, so every project has them; without `-g` they go into the current project only. Add `-a` and an agent ID to choose the agent, for example `-a cursor`, `-a codex`, `-a opencode` or `-a antigravity`. The [skills CLI](https://github.com/vercel-labs/skills) supports Claude Code, Codex, Cursor, OpenCode and 75 more agents; its [agent list](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) has the IDs. This route needs Node.js 22.20 or newer.
 
@@ -88,16 +89,16 @@ This installs both skills. To install one, add `--skill`, for example `npx skill
 On a connected machine, in a clone of this repository:
 
 ```bash
-for skill in airgap-architect airgap-transfer; do
+for skill in airgap-architect airgap-transfer airgap-agent; do
   git archive --format=tar.gz --prefix=$skill/ -o $skill.tar.gz HEAD:plugins/airgap-anything/skills/$skill
   sha256sum $skill.tar.gz > $skill.tar.gz.sha256
 done
 ```
 
-Carry the four files in, then:
+Carry the six files in, then:
 
 ```bash
-for skill in airgap-architect airgap-transfer; do
+for skill in airgap-architect airgap-transfer airgap-agent; do
   sha256sum -c $skill.tar.gz.sha256 && mkdir -p ~/.claude/skills && tar -xzf $skill.tar.gz -C ~/.claude/skills/
 done
 ```
@@ -140,6 +141,19 @@ Once the blueprint is approved, ask in your own words, for example "prepare ever
 
 Inside, on any Linux host, the runbook checks every file with `sha256sum -c` before anything is loaded. When a file is missing or damaged, it names the file and the volume it came on.
 
+### Coding agents inside
+
+A coding agent installed as-is tries to reach a model catalog, telemetry, update servers and web search on its first start. Once the blueprint exists, ask for it in your own words, for example "set up a coding agent for the developers inside". `airgap-agent` interviews you (eight questions, each with a default), then writes `docs/airgap/agents.md` and the configuration under `docs/airgap/agents/<tool>/user/` and, for central enforcement, `docs/airgap/agents/<tool>/central/`. It adds the tool archives, MCP packages and every outbound switch to the transfer manifest, and `airgap-transfer` carries the configuration folders in as project files.
+
+Which tool:
+
+- **Qwen Code** is the default for an open-weight model.
+- **Codex CLI** when the model server passes a `/v1/responses` smoke test and you want central enforcement and a sandbox.
+- **opencode** when the team already uses it. Version 2.4.1 is pinned, and its egress check is mandatory.
+- **Claude Code** only on a private Claude route. It is never configured against an open-weight model: Anthropic ["doesn't support routing Claude Code to non-Claude models through any gateway"](https://code.claude.com/docs/en/llm-gateway).
+
+Three checks run inside, in order, with no LLM: the install checksum and version, a smoke test that forces a tool call against the internal model, and an egress check that shows every address the tool contacts. A tool whose egress check shows an unexpected address is not released to developers.
+
 ## What you get
 
 ```
@@ -147,6 +161,8 @@ your-project/
 ├── docs/airgap/blueprint.md            the blueprint (under docs/superpowers/specs/ with superpowers)
 ├── docs/airgap/transfer-manifest.md    images, models, packages and settings to carry in
 ├── docs/airgap/transfer-plan.md        the transfer's answers, items and volumes
+├── docs/airgap/agents.md               the coding-agent decisions and the checks to run inside
+├── docs/airgap/agents/<tool>/          the configuration (user/) and central policy (central/) per tool
 └── AGENTS.md                           instructions for the agent that builds it inside the network
 ```
 
@@ -189,16 +205,17 @@ A decision inherits the weakest label among its inputs. Every decision that rest
 
 ## Scope
 
-In version 0.3:
+In version 0.4:
 
 - Layer guides for the inference engine and the LLM gateway, and per-tier defaults for UI, identity, observability, orchestration, state stores and artifact registry.
 - Sizing from organization answers, a transfer manifest, and a self-review.
 - `airgap-transfer`: a plan and fetch commands from the transfer manifest, a checked bundle split across media, and a runbook or agent rules for the inside.
+- `airgap-agent`: the choice of coding-agent tool, its configuration and central policy with outbound connections off, the model server's requirements, offline MCP servers, and three checks for the inside.
 
-Not in version 0.3:
+Not in version 0.4:
 
 - Deployment files such as Docker Compose or Helm.
-- A recommendation of which model to run.
+- A recommendation of which model to run, for the architect or the coding agents.
 - Guides for data, CI/CD and security layers.
 - Compliance mappings.
 
@@ -212,6 +229,7 @@ The plugin is Markdown, JSON and an icon: no code, no server, nothing collected,
 
 - `airgap-architect` needs no network access. It writes the blueprint, `docs/airgap/transfer-manifest.md` and an `AGENTS.md` block in your project.
 - `airgap-transfer` proposes download commands for what the transfer manifest lists: container images from their registries (for example Docker Hub, `ghcr.io`, `quay.io`), model files from Hugging Face, and packages from the release pages the catalog names. It runs them only after you approve the plan, from your machine straight to those services. A Hugging Face token is read only from `HF_TOKEN` in your environment and never written to a file.
+- `airgap-agent` downloads nothing and runs nothing: it writes configuration and the checks, with keys named as environment variables and never written to a file. The tools it sets up have outbound connections of their own; switching them off is its job, and the egress check proves it inside.
 - The interview asks about the organization (headcount, departments, hardware), not about people.
 
 The full policy is on the [privacy page](https://airgap-anything.mefby.com/project/privacy/).
@@ -236,7 +254,7 @@ MIT. See [LICENSE](LICENSE).
 
 Skill'ler düz markdown'dır: betik yok, bağımlılık yok, klasörden başka kurulacak bir şey yok. Claude Code, Codex, Cursor ve [Agent Skills](https://agentskills.io) okuyan her agent'ta çalışır; internete kapalı ağın içinde, yerel bir modelle de çalışır.
 
-`airgap-architect` kurumunuzla kısa bir görüşme yapar ve bir blueprint yazar: her katman için gerekçesi ve alternatifleriyle bir karar, her adımı yazılmış GPU, sunucu ve güç hesabı, ağa taşınacak her şeyin listesi. `airgap-transfer` bu listeyi kendini denetleyen bir pakete çevirir: önce sizin onayladığınız indirme komutları, SHA-256 listesi, disklere bölme, envanter ve içeride insanlar için bir çalıştırma kılavuzu ya da içerideki agent için kurallar. İçeride hiçbir adım internet ya da LLM gerektirmez.
+`airgap-architect` kurumunuzla kısa bir görüşme yapar ve bir blueprint yazar: her katman için gerekçesi ve alternatifleriyle bir karar, her adımı yazılmış GPU, sunucu ve güç hesabı, ağa taşınacak her şeyin listesi. `airgap-transfer` bu listeyi kendini denetleyen bir pakete çevirir: önce sizin onayladığınız indirme komutları, SHA-256 listesi, disklere bölme, envanter ve içeride insanlar için bir çalıştırma kılavuzu ya da içerideki agent için kurallar. İçeride hiçbir adım internet ya da LLM gerektirmez. `airgap-agent` ise içerideki geliştiriciler için bir kodlama agent'ı hazırlar: aracı seçer, telemetri, güncelleme ve web erişimini kapatan yapılandırmayı yazar ve tüm dosyaları aktarım listesine ekler; hiçbir şey indirmez ya da çalıştırmaz.
 
 **Kurulum.** Bir kez kurarsınız; sonrasında yalnızca sorarsınız. Claude Code oturumunda:
 

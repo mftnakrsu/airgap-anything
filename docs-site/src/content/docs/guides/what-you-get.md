@@ -8,10 +8,12 @@ your-project/
 ├── docs/airgap/blueprint.md            the blueprint: answers, tier, sizing, decisions
 ├── docs/airgap/transfer-manifest.md    images, models, packages and settings to carry in
 ├── docs/airgap/transfer-plan.md        the transfer's answers, items and volumes
+├── docs/airgap/agents.md               coding-agent decisions and the checks to run inside
+├── docs/airgap/agents/<tool>/          configuration (user/) and central policy (central/) per tool
 └── AGENTS.md                           instructions for the agent that builds it inside the network
 ```
 
-With superpowers installed, the blueprint goes to `docs/superpowers/specs/YYYY-MM-DD-PROJECT-airgap-blueprint-design.md` instead ([With superpowers](/guides/with-superpowers/)). `airgap-architect` writes the blueprint, the manifest and the `AGENTS.md` block; `airgap-transfer` writes the plan and the bundle.
+With superpowers installed, the blueprint goes to `docs/superpowers/specs/YYYY-MM-DD-PROJECT-airgap-blueprint-design.md` instead ([With superpowers](/guides/with-superpowers/)). `airgap-architect` writes the blueprint, the manifest and the `AGENTS.md` block; `airgap-transfer` writes the plan and the bundle; `airgap-agent` writes `agents.md` and the configuration folders ([Coding agents inside](/guides/coding-agents/)).
 
 Everything is markdown that a person can read. There is no separate state file: the blueprint holds the design's state and the plan file the transfer's, so an interrupted interview or transfer resumes from them.
 

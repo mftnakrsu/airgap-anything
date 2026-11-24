@@ -1,20 +1,21 @@
 ---
 title: Scope
-description: What version 0.3 covers, and what it leaves out.
+description: What version 0.4 covers, and what it leaves out.
 ---
 
-## In version 0.3
+## In version 0.4
 
-- Two skills in plain markdown: `SKILL.md`, references and a catalog, read by Claude Code, Codex, Cursor or any agent that reads Agent Skills. Nothing to install but the skill folder, and no script to run.
+- Three skills in plain markdown: `SKILL.md`, references and a catalog, read by Claude Code, Codex, Cursor or any agent that reads Agent Skills. Nothing to install but the skill folder, and no script to run.
 - Decision tables for the inference engine and the LLM gateway.
 - Fixed per-tier defaults for UI, identity, observability, orchestration, state stores and artifact registry.
 - Tier and sizing from organization answers, with every step written out, a transfer manifest, and a self-review before approval.
 - `airgap-transfer`: a plan from the transfer manifest, documented fetch commands that run only after your approval, a bundle with checksum lists split across media, and a runbook or agent rules that check it inside with `sha256sum` alone.
+- `airgap-agent`: the choice of coding-agent tool, its configuration and central policy with outbound connections off, the model server's requirements, offline MCP servers, and three checks for the inside ([Coding agents inside](/guides/coding-agents/)).
 
-## Not in version 0.3
+## Not in version 0.4
 
 - Deployment files such as Docker Compose or Helm. The skill decides; it does not operate. For running each tool, catalog entries point to existing per-tool skills.
-- A recommendation of which model to run.
+- A recommendation of which model to run, for the architect or the coding agents.
 - Decision tables for data, CI/CD and security layers.
 - Compliance mappings.
 - Publisher signatures. `airgap-transfer` checks publisher checksums where the manifest names them, not signatures.
