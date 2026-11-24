@@ -36,7 +36,7 @@ Open WebUI side (read from the Open WebUI docs, https://docs.openwebui.com/refer
 Server side:
 
 - Behind Open WebUI keep `UVICORN_WORKERS=1` and raise `DOCLING_SERVE_MAX_SYNC_WAIT` above its 120 s default (https://docs.openwebui.com/features/chat-conversations/rag/document-extraction/docling.md).
-- `DOCLING_SERVE_API_KEY` sets an API key on the service (https://raw.githubusercontent.com/docling-project/docling-serve/main/docs/configuration.md).
+- `DOCLING_SERVE_API_KEY` sets an API key on the service: "If specified, all the API requests must contain the header `X-Api-Key` with this value" (https://raw.githubusercontent.com/docling-project/docling-serve/main/docs/configuration.md). Open WebUI's `DOCLING_API_KEY` is what it sends in that header, so the two must hold the same value, each from the environment of its host.
 - Compute engines are local (2 workers), rq (Redis) and ray; file and page limits are unset by default (same page).
 - The container listens on port 5001 as UID 1001; models live in `DOCLING_SERVE_ARTIFACTS_PATH=/opt/app-root/src/.cache/docling/models` (https://raw.githubusercontent.com/docling-project/docling-serve/main/Containerfile).
 - Check inside the network: `GET /v1/capabilities` lists the engines, and one test conversion with the network cut shows that nothing is downloaded (read from the research; not run).

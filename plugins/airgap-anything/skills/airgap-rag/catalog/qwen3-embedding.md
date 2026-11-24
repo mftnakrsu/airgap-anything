@@ -7,7 +7,7 @@ Open-weight embedding model from the Qwen team, instruction-aware, served by the
 | Kind | `embedding-model` |
 | Version | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` |
 | License | Apache-2.0 |
-| Install | `hf download Qwen/Qwen3-Embedding-0.6B --revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3 --local-dir ./qwen3-embedding` on the connected side, then `vllm serve ./qwen3-embedding` on the inside |
+| Install | `hf download Qwen/Qwen3-Embedding-0.6B --revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3 --local-dir ./qwen3-embedding` on the connected side, then `vllm serve /srv/models/qwen3-embedding` on the inside |
 | Evidence | docs |
 | Last verified | 2026-11-24 |
 
@@ -39,7 +39,7 @@ The score is a reason, not a promise: MMTEB (multilingual) mean 64.33 for the 0.
 Serving, on a separate instance of the architect's `vllm` entry (v0.34.0), as a pooling model (https://docs.vllm.ai/en/stable/cli/serve/): Qwen3ForCausalLM is converted to an embedding model automatically.
 
 ```
-vllm serve ./qwen3-embedding --runner pooling
+vllm serve /srv/models/qwen3-embedding --runner pooling
 ```
 
 The endpoint is `/v1/embeddings` (https://docs.vllm.ai/en/stable/models/pooling_models.html). There is no `--task` flag.
@@ -71,9 +71,9 @@ None.
 |---|---|---|---|
 | `Qwen/Qwen3-Embedding-0.6B` | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` | 1.19 GB | https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B |
 
-Carry the whole `./qwen3-embedding` folder, produced by `hf download Qwen/Qwen3-Embedding-0.6B --revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3 --local-dir ./qwen3-embedding`; it is the path that `vllm serve ./qwen3-embedding` takes inside the network (https://huggingface.co/docs/huggingface_hub/guides/cli).
+Carry the whole `./qwen3-embedding` folder, produced by `hf download Qwen/Qwen3-Embedding-0.6B --revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3 --local-dir ./qwen3-embedding` (https://huggingface.co/docs/huggingface_hub/guides/cli). Inside the network `airgap-transfer` copies it to `/srv/models/<MODEL>`, the path that `vllm serve` takes; `qwen3-embedding` is used here for `<MODEL>` (`references/models.md`, Serving).
 
-The runtime image is the architect's `vllm` entry (`vllm/vllm-openai:v0.34.0`), not carried again here.
+The runtime image comes from the architect's `vllm` entry. With a GPU, `vllm/vllm-openai:v0.34.0` is already in the manifest. With no GPU (`hardware.gpus` empty), airgap-rag adds `vllm/vllm-openai-cpu:v0.34.0-x86_64` (`v0.34.0-arm64` on arm64) as the section-1 row `vllm` (from airgap-rag); pooling models on CPU are `unverified` and checked inside (`references/models.md`, Serving).
 
 ### Runtime downloads to stage in advance
 
@@ -98,3 +98,5 @@ All rows of Egress switches, in the environment of the embedding instance.
 - https://docs.openwebui.com/reference/env-configuration
 - https://www.runpod.io/blog/gpu-embedding-workloads-benchmark
 - https://huggingface.co/docs/huggingface_hub/guides/cli
+- https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/cpu.x86.inc.md
+- https://github.com/vllm-project/vllm/blob/v0.34.0/docs/models/hardware_supported_models/cpu.md

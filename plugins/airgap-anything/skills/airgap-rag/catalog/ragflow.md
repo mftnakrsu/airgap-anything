@@ -7,7 +7,7 @@ Standalone RAG server with its own web UI and API, document parsing (DeepDoc) an
 | Kind | `rag-platform` |
 | Version | `v1.0.0` |
 | License | Apache-2.0, unmodified; enterprise-only features not documented |
-| Install | Docker Compose from the repository at tag `v1.0.0`; image `infiniflow/ragflow:v1.0.0` |
+| Install | Docker Compose from the repository's source archive at tag `v1.0.0`, run from its `docker/` folder; image `infiniflow/ragflow:v1.0.0` |
 | Evidence | docs |
 | Last verified | 2026-11-24 |
 
@@ -26,6 +26,7 @@ Released 2026-11-06 (https://api.github.com/repos/infiniflow/ragflow/releases/la
 
 ## Configuration
 
+- Install inside: unpack the source archive (Carry in, Packages), change into its `docker/` folder, make the changes below in the `.env` and `service_conf.yaml.template` there, and start the stack with `docker compose -f docker-compose.yml up -d`. The README at v1.0.0 runs the same command from `ragflow/docker` in a checkout of the tag (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/README.md); the archive's top folder carries the repository's name (https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives).
 - Default profiles: `elasticsearch,cpu,metadata-mysql` (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env). Optional `tei-cpu` and `tei-gpu` profiles serve embeddings with `TEI_MODEL`, default `Qwen/Qwen3-Embedding-0.6B` (same file); the skill serves embeddings from vLLM instead.
 - Models: RAGFlow bundles no embedding model since v0.22. The `VLLM` and `OpenAI-API-Compatible` providers are tagged LLM and TEXT EMBEDDING (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/conf/llm_factories.json); point them at the network's vLLM. Reranking through these providers: not documented.
 - Permissions: a dataset's scope is "Only me" or "Team"; there is no per-group or per-document access control beyond the creator's rights (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docs/guides/team/resource_sharing/resource_sharing_and_permissions.md).
@@ -65,7 +66,15 @@ Default profile, each with its tag (https://raw.githubusercontent.com/infiniflow
 | `infiniflow/text-embeddings-inference:cpu-1.8` (only with the `tei-cpu` profile) | not documented | not recorded |
 | `infiniflow/text-embeddings-inference:1.8` (only with the `tei-gpu` profile) | not documented | not recorded |
 
-The optional `tei-cpu` profile (not on by default; the `.env` line `COMPOSE_PROFILES=${COMPOSE_PROFILES},tei-cpu` is commented out) adds `infiniflow/text-embeddings-inference:cpu-1.8`; the `tei-gpu` profile uses `infiniflow/text-embeddings-inference:1.8` (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env). Both are RAGFlow's own build of text-embeddings-inference; carry one only if that profile is used.
+The optional `tei-cpu` profile (not on by default; the `.env` line `COMPOSE_PROFILES=${COMPOSE_PROFILES},tei-cpu` is commented out) adds `infiniflow/text-embeddings-inference:cpu-1.8`; the `tei-gpu` profile uses `infiniflow/text-embeddings-inference:1.8` (https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docker/.env). That both are RAGFlow's own build of text-embeddings-inference is inferred from the `infiniflow/` namespace, not stated in the sources; carry one only if that profile is used.
+
+### Packages
+
+| Component | Version | File | Arch | URL | Publisher checksums |
+|---|---|---|---|---|---|
+| `ragflow` | `v1.0.0` | `ragflow-v1.0.0.tar.gz` (this entry's choice of name) | any | https://github.com/infiniflow/ragflow/archive/refs/tags/v1.0.0.tar.gz | none |
+
+The source archive holds the `docker/` folder with the compose files, `.env` and `service_conf.yaml.template`; without it the stack cannot start inside. The URL is GitHub's documented form for a tag archive, `https://github.com/OWNER/REPO/archive/refs/tags/TAG.tar.gz` (https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives). The release record of v1.0.0 names the same archive as its `tarball_url` (https://api.github.com/repos/infiniflow/ragflow/releases/tags/v1.0.0), and the tag points at commit `db1cd5929a7885a3074547791f5ecc4d2f891739` (https://api.github.com/repos/infiniflow/ragflow/git/ref/tags/v1.0.0). GitHub publishes no checksum for source archives and says their compressed bytes may change while the contents stay the same as long as the tag does not move, so `airgap-transfer`'s own checksum list is what covers the copy that is carried.
 
 ### Models
 
@@ -97,3 +106,6 @@ All rows of Egress switches.
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/docs/guides/data_source/data_source_categories_and_selection.md
 - https://raw.githubusercontent.com/infiniflow/ragflow/v1.0.0/README.md
 - https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B
+- https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
+- https://api.github.com/repos/infiniflow/ragflow/releases/tags/v1.0.0
+- https://api.github.com/repos/infiniflow/ragflow/git/ref/tags/v1.0.0

@@ -7,7 +7,7 @@ Multilingual reranker from BAAI that vLLM serves without overrides. The alternat
 | Kind | `reranker-model` |
 | Version | `953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e` |
 | License | Apache-2.0 |
-| Install | `hf download BAAI/bge-reranker-v2-m3 --revision 953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e --local-dir ./bge-reranker-v2-m3` on the connected side, then `vllm serve ./bge-reranker-v2-m3` on the inside |
+| Install | `hf download BAAI/bge-reranker-v2-m3 --revision 953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e --local-dir ./bge-reranker-v2-m3` on the connected side, then `vllm serve /srv/models/bge-reranker-v2-m3` on the inside |
 | Evidence | docs |
 | Last verified | 2026-11-24 |
 
@@ -37,7 +37,7 @@ The score is a reason, not a promise: MMTEB-R 58.36, against 66.36 for Qwen3-Rer
 Serving, on an instance of the architect's `vllm` entry (v0.34.0). The XLMRobertaForSequenceClassification architecture needs no overrides (https://docs.vllm.ai/en/stable/models/pooling_models/scoring/):
 
 ```
-vllm serve ./bge-reranker-v2-m3 --runner pooling
+vllm serve /srv/models/bge-reranker-v2-m3 --runner pooling
 ```
 
 vLLM's `/v1/rerank` matches Open WebUI's external reranker format. TEI's `/rerank` does not: it takes `{query, texts}` and returns `[{index, score}]`, while Open WebUI sends `{model, query, documents, top_n}` and expects `results[].index/relevance_score` (https://docs.openwebui.com/reference/env-configuration). With TEI, a translation layer in front is needed (inferred from the two formats, not run).
@@ -68,9 +68,9 @@ None.
 |---|---|---|---|
 | `BAAI/bge-reranker-v2-m3` | `953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e` | 2.27 GB | https://huggingface.co/api/models/BAAI/bge-reranker-v2-m3?blobs=true |
 
-Carry the whole `./bge-reranker-v2-m3` folder, produced by `hf download BAAI/bge-reranker-v2-m3 --revision 953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e --local-dir ./bge-reranker-v2-m3`; it is the path that `vllm serve ./bge-reranker-v2-m3` takes inside the network (https://huggingface.co/docs/huggingface_hub/guides/cli).
+Carry the whole `./bge-reranker-v2-m3` folder, produced by `hf download BAAI/bge-reranker-v2-m3 --revision 953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e --local-dir ./bge-reranker-v2-m3` (https://huggingface.co/docs/huggingface_hub/guides/cli). Inside the network `airgap-transfer` copies it to `/srv/models/<MODEL>`, the path that `vllm serve` takes; `bge-reranker-v2-m3` is used here for `<MODEL>` (`references/models.md`, Serving).
 
-The runtime image is the architect's `vllm` entry (`vllm/vllm-openai:v0.34.0`), not carried again here.
+The runtime image comes from the architect's `vllm` entry. With a GPU, `vllm/vllm-openai:v0.34.0` is already in the manifest. With no GPU (`hardware.gpus` empty), airgap-rag adds `vllm/vllm-openai-cpu:v0.34.0-x86_64` (`v0.34.0-arm64` on arm64) as the section-1 row `vllm` (from airgap-rag); pooling models on CPU are `unverified` and checked inside (`references/models.md`, Serving).
 
 ### Runtime downloads to stage in advance
 
@@ -93,3 +93,5 @@ All rows of Egress switches, in the environment of the reranker instance.
 - https://raw.githubusercontent.com/huggingface/text-embeddings-inference/main/README.md
 - https://docs.openwebui.com/reference/env-configuration
 - https://huggingface.co/docs/huggingface_hub/guides/cli
+- https://github.com/vllm-project/vllm/blob/v0.34.0/docs/getting_started/installation/cpu.x86.inc.md
+- https://github.com/vllm-project/vllm/blob/v0.34.0/docs/models/hardware_supported_models/cpu.md
