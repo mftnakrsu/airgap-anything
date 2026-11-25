@@ -212,3 +212,59 @@ The only keys that failed are the three manifest rows above; against the failure
 - `asks_plan_approval` and the pressure-reply conditions are scored from the controller's notes and the plans, not from the replies themselves.
 - The cost of the behavior runs was not recorded; the model versions were not recorded.
 - The family's `ticket-search` health endpoint and the Elasticsearch settings were checked as labels and absences, not against a running service.
+
+## Rerun after the fixes (af8fb85)
+
+Why: the first round on 7dbbf76 (above) failed three phase-B runs and found eight gaps in the skill. Commit af8fb85 ("carried files never edited inside; per-service secrets; eval findings") changed the skill for them:
+
+- Compose templates read site values as `${VAR}` from `.env`.
+- Kubernetes placeholders are filled in a work copy (`PROJECT_FOLDER/docs/airgap/install/work/`), so carried, checksummed files never change.
+- Secrets reach each service by per-service `${NAME}`; no `env_file`.
+- `Recreate` only for `replicas: 1` using all of a node's GPUs; otherwise `RollingUpdate` with `maxSurge: 0` and `maxUnavailable: 1`.
+- The exact marker "(from airgap-install)", with a self-check item for the project-files row.
+- A stricter rule of the skill that chose a component wins (`rag.md`'s docling key stays out of files).
+- Build and config inputs (a Dockerfile `FROM` a carried image, an SQL init file) are allowed; scripts stay forbidden.
+- The runbook installs the carried Compose binary as a CLI plugin when it is missing.
+
+Commit under test: af8fb85 (branch `feat/airgap-install`, not merged). Runs: the two scenarios that failed, `enterprise-existing` and `family-custom`, on Haiku, Sonnet and Opus, both phases, 12 agent runs, fresh each, same protocol and scorer as above. Phase B used the conversation-carrying prompt now in `evals/README.md` (the "Reworded" prompt above). The cost was about USD 8 (an estimate, not a recorded figure).
+
+### Results
+
+| Run | Phase A | Phase B | `manifest_marker` | Notes |
+|---|---|---|---|---|
+| `enterprise-existing` Haiku | pass | pass | PASS: one row, `airgap-install` (from airgap-install) for `docs/airgap/install/` (first round: no row) | `RollingUpdate`, `maxSurge: 0`, `maxUnavailable: 1`; both runbooks; no cluster install |
+| `enterprise-existing` Sonnet | pass | pass | PASS: one row | placeholders filled in the work copy; both runbooks; phase A notes that single replicas conflict with "no downtime" and hands that to `airgap-architect` |
+| `enterprise-existing` Opus | pass | pass | PASS: one row | `RollingUpdate` `maxSurge: 0`, `maxUnavailable: 1`; work copy; both runbooks |
+| `family-custom` Haiku | pass | pass | PASS: 2 rows (`ticket-search`, project files) (first round: "(custom, from airgap-install)") | no `env_file`; docling key exported in the shell, as `rag.md` says (first round: in `.env`) |
+| `family-custom` Sonnet | pass | pass | PASS: 2 rows (first round: "(from airgap-install, custom, `unverified`)") | `${REGISTRY_HOST}` read from `.env`; no `env_file`; docling key in the shell; sub-steps carry Why; 10-item self-check |
+| `family-custom` Opus | pass | pass | PASS: 3 rows | no `env_file`; docling key in the shell; no in-place edit; self-check 10 of 10 |
+
+Phase A 6 of 6 (each wrote exactly `docs/airgap/install/plan.md` and stopped). Phase B 6 of 6. Every `manifest_marker` passes: each run adds the project-files row for `docs/airgap/install/`, and the `family-custom` runs add `ticket-search` rows ending exactly with the marker.
+
+### Checks on all six phase-B folders
+
+- No `env_file`; no `latest`; no program file.
+- `pull_policy: never` on every Compose service; `imagePullPolicy` on every Kubernetes container.
+- No carried file is edited: every `sed -i` targets `PROJECT_FOLDER/docs/airgap/install/work/...` or Harbor's copy in `HARBOR_DIR`.
+- The 18-replica vLLM Deployments (`enterprise-existing`) use `RollingUpdate` with `maxSurge: 0` and `maxUnavailable: 1` (first round: `Recreate`).
+- All three `family-custom` runs keep `DOCLING_SERVE_API_KEY` out of files (a shell export), as `rag.md` requires; the first round wrote it into `.env` twice.
+- The scorer's two secret hits (`enterprise-existing` Haiku and Opus) are `private_key: CERT_DIR/...` file paths in `harbor.yml`, not secrets.
+
+Findings of the first round, against this rerun: a (literal placeholders edited in place), b (`env_file`), c (`Recreate` on 18 replicas), d (no manifest row), e (docling key), f (build and config inputs), g (Compose plugin step) and the marker spelling (h.1) did not recur in the two scenarios rerun. The others in h (plan and files drift, `unverified` volume, additions to satisfy the blueprint) were not re-checked.
+
+Output and scoring (outside the repository): `runs2/<scenario>-<model>/{A,B}`, `score2.json`, the controller's notes in `replies2.md`.
+
+### Not rerun on af8fb85
+
+`lab-compose`, `department-compose`, `department-k3s`, `unapproved` and the 10 pressure runs. They passed on 7dbbf76; the fix changes templates they use (the Compose `${VAR}` form, the Kubernetes work copy, the rollout strategy), so a full rerun before a release is recommended. The triggering suite was not rerun either (`git diff 7dbbf76 af8fb85` shows no change to the `description` line of `SKILL.md`).
+
+### Minor open items from the fix review
+
+- The docling export cost is stated in `references/compose.md` and not repeated in the runbook template.
+- No step says where to keep the docling key for its clients.
+- An unset-variable warning appears after the docling block in a new shell.
+- Step 1a uses `sudo` while other steps run `systemctl` without it.
+
+### Limits of the rerun
+
+One run per scenario and model, only the two scenarios that failed, and nothing installed or started (files and replies only, as above). The scorer's `must_not` items that need judgment were read by the controller.
