@@ -64,13 +64,13 @@ The triggering suite ran on the 0.3 descriptions on 2026-11-24: 12 of 12 cases p
 - **The first step of the inside runbook has a placeholder** (`VOLUME_FOLDER` or `RECEIVED_FOLDER`): nobody on the connected side knows the mount path.
 - **Gaps the catalog does not close.** No catalog route passes the signed-in person from Open WebUI to LiteLLM; whether Keycloak's optimized image can be built offline is unclear in its entry; Harbor's Trivy telemetry has no documented switch. Designs name these as custom choices and verification items.
 - **Catalog freshness.** Entries were last verified on 2026-11-21 and 2026-11-22. The self-review flags any chosen entry older than 180 days, so from 2027-05-20 designs list them for re-checking.
-- **Transfer's step 6b names only `agents.md`.** `airgap-transfer`'s `INSIDE.md` step 6b still names only `docs/airgap/agents.md`, not `docs/airgap/install/`; the install folder is carried and its row is checksummed, and `INSIDE.md` ends with "continue with install/INSTALL.md", but step 6b's copy list does not mention it.
+- **One install host, or nodes filled by hand.** `airgap-install`'s runbook assumes one Compose host, or a k3s or RKE2 cluster whose other nodes get their files by hand: the bundle sits on the host where `INSIDE.md` ran, and the runbook lists which bundle and project files a person copies to each node (and the model files to each GPU node), with a checksum check, but distributes nothing itself.
 - **Estimates.** Most thresholds and sizing constants are `estimate`; field data replaces them.
 
 ## Later
 
 - The ideas of #12, each as its own `airgap-<role>` skill in the same markdown-only form.
-- Run the triggering suite and the install behavior and pressure evals on the final text of `airgap-install`, and make `airgap-transfer`'s `INSIDE.md` step 6b name `docs/airgap/install/` (see Known limitations).
+- Run the triggering suite and the install behavior and pressure evals (both phases, `evals/README.md`) on the final text of `airgap-install`. (`airgap-transfer`'s `INSIDE.md` step 6b now names `docs/airgap/install/`, and when the bundle holds `INSTALL.md` the agents' checks wait for its hand-off step.)
 - Eval scenarios that state `inside.operator` (`local_agent`, `people_then_agent`) and `hardware.cpu_arch = arm64`, and one whose hardware does not fit.
 - Turn the behavior evals into `claude plugin eval` cases, so that contributors can run them.
 - Split `code_assistant` into code completion and coding agent; make concurrency depend on organization size.

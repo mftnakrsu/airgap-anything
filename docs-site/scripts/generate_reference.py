@@ -249,8 +249,33 @@ def component_page(entry: dict, order: int, ids: set[str]) -> str:
 
 
 def _text_outside_code(markdown: str) -> str:
-    """Angle brackets in prose would become HTML in the site; inside code spans and blocks they stay."""
-    parts = re.split(r"(```.*?```|`[^`\n]*`)", markdown, flags=re.S)
+    """Angle brackets in prose would become HTML in the site; inside code spans and blocks they stay.
+
+    Fences are tracked by their length, as CommonMark does: a block opened with four backticks
+    (a template that holds ```sh blocks) closes only at a line of four or more backticks, so the
+    inner fences and every line between them stay code.
+    """
+    out, prose, fence = [], [], None
+    for line in markdown.splitlines(keepends=True):
+        match = re.match(r" {0,3}(`{3,}|~{3,})", line)
+        if fence is None and match:
+            out.append(_text_inline(prose))
+            prose, fence = [], match.group(1)
+            out.append(line)
+        elif fence is not None:
+            out.append(line)
+            closing = re.fullmatch(r" {0,3}(`{3,}|~{3,})[ \t]*\n?", line)
+            if closing and closing.group(1)[0] == fence[0] and len(closing.group(1)) >= len(fence):
+                fence = None
+        else:
+            prose.append(line)
+    out.append(_text_inline(prose))
+    return "".join(out)
+
+
+def _text_inline(lines: list[str]) -> str:
+    """Prose lines with their code spans kept as they are."""
+    parts = re.split(r"(`[^`\n]*`)", "".join(lines))
     return "".join(part if part.startswith("`") else _text(part) for part in parts)
 
 

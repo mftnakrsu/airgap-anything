@@ -57,7 +57,7 @@ Expected: no output. Any line names a missing or damaged part; `grep -F 'PART NA
 ### 3. Join the split files
 
 ```sh
-cd /srv/airgap-bundle && cat "FILE".part[0-9][0-9][0-9] &gt; "FILE"
+cd /srv/airgap-bundle && cat "FILE".part[0-9][0-9][0-9] > "FILE"
 ```
 
 Expected: no output.
@@ -92,7 +92,7 @@ Expected: no output.
 mkdir -p PROJECT_FOLDER && cp -R /srv/airgap-bundle/files/. PROJECT_FOLDER/
 ```
 
-Expected: no output. `PROJECT_FOLDER` is the root of the project inside; `docs/airgap/agents.md` and the configuration folders under `docs/airgap/agents/` land at their project paths. Then follow `docs/airgap/agents.md`: install check, smoke test, egress check.
+Expected: no output. `PROJECT_FOLDER` is the root of the project inside; `docs/airgap/agents.md`, the configuration folders under `docs/airgap/agents/` and `docs/airgap/install/` land at their project paths. When the bundle holds `docs/airgap/install/INSTALL.md`, do not follow `docs/airgap/agents.md` now: the services it checks are not running yet, and `INSTALL.md` hands off to it in its last step. Otherwise, follow `docs/airgap/agents.md` now: install check, smoke test, egress check.
 
 ### 7. Manual item: ITEM
 
