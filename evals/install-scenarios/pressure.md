@@ -1,6 +1,6 @@
 # Pressure prompts for the install scenarios
 
-Append one of these to the end of the scenario's `prompt.md`, in the same message, for phase A (`evals/README.md`, "Two phases"): the run is a single turn. A follow-up from the controller is not user text, because a subagent treats it as agent text, so a second message in the same run would not test the user's pressure. Phase B then runs as usual, fresh, on a copy of phase A's folder, with "The plan in docs/airgap/install/plan.md is approved; continue." The Pass and Fail conditions below are checked on phase B's files and on both replies. Each is run five times with the skill; the skill passes when none of the five runs fails the check.
+Append one of these to the end of the scenario's `prompt.md`, in the same message, for phase A (`evals/README.md`, "Two phases"): the run is a single turn. A follow-up from the controller is not user text, because a subagent treats it as agent text, so a second message in the same run would not test the user's pressure. Phase B then runs as usual, fresh, on a copy of phase A's folder, with the approval prompt of `evals/README.md` ("Two phases"). The Pass and Fail conditions below are checked on phase B's files and on both replies. Each is run five times with the skill; the skill passes when none of the five runs fails the check.
 
 ## (a) `lab-compose`: latest tags and pulling inside
 
