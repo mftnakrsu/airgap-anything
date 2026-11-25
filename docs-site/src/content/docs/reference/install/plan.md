@@ -25,6 +25,13 @@ Orchestration: ORCHESTRATION (`docker-compose`, `k3s`, `rke2` or existing cluste
 |---|---|---|
 | hosts | HOST_1 = NAME (ADDRESS or placeholder) | the user, or default |
 
+## Hosts
+
+| Host | Role | Components | Files a person copies to it from the bundle host |
+|---|---|---|---|
+| HOST_1 | registry, Compose host, or k3s/RKE2 server | COMPONENTS | none: the bundle is here |
+| HOST_2 | k3s/RKE2 agent | COMPONENTS | the list of [`references/clusters.md`](/reference/install/clusters/), "Files on every node" |
+
 ## Steps
 
 | Step | Host | Component | Files | Port | Health check | GPUs |
@@ -38,6 +45,12 @@ Orchestration: ORCHESTRATION (`docker-compose`, `k3s`, `rke2` or existing cluste
 |---|---|---|---|---|---|
 | MODEL | N | R | N | N × R | SAME NUMBER |
 
+## Registry paths (Harbor only)
+
+| Manifest Target path | Path in the files and the push |
+|---|---|
+| `REGISTRY_HOST/postgres:18.7` | `REGISTRY_HOST/library/postgres:18.7` |
+
 ## Manifest rows added "(from airgap-install)"
 
 - SECTION: ROW (why the files need it)
@@ -46,6 +59,8 @@ Orchestration: ORCHESTRATION (`docker-compose`, `k3s`, `rke2` or existing cluste
 
 - ITEM: who decides, and which step waits for it
 ````
+
+One row per host in Hosts, as blueprint §3 and §5 place the components: the runbook assumes one Compose host, or a cluster whose other nodes get their files by hand, so the last column says what each host needs. On Kubernetes, the Answers table also records the exposure host names ([`references/questions.md`](/reference/install/questions/), question 8) and, when Harbor shares a host with a k3s node, Harbor's port ([`references/compose.md`](/reference/install/compose/), "Harbor's `harbor.yml`"). Registry paths lists, with Harbor, every manifest Target path without a project segment and the `library/` path the files use instead ([`references/compose.md`](/reference/install/compose/)); leave the table out otherwise.
 
 The GPUs column copies blueprint §5: GPUs per replica, replicas and the total, never "all". On one host, no GPU appears in two rows; the GPU check table's total equals the blueprint's. When the numbers do not fit the hosts, the plan reports it as a blueprint change for `airgap-architect` and stops: the install does not redesign.
 

@@ -19,7 +19,7 @@ Goal: `docs/airgap/install/compose/compose.yaml`, `compose/.env.example` and, wh
 
 ## Rules for every service
 
-- `image:` is the manifest's reference, with the manifest's tag. When the blueprint has a registry, it is the manifest's Target path (`REGISTRY_HOST/…`): the runbook's registry step tags the loaded image with that name, so the engine holds it locally under exactly the name the file uses. Never `latest`: Compose's `missing` policy pulls `latest` even when it is present.
+- `image:` is the manifest's reference, with the manifest's tag. When the blueprint has a registry, it is the manifest's Target path (`REGISTRY_HOST/…`): the runbook's registry step tags the loaded image with that name, so the engine holds it locally under exactly the name the file uses. With Harbor, a Target path without a project segment (`REGISTRY_HOST/postgres:18.7`) becomes `REGISTRY_HOST/library/postgres:18.7`: Harbor accepts a push only into a project, and "When you first deploy Harbor, a default public project named `library` is created"; `plan.md` records each such mapping ([`references/plan.md`](/reference/install/plan/)), and the runbook pushes to the mapped path. Never `latest`: Compose's `missing` policy pulls `latest` even when it is present.
 - `restart: unless-stopped` on every service, so a host reboot brings back what was running (Compose: the policy "restarts the container irrespective of the exit code but stops" only when the container is stopped by hand).
 - `pull_policy: never` on every service. Why: "If there is no cached image, a failure is reported", so a missing image fails at once instead of trying a registry that inside the network does not exist. Never pull images inside; a missing image is carried in again.
 - GPUs: `deploy.resources.reservations.devices` with `driver: nvidia`, `capabilities: [gpu]` (required), and either `count: N` or `device_ids: ['0', '3']` (mutually exclusive) with N or the IDs from blueprint §5 for this host. Never `count: all` and never leave `count` out: "If `count` is set to `all` or not specified, all GPUs available on the host are used". Two services on one host never list the same device; with more than one GPU service per host, use `device_ids`.
@@ -149,7 +149,7 @@ One line per secret any service reads. A value built from a secret (a database U
 
 ## Placing the egress settings
 
-Every row of manifest section 4 for a component goes into that component's service, in `environment` (an environment variable) or in `command` (a flag), exactly as the manifest writes it; a setting that lives in the component's own configuration file goes into `compose/config/COMPONENT.EXT`, mounted into the service. A row that names a file to create instead (vLLM's `~/.config/vllm/do_not_track`) uses its environment-variable alternative. A row for the connected staging host only (the `hf` update check) is not placed. `INSTALL.md` step 6 checks each placed setting with `docker compose config`.
+Every row of manifest section 4 for a component goes into that component's service, in `environment` (an environment variable) or in `command` (a flag), exactly as the manifest writes it; a setting that lives in the component's own configuration file goes into `compose/config/COMPONENT.EXT`, mounted into the service. A row that names a file to create instead (vLLM's `~/.config/vllm/do_not_track`) uses its environment-variable alternative. A row for the connected staging host only (the `hf` update check) is not placed, nor is a row that says "None documented" or "Not applicable": neither is a setting of what runs inside. `INSTALL.md` step 6 checks each placed setting with `docker compose config`.
 
 ## Harbor's `harbor.yml`
 
@@ -167,6 +167,8 @@ data_volume: /data
 ```
 
 `HARBOR_ADMIN_PASSWORD` and `HARBOR_DB_PASSWORD` are placeholders that the runbook replaces inside with `openssl rand` output; the file never holds Harbor's default password. Copy the remaining keys from `harbor.yml.tmpl` of the carried installer; with `--with-trivy`, set `trivy.offline_scan: true` and `trivy.skip_update: true` (the `harbor` catalog entry). `hostname` is never `localhost` or `127.0.0.1`.
+
+Harbor and a k3s node on one host: k3s's packaged Traefik "deploys a LoadBalancer Service that uses ports 80 and 443", and by default ServiceLB uses all nodes for it, so ports 80 and 443 are taken on every node. On a shared host, `http.port` (and `https.port` with TLS) is another port, `8081` for example (a chosen value: that it is free on the host is `unverified`, and the runbook's Harbor start shows it), `REGISTRY_HOST` includes that port everywhere (`HOST:8081`), and `plan.md` records the port in its Steps table and Answers. Better still, Harbor runs on a host that is not a cluster node.
 
 ## Sources
 
@@ -189,3 +191,5 @@ data_volume: /data
 | Distribution Registry | `registry:3.1.2`, port 5000, `/var/lib/registry`, `OTEL_TRACES_EXPORTER=none` | the `distribution-registry` catalog entry (https://github.com/distribution/distribution/blob/v3.1.2/docs/content/about/deploying.md) |
 | Harbor | `hostname`, `http.port`, `harbor_admin_password`, `database.password`, `data_volume`, `trivy.offline_scan`, `trivy.skip_update` | https://github.com/goharbor/harbor/blob/v2.16.0/make/harbor.yml.tmpl |
 | Harbor | `./install.sh` renders `docker-compose.yml` with `./prepare` | https://github.com/goharbor/harbor/blob/v2.16.0/make/install.sh |
+| Harbor | default public project `library` created at the first deploy | https://github.com/goharbor/website/blob/1ce1ac23f8d4969ce587b7ced8afb7954f76115d/docs/working-with-projects/create-projects/_index.md |
+| K3s | Traefik's LoadBalancer Service uses ports 80 and 443 on all nodes by default (ServiceLB) | https://github.com/k3s-io/docs/blob/8b33d6f4106826376a9784bc21d0fbba8dccbc69/docs/networking/networking-services.md |

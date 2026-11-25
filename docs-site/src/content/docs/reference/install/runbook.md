@@ -22,6 +22,8 @@ Goal: `docs/airgap/install/INSTALL.md` for people, `docs/airgap/install/AGENTS-I
 - **No pulls, no downloads.** Never pull images inside; a missing image or file is carried in again from outside.
 - **Expected outputs** come from the catalog entries and the sources below (ports, endpoints, rollout messages). Where none is documented, the step checks that the container or pod runs and is labeled `unverified`.
 - **Language.** Prose follows the blueprint's `Language:` line (English when it has none). Commands, file names, paths and expected outputs are never translated.
+- **Absolute paths.** Every Compose block starts with `cd PROJECT_FOLDER/docs/airgap/install/compose`, every Kubernetes file is named as `PROJECT_FOLDER/docs/airgap/install/kubernetes/…`, and bundle files as `/srv/airgap-bundle/…`, so no block depends on the folder the previous one left, and no step `cd`s into a relative path. Why: a person who opens a new shell, or repeats one step, must get the same result.
+- **RKE2's `kubectl`.** On RKE2, `kubectl` is not on the `PATH`, so every Kubernetes block of the runbook starts with `export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin` ([`references/clusters.md`](/reference/install/clusters/), "RKE2"); on k3s and an existing cluster, leave the line out.
 - **Placeholders** only for what nobody on the connected side knows, in capitals, listed at the top of the runbook with where each value comes from. The blueprint's numbers (GPU counts, replicas, ports) are written out, never left as placeholders.
 
 ## INSTALL.md template
@@ -33,14 +35,17 @@ Fill in the parts in capitals. Step 4b only on Kubernetes with GPUs, and always 
 
 This runbook needs neither internet access nor an LLM. Every step has a reason, the commands, the output to expect and what to do when the output differs. Stop at the first difference, report the command, its output and the log command of the step, and change nothing.
 
-Run the commands from the project folder (PROJECT_FOLDER, where `INSIDE.md` copied the project files), on the host each step names.
+Run the commands on the host each step names. PROJECT_FOLDER is the project folder where `INSIDE.md` copied the project files, and /srv/airgap-bundle the bundle folder of `INSIDE.md`; every command names its files by these absolute paths. On RKE2, the first line of every Kubernetes block, `export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin`, puts RKE2's `kubectl` on the `PATH`.
 
 Placeholders, filled once here before step 1:
 
 | Placeholder | Value | Where it comes from |
 |---|---|---|
 | HOST_1 | | `plan.md`, Answers |
+| PROJECT_FOLDER | | `INSIDE.md` step 6b |
 | REGISTRY_HOST | | the registry's host name and port |
+| GATEWAY_HOSTNAME, UI_HOSTNAME | | Kubernetes only: `plan.md`, Answers (`exposure`) |
+| HARBOR_DIR | | Harbor only: an absolute folder on the registry host for the installer, for example `/opt/harbor-installer` |
 
 ## 1. Preconditions
 
@@ -59,14 +64,18 @@ nvidia-smi
 
 **Why:** the workloads need a cluster whose every node is `Ready`.
 
+First the files every other node needs, copied by a person from the bundle host, with the list and the check of [`references/clusters.md`](/reference/install/clusters/) ("Files on every node"). Then:
+
 ```sh
+# RKE2 only:
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin
 COMMANDS FROM references/clusters.md FOR THIS DISTRIBUTION
 kubectl get nodes
 ```
 
-**Expect:** every node of `plan.md` listed as `Ready`.
+**Expect:** the copy check prints nothing on every node; every node of `plan.md` listed as `Ready`.
 
-**If not:** stop and report the output of `journalctl -u SERVICE -n 200` (`rke2-server` or `rke2-agent`; `k3s` for k3s, whose unit name is `unverified`).
+**If not:** stop and report the output of `journalctl -u SERVICE -n 200` (`rke2-server` or `rke2-agent`; `k3s` for k3s, whose unit name is `unverified`; `-n 200`, the last 200 lines, is `unverified` too).
 
 ## 3. Registry
 
@@ -84,32 +93,36 @@ The file holds `{"insecure-registries" : ["REGISTRY_HOST"]}` (REGISTRY_HOST with
 Distribution Registry (Compose). `.env` is created empty here, readable only by its owner: Compose reads the `env_file` of every service in the file even when one service is started, and step 4 fills it.
 
 ```sh
-cd docs/airgap/install/compose
+cd PROJECT_FOLDER/docs/airgap/install/compose
 touch .env
 chmod 600 .env
 docker compose up -d --wait registry
+echo $?
 ```
 
-Harbor, in the folder where its offline installer is extracted (HARBOR_DIR):
+Harbor: the offline installer is in the bundle, `/srv/airgap-bundle/packages/harbor/` (manifest section 3, the `harbor` catalog entry); it is copied into a folder of its own (HARBOR_DIR, for example `/opt/harbor-installer`) and extracted there:
 
 ```sh
-cd HARBOR_DIR
-tar xzvf harbor-offline-installer-v2.16.0-amd64.tgz
-cp PROJECT_FOLDER/docs/airgap/install/compose/harbor/harbor.yml harbor/harbor.yml
-chmod 600 harbor/harbor.yml
-sed -i "s/HARBOR_ADMIN_PASSWORD/$(openssl rand -hex 32)/" harbor/harbor.yml
-sed -i "s/HARBOR_DB_PASSWORD/$(openssl rand -hex 32)/" harbor/harbor.yml
-cd harbor && sudo ./install.sh
+mkdir -p HARBOR_DIR
+cp /srv/airgap-bundle/packages/harbor/harbor-offline-installer-v2.16.0-amd64.tgz HARBOR_DIR/
+cd HARBOR_DIR && tar xzvf harbor-offline-installer-v2.16.0-amd64.tgz
+cp PROJECT_FOLDER/docs/airgap/install/compose/harbor/harbor.yml HARBOR_DIR/harbor/harbor.yml
+chmod 600 HARBOR_DIR/harbor/harbor.yml
+sed -i "s/HARBOR_ADMIN_PASSWORD/$(openssl rand -hex 32)/" HARBOR_DIR/harbor/harbor.yml
+sed -i "s/HARBOR_DB_PASSWORD/$(openssl rand -hex 32)/" HARBOR_DIR/harbor/harbor.yml
+cd HARBOR_DIR/harbor && sudo ./install.sh
 ```
 
-Harbor only, before the first push: Harbor accepts a push only into an existing project ("you must create a corresponding project in the Harbor interface"). In the portal (`https://REGISTRY_HOST`, or `http://` without TLS), signed in as `admin` with the password from `harbor/harbor.yml`: **Projects**, **New Project**, the name, **Public** checked (any user may then pull, so the cluster nodes need no pull credentials), **OK**; one project per first path segment of the manifest's Target paths (`vllm`, `berriai`, …). A Target path without a project segment (`REGISTRY_HOST/postgres:18.7`) cannot be pushed to Harbor: `plan.md` lists it as an open item with the project to use, and the install stops here until the files and the manifest name that path. Then sign in from the host that pushes; `docker login` asks for the user name and password, which a person types (an agent stops here and asks a person):
+On arm64 the archive is `harbor-offline-installer-v2.16.0-arm64.tgz`.
+
+Harbor only, before the first push: Harbor accepts a push only into an existing project ("you must create a corresponding project in the Harbor interface"). In the portal (`https://REGISTRY_HOST`, or `http://` without TLS), signed in as `admin` with the password from `HARBOR_DIR/harbor/harbor.yml`: **Projects**, **New Project**, the name, **Public** checked (any user may then pull, so the cluster nodes need no pull credentials), **OK**; one project per first path segment of the Target paths (`vllm`, `berriai`, …). A Target path without a project segment (`REGISTRY_HOST/postgres:18.7`) goes into Harbor's default public project `library`, which Harbor creates at its first deploy: the files name `REGISTRY_HOST/library/postgres:18.7`, `plan.md` ("Registry paths") lists each such path, and the push below uses it; `library` needs no **New Project**. Then sign in from the host that pushes; `docker login` asks for the user name and password, which a person types (an agent stops here and asks a person):
 
 ```sh
 docker login REGISTRY_HOST
 echo $?
 ```
 
-Then, for every image of manifest section 1, its reference and its Target path:
+Then, for every image of manifest section 1, its reference and its Target path (with Harbor, the path of `plan.md`'s "Registry paths" where it has one, so `REGISTRY_HOST/library/postgres:18.7`):
 
 ```sh
 docker tag IMAGE REGISTRY_HOST/TARGET
@@ -120,10 +133,10 @@ echo $?
 **Expect:**
 
 - Without TLS: `cat` shows the `insecure-registries` line.
-- Distribution Registry only: `docker compose up --wait registry` returns with exit code 0, and every `echo $?` after a push prints `0`.
-- Harbor only: `install.sh` ends without an error; every project of the Target paths is listed under **Projects**; the `echo $?` after `docker login` and after every push prints `0`.
+- Distribution Registry only: the `echo $?` after `docker compose up --wait registry` prints `0`, and every `echo $?` after a push prints `0`.
+- Harbor only: `install.sh` ends without an error; every project of the Target paths, and `library`, is listed under **Projects**; the `echo $?` after `docker login` and after every push prints `0`.
 
-**If not:** stop and report `docker compose logs --tail 200 registry`, or the last lines of `install.sh`. Notes: the archive's top folder `harbor/` is `unverified` (the installer's file list is in the `harbor` catalog entry, its folder name is not); `ls -l harbor/install.sh` shows it. Harbor's `install.sh` runs `docker compose down -v` before `up -d`; its data stays in the bind-mounted `data_volume` (`/data`). It renders its Compose file with the `goharbor/prepare` container from the installer's archive; that this works offline is `unverified`. The admin password is the `harbor_admin_password` line of `harbor/harbor.yml`, readable only by root. After a change of `daemon.json` with Harbor already running, Harbor's documentation restarts it with `docker compose down -v` and `docker compose up -d` in the installer folder. A tag listing of the registry is `unverified`; the starts of step 5 prove every tag.
+**If not:** stop and report `docker compose logs --tail 200 registry`, or the last lines of `install.sh`. Notes: the archive's top folder `harbor/` is `unverified` (the installer's file list is in the `harbor` catalog entry, its folder name is not); `ls -l HARBOR_DIR/harbor/install.sh` shows it. Harbor's `install.sh` runs `docker compose down -v` before `up -d`; its data stays in the bind-mounted `data_volume` (`/data`). It renders its Compose file with the `goharbor/prepare` container from the installer's archive; that this works offline is `unverified`. The admin password is the `harbor_admin_password` line of `HARBOR_DIR/harbor/harbor.yml`, which `chmod 600` leaves readable only by its owner, the account that ran the `cp` (and by root). After a change of `daemon.json` with Harbor already running, Harbor's documentation restarts it with `docker compose down -v` and `docker compose up -d` in `HARBOR_DIR/harbor`. A tag listing of the registry is `unverified`; the starts of step 5 prove every tag.
 
 ## 4. Secrets
 
@@ -132,12 +145,12 @@ echo $?
 Compose:
 
 ```sh
-cd docs/airgap/install/compose
+cd PROJECT_FOLDER/docs/airgap/install/compose
 touch .env
 chmod 600 .env
-echo "VLLM_API_KEY=$(openssl rand -hex 32)" &gt;&gt; .env
-grep '^VLLM_API_KEY=' .env | sed 's/^VLLM_API_KEY=/OPENAI_API_KEY=/' &gt;&gt; .env
-echo "WEBUI_SECRET_KEY=$(openssl rand -hex 32)" &gt;&gt; .env
+echo "VLLM_API_KEY=$(openssl rand -hex 32)" >> .env
+grep '^VLLM_API_KEY=' .env | sed 's/^VLLM_API_KEY=/OPENAI_API_KEY=/' >> .env
+echo "WEBUI_SECRET_KEY=$(openssl rand -hex 32)" >> .env
 ls -l .env
 grep -c '^[A-Z_]*=' .env
 grep -c '^[A-Z_]*=' .env.example
@@ -146,20 +159,31 @@ grep -c '^[A-Z_]*=' .env.example
 Kubernetes:
 
 ```sh
-kubectl apply -f docs/airgap/install/kubernetes/00-namespace.yaml
+# RKE2 only:
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin
+kubectl apply -f PROJECT_FOLDER/docs/airgap/install/kubernetes/00-namespace.yaml
 kubectl create secret generic vllm -n NAMESPACE --from-literal=api-key="$(openssl rand -hex 32)"
 ```
 
 **Expect:** `ls -l .env` starts with `-rw-------`; the two counts are equal (one line per name of `.env.example`). On Kubernetes, each command prints one line naming the namespace or the secret.
 
-**If not:** stop; delete `.env` and repeat the step from the top, so that no name is written twice. The account that runs `docker compose` must be able to read `.env`.
+**If not:** stop; delete `.env` and repeat the step from the top, so that no name is written twice. The account that runs `docker compose` must be able to read `.env`. On Kubernetes, when `kubectl create secret` reports that the Secret already exists (a repeated step), delete it and create it again; a new key means every client of the old one gets the new value:
+
+```sh
+# RKE2 only:
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin
+kubectl delete secret vllm -n NAMESPACE
+kubectl create secret generic vllm -n NAMESPACE --from-literal=api-key="$(openssl rand -hex 32)"
+```
 
 ## 4b. GPU nodes (Kubernetes with GPUs only)
 
 **Why:** this runs after the registry (the device plugin's image comes from it) and before any step 5 block, because a serving pod only schedules when its node offers `nvidia.com/gpu`, and the count must be blueprint §5's.
 
 ```sh
-kubectl apply -f docs/airgap/install/kubernetes/05-nvidia-device-plugin.yaml
+# RKE2 only:
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin
+kubectl apply -f PROJECT_FOLDER/docs/airgap/install/kubernetes/05-nvidia-device-plugin.yaml
 kubectl get node NODE -o jsonpath='{.status.allocatable}'
 ```
 
@@ -167,7 +191,13 @@ The first command on k3s and RKE2 only (on an existing cluster, the owners' devi
 
 **Expect:** for each GPU node, `"nvidia.com/gpu":` followed by the number of GPUs blueprint §5 gives that node (GPUS).
 
-**If not:** stop and report the output; on k3s and RKE2 also `kubectl get pods -n kube-system` (`unverified`, not in the sources read), and see `nvidia-datacenter-bringup` for the host's drivers and runtime.
+**If not:** stop and report the output, with `kubectl get pods -n kube-system` (`unverified`, not in the sources read). The likely causes, in this order:
+
+- The device plugin's pod on that node is not `Running`: on k3s and RKE2 the pod asks for the `nvidia` runtime class, and the node's containerd must know it. Check `grep nvidia /var/lib/rancher/k3s/agent/etc/containerd/config.toml` (k3s) or `grep nvidia /var/lib/rancher/rke2/agent/etc/containerd/config.toml` (RKE2) on the node: no line means the cluster did not find the NVIDIA runtime. The fix is on the host: the NVIDIA container toolkit installed (`nvidia-datacenter-bringup`), then k3s restarted (its docs: "Install K3s, or restart it if already installed"); that a restart of `rke2-server` or `rke2-agent` does the same on RKE2 is `unverified`.
+- On a node without GPUs in a mixed cluster, the plugin's pod may not start ([`references/kubernetes.md`](/reference/install/kubernetes/), "GPUs"); that is expected, and only the GPU nodes' counts matter here.
+- The pod runs but the count is lower than blueprint §5: a host problem (a GPU missing in `nvidia-smi` of step 1), see `nvidia-datacenter-bringup`.
+
+On an existing cluster, the owners' device plugin or operator is theirs to check: report to them.
 
 ## 5. COMPONENT (one step per row of plan.md)
 
@@ -178,30 +208,35 @@ The step 5 blocks follow `plan.md`'s rows in order (state, serving, extraction, 
 Compose:
 
 ```sh
-cd docs/airgap/install/compose
+cd PROJECT_FOLDER/docs/airgap/install/compose
 docker compose config -q
 docker compose up -d --wait --wait-timeout 1800 SERVICE
+echo $?
 ```
 
 Kubernetes:
 
 ```sh
-kubectl apply -f docs/airgap/install/kubernetes/NN-COMPONENT.yaml
+# RKE2 only:
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin
+kubectl apply -f PROJECT_FOLDER/docs/airgap/install/kubernetes/NN-COMPONENT.yaml
 kubectl rollout status deployment/COMPONENT -n NAMESPACE --timeout=30m
 ```
+
+The last step 5 block on Kubernetes applies `70-ingress.yaml` ([`references/kubernetes.md`](/reference/install/kubernetes/), "Exposure"), after the gateway and the UI; it has no rollout, and its Expect is the line `kubectl apply` prints for the Ingress. On an existing cluster it waits for the owners' answer of step 2 on exposure: their route or load balancer replaces it when they say so.
 
 Then the health check of `plan.md`, for example vLLM's models list:
 
 ```sh
-cd docs/airgap/install/compose
+cd PROJECT_FOLDER/docs/airgap/install/compose
 KEY=$(grep '^VLLM_API_KEY=' .env | cut -d= -f2)
 VLLM_URL=http://localhost:8000
 docker compose exec -T vllm curl -s -H "Authorization: Bearer $KEY" "$VLLM_URL/v1/models"
 ```
 
-The check runs inside the vLLM container, so it works whether or not vLLM publishes a port (with a gateway it sits only on the internal network); the host's shell fills in `$KEY` and `$VLLM_URL` before the command runs. That the vLLM image contains `curl` is `unverified`; when it does not, the step reports `executable file not found` and the check moves to step 7. On Kubernetes the key is in the Secret `vllm`; reading it back (`kubectl get secret vllm -n NAMESPACE -o jsonpath='{.data.api-key}'`, then `base64 -d`) is `unverified`, and the URL is the Service's address as the cluster owners or `kubectl get service vllm -n NAMESPACE` give it.
+The check runs inside the vLLM container, so it works whether or not vLLM publishes a port (with a gateway it sits only on the internal network); the host's shell fills in `$KEY` and `$VLLM_URL` before the command runs. That the vLLM image contains `curl` is `unverified`. When it does not, the Compose `healthcheck` of `compose.yaml` fails as well (it runs `curl` in the same container), so `up --wait` already reports the service unhealthy and its `echo $?` is not `0`: stop at that point and report `docker compose logs --tail 200 vllm` and the output of this check (`executable file not found`). The fix is a health check the image supports, decided on the connected side and carried in again; do not edit `compose.yaml` inside. On Kubernetes the key is in the Secret `vllm`; reading it back (`kubectl get secret vllm -n NAMESPACE -o jsonpath='{.data.api-key}'`, then `base64 -d`) is `unverified`, and the URL is the Service's address as the cluster owners or `kubectl get service vllm -n NAMESPACE` give it.
 
-**Expect:** `docker compose config -q` prints nothing; `up --wait` returns with exit code 0 once the service is healthy (or running, when it has no health check); `rollout status` prints `deployment "COMPONENT" successfully rolled out`; the models list (a JSON answer) names SERVED_NAME. For a component without a documented health check: `docker compose ps` lists it as running, and that it works is `unverified` until step 7.
+**Expect:** `docker compose config -q` prints nothing; the `echo $?` after `up --wait` prints `0` once the service is healthy (or running, when it has no health check); `rollout status` prints `deployment "COMPONENT" successfully rolled out`; the models list (a JSON answer) names SERVED_NAME. For a component without a documented health check: `docker compose ps` lists it as running, and that it works is `unverified` until step 7.
 
 **If not:** stop and report `docker compose logs --tail 200 SERVICE` (Compose) or `kubectl logs deployment/COMPONENT -n NAMESPACE --tail=200` (Kubernetes; `unverified`, not in the sources read).
 
@@ -210,13 +245,20 @@ The check runs inside the vLLM container, so it works whether or not vLLM publis
 **Why:** each setting of manifest section 4 stops a call to the outside; this step proves it is in what runs.
 
 ```sh
-cd docs/airgap/install/compose
+cd PROJECT_FOLDER/docs/airgap/install/compose
 docker compose config | grep -n -e HF_HUB_OFFLINE -e VLLM_NO_USAGE_STATS -e OFFLINE_MODE
 ```
 
-Kubernetes: `grep -n -e HF_HUB_OFFLINE -e VLLM_NO_USAGE_STATS docs/airgap/install/kubernetes/*.yaml`, the files that step 5 applied.
+Kubernetes, the files that step 5 applied, and on k3s the Traefik setting on the server:
 
-**Expect:** one line per setting of manifest section 4, with its value (`HF_HUB_OFFLINE` with `1`, `OFFLINE_MODE` with `true`, …). Do not copy the whole `docker compose config` output into a report: it includes the values from `.env`.
+```sh
+grep -n -e HF_HUB_OFFLINE -e VLLM_NO_USAGE_STATS PROJECT_FOLDER/docs/airgap/install/kubernetes/*.yaml
+grep -n checkNewVersion /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
+```
+
+The second line on k3s only.
+
+**Expect:** one line per applicable setting of manifest section 4, with its value (`HF_HUB_OFFLINE` with `1`, `OFFLINE_MODE` with `true`, on k3s `checkNewVersion: false`, …). Do not copy the whole `docker compose config` output into a report: it includes the values from `.env`.
 
 **If not:** stop; the setting is missing from the file of that component.
 
@@ -226,23 +268,23 @@ Kubernetes: `grep -n -e HF_HUB_OFFLINE -e VLLM_NO_USAGE_STATS docs/airgap/instal
 
 ```sh
 KEY=GATEWAY OR VLLM KEY, AS IN STEP 5
-GATEWAY_URL=http://GATEWAY_HOST:4000
+GATEWAY_URL=GATEWAY URL
 curl -s -H "Authorization: Bearer $KEY" "$GATEWAY_URL/v1/models"
 curl -s -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{"model": "SERVED_NAME", "messages": [{"role": "user", "content": "Reply with OK."}]}' "$GATEWAY_URL/v1/chat/completions"
 ```
 
-Without a gateway, `GATEWAY_URL` is vLLM's own port on its host, `http://127.0.0.1:8000`, which the Compose file publishes on 127.0.0.1 in that design only ([`references/compose.md`](/reference/install/compose/)).
+`GATEWAY_URL` is the address the gateway is exposed on. Compose: `http://GATEWAY_HOST:4000`, the port the gateway publishes ([`references/compose.md`](/reference/install/compose/)); without a gateway, vLLM's own port on its host, `http://127.0.0.1:8000`, which the Compose file publishes on 127.0.0.1 in that design only. Kubernetes: `http://GATEWAY_HOSTNAME`, the host name of the Ingress (`70-ingress.yaml`, port 80 without TLS), which the network's DNS resolves to the nodes (k3s, RKE2) or the address the cluster owners gave in step 2 (existing cluster); without a gateway, nothing is exposed and the check runs inside the cluster like step 5's.
 
-**Expect:** the first answer names SERVED_NAME; the second has a `choices` list with an assistant message.
+**Expect:** the first answer names SERVED_NAME; the second has a `choices` list with an assistant message. On Kubernetes this also proves the Ingress: an answer at `http://GATEWAY_HOSTNAME` came through it.
 
-**If not:** stop and report both outputs and the gateway's and the engine's logs (step 5's log commands).
+**If not:** stop and report both outputs and the gateway's and the engine's logs (step 5's log commands). On Kubernetes, an error page or no answer at all before the gateway's logs show the request points at the exposure: the host name's DNS entry, or the ingress controller (`kubectl get ingress -n NAMESPACE`, `unverified`).
 
 ## 8. Hand-offs
 
 **Why:** the install is done; what follows is measured and set up from its own documents.
 
 ```sh
-ls -l docs/airgap/agents.md docs/airgap/rag.md
+ls -l PROJECT_FOLDER/docs/airgap/agents.md PROJECT_FOLDER/docs/airgap/rag.md
 ```
 
 **Expect:** the files the design has. Then, in this order: the benchmark of blueprint §9 item 1, on the real servers; `docs/airgap/agents.md` (the coding agents' install, smoke and egress checks) when it exists; `docs/airgap/rag.md` (the document load and its checks) when it exists.
@@ -255,14 +297,14 @@ ls -l docs/airgap/agents.md docs/airgap/rag.md
 
 | Command | Keeps | Loses |
 |---|---|---|
-| `docker compose down` (in `compose/`) | named volumes (databases, registry data, UI data) | containers and networks, recreated by `up` |
+| `docker compose down` (in `PROJECT_FOLDER/docs/airgap/install/compose`) | named volumes (databases, registry data, UI data) | containers and networks, recreated by `up` |
 | `docker compose down -v` | nothing of the project's volumes | every named volume: all data. Only with a backup |
-| `docker compose down` in Harbor's installer folder | `data_volume` (`/data`) | Harbor's containers |
-| `kubectl delete -f docs/airgap/install/kubernetes/NN-COMPONENT.yaml` (`unverified`) | other components | that component; with a file that holds a claim, its data |
+| `docker compose down` in `HARBOR_DIR/harbor` | `data_volume` (`/data`) | Harbor's containers |
+| `kubectl delete -f PROJECT_FOLDER/docs/airgap/install/kubernetes/NN-COMPONENT.yaml` (`unverified`) | other components | that component; with a file that holds a claim, its data |
 
 After a host reboot nothing is typed: every service has `restart: unless-stopped`, so Docker starts again what was running before. That Docker itself starts at boot is the host's setting (`unverified`); check with `docker compose ps` after the first reboot. A service stopped by hand stays stopped.
 
-**Expect:** after `docker compose down`, `docker compose ps --all` prints only its header line.
+**Expect:** after `docker compose down`, `docker compose ps --all` lists no container of the project (that it prints only its header line is `unverified`: the page does not show the output format).
 
 **If not:** report `docker compose ps --all`.
 ````
@@ -313,5 +355,14 @@ You work inside a network without internet access. These rules come before any o
 | LiteLLM | port 4000 | the `litellm` catalog entry (https://github.com/BerriAI/litellm-docs/blob/d6ae56ec9fa4b0c232b5cb88ccb25482bcdf3ee8/docs/proxy/docker_quick_start.md) |
 | RKE2 | `journalctl -u rke2-server` | https://github.com/rancher/rke2-docs/blob/3931bc85192e5d74abdfc43a499b0c6fae2274d2/docs/install/quickstart.md |
 | Kubernetes | `deployment "NAME" successfully rolled out` | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/concepts/workloads/controllers/deployment.md |
-| kubectl | `kubectl logs`, `kubectl delete -f`, `kubectl get secret … -o jsonpath`, `kubectl get service` | not in the sources read: `unverified` |
-| Shell tools | `touch`, `ls -l`, `grep`, `sed -i`, `cut`, `echo $?`, `base64 -d` | standard tools, not in the sources read; their output is what each step's Expect names |
+| kubectl | `kubectl logs`, `kubectl delete -f`, `kubectl get secret … -o jsonpath`, `kubectl get service`, `kubectl get ingress`, `kubectl get pods -n kube-system` | not in the sources read: `unverified` |
+| Kubernetes | `kubectl apply -f ./my-manifest.yaml` | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/reference/kubectl/quick-reference.md |
+| Kubernetes | `kubectl delete secret NAME` | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/tasks/configmap-secret/managing-secret-using-kubectl.md |
+| systemd | `journalctl -u UNIT -n 200` (`-n`) | not in the sources read: `unverified` |
+| Docker Compose | `docker compose ps --all` prints only its header line when nothing runs | not in the page read (it shows no output format): `unverified` |
+| RKE2 | `export KUBECONFIG=/etc/rancher/rke2/rke2.yaml`, `/var/lib/rancher/rke2/bin` not on the `PATH` | https://github.com/rancher/rke2-docs/blob/3931bc85192e5d74abdfc43a499b0c6fae2274d2/docs/cluster_access.md, https://github.com/rancher/rke2-docs/blob/3931bc85192e5d74abdfc43a499b0c6fae2274d2/docs/install/quickstart.md |
+| K3s, RKE2 | `grep nvidia …/agent/etc/containerd/config.toml`; k3s "Install K3s, or restart it if already installed" | https://github.com/k3s-io/docs/blob/8b33d6f4106826376a9784bc21d0fbba8dccbc69/docs/advanced.md, https://github.com/rancher/rke2-docs/blob/3931bc85192e5d74abdfc43a499b0c6fae2274d2/docs/add-ons/gpu_operators.md |
+| Harbor | offline installer in the bundle's `packages/harbor/`, `harbor-offline-installer-v2.16.0-amd64.tgz` and `-arm64.tgz` | the `harbor` catalog entry; `airgap-transfer`'s bundle layout |
+| Harbor | default public project `library` | https://github.com/goharbor/website/blob/1ce1ac23f8d4969ce587b7ced8afb7954f76115d/docs/working-with-projects/create-projects/_index.md |
+| Kubernetes | Ingress, `host` rules | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/concepts/services-networking/ingress.md |
+| Shell tools | `touch`, `ls -l`, `grep`, `sed -i`, `cut`, `echo $?`, `base64 -d`, `mkdir -p`, `cp`, `tar xzvf` outside Harbor's page | not in the sources read: `unverified`; their output is what each step's Expect names |
