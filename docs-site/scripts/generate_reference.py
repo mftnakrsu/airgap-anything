@@ -4,7 +4,7 @@ Nothing in docs-site/src/content/docs/reference/ is written by hand, and neither
 example page, the install page, the contributing page or the images the site shares with the
 README. The skills ship markdown, so most pages are that markdown with a front matter and links:
 
-- reference/architect/, reference/transfer/, reference/agent/ and reference/rag/: each skill's SKILL.md workflow and its references/
+- reference/architect/, reference/transfer/, reference/agent/, reference/rag/ and reference/install/: each skill's SKILL.md workflow and its references/
 - reference/catalog/: one page per catalog entry, and an index (the architect's)
 - reference/gpus.md: the GPU table
 - start/install.md: the Install section of the README
@@ -31,6 +31,7 @@ ARCHITECT = SKILLS / "airgap-architect"
 TRANSFER = SKILLS / "airgap-transfer"
 AGENT = SKILLS / "airgap-agent"
 RAG = SKILLS / "airgap-rag"
+INSTALL = SKILLS / "airgap-install"
 CATALOG = ARCHITECT / "catalog"
 AGENT_CATALOG = AGENT / "catalog"
 RAG_CATALOG = RAG / "catalog"
@@ -87,6 +88,14 @@ SKILL_PAGES = [
         ("references/ingestion.md", "ingestion", "Bulk load, updates and queries", "The runbook for loading a folder into a knowledge base, updating it, granting access and querying it over the API."),
         ("references/wiki.md", "wiki", "The LLM wiki", "Documents as plain markdown files in a git repository, for coding agents that read files."),
         ("references/verification.md", "verification", "Verification inside", "The five checks a person runs inside the network: install, retrieval, OCR per language, access and egress."),
+    ]),
+    (INSTALL, "install", [
+        ("references/questions.md", "questions", "Install questions", "The questions airgap-install asks before it plans, with their defaults, and why it asks whether the blueprint is approved unless you already said so."),
+        ("references/plan.md", "plan", "Install plan", "The plan template, the table that copies the GPUs of blueprint section 5, the manifest rows the install adds and the start order."),
+        ("references/compose.md", "compose", "Docker Compose files", "The rules for every Compose service, the template, the .env.example, where each outbound switch goes and Harbor's configuration."),
+        ("references/kubernetes.md", "kubernetes", "Kubernetes manifests", "The rules for every workload, the manifests, and the NVIDIA device plugin for GPU nodes."),
+        ("references/clusters.md", "clusters", "Clusters", "What k3s, RKE2 and an existing cluster each need: the registry mirror, the server configuration and the cluster owners' list."),
+        ("references/runbook.md", "runbook", "Install runbooks", "The runbook for people and the rules for an agent inside: every step has a Why, commands, the output to expect and what to do if it differs."),
     ]),
 ]
 

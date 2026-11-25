@@ -12,10 +12,11 @@ your-project/
 ├── docs/airgap/agents/<tool>/          configuration (user/) and central policy (central/) per tool
 ├── docs/airgap/rag.md                  document-search decisions, the sizing and the checks to run inside
 ├── docs/airgap/rag/                    the platform's configuration, the bulk-load runbook and the wiki steps
+├── docs/airgap/install/                the install plan, the runbook and the Compose or Kubernetes files
 └── AGENTS.md                           instructions for the agent that builds it inside the network
 ```
 
-With superpowers installed, the blueprint goes to `docs/superpowers/specs/YYYY-MM-DD-PROJECT-airgap-blueprint-design.md` instead ([With superpowers](/guides/with-superpowers/)). `airgap-architect` writes the blueprint, the manifest and the `AGENTS.md` block; `airgap-transfer` writes the plan and the bundle; `airgap-agent` writes `agents.md` and the configuration folders ([Coding agents inside](/guides/coding-agents/)); `airgap-rag` writes `rag.md` and the `rag/` folder ([Searchable documents inside](/guides/searchable-documents/)).
+With superpowers installed, the blueprint goes to `docs/superpowers/specs/YYYY-MM-DD-PROJECT-airgap-blueprint-design.md` instead ([With superpowers](/guides/with-superpowers/)). `airgap-architect` writes the blueprint, the manifest and the `AGENTS.md` block; `airgap-transfer` writes the plan and the bundle; `airgap-agent` writes `agents.md` and the configuration folders ([Coding agents inside](/guides/coding-agents/)); `airgap-rag` writes `rag.md` and the `rag/` folder ([Searchable documents inside](/guides/searchable-documents/)); `airgap-install` writes the `install/` folder ([Installing inside](/guides/installing-inside/)).
 
 Everything is markdown that a person can read. There is no separate state file: the blueprint holds the design's state and the plan file the transfer's, so an interrupted interview or transfer resumes from them.
 

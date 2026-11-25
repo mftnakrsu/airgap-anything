@@ -21,7 +21,7 @@ export default defineConfig({
         { label: 'Start here', items: ['start/install', 'start/quick-start'] },
         {
           label: 'Guides',
-          items: ['guides/how-it-works', 'guides/the-interview', 'guides/what-you-get', 'guides/carrying-it-in', 'guides/coding-agents', 'guides/searchable-documents', 'guides/with-superpowers'],
+          items: ['guides/how-it-works', 'guides/the-interview', 'guides/what-you-get', 'guides/carrying-it-in', 'guides/coding-agents', 'guides/searchable-documents', 'guides/installing-inside', 'guides/with-superpowers'],
         },
         { label: 'Concepts', items: ['concepts/tiers-and-sizing', 'concepts/evidence', 'concepts/scope'] },
         { label: 'Example', items: ['example/department'] },
@@ -32,6 +32,7 @@ export default defineConfig({
             { label: 'airgap-transfer', items: [{ autogenerate: { directory: 'reference/transfer' } }] },
             { label: 'airgap-agent', items: [{ autogenerate: { directory: 'reference/agent' } }] },
             { label: 'airgap-rag', items: [{ autogenerate: { directory: 'reference/rag' } }] },
+            { label: 'airgap-install', items: [{ autogenerate: { directory: 'reference/install' } }] },
             { label: 'Catalog', collapsed: true, items: [{ autogenerate: { directory: 'reference/catalog' } }] },
             'reference/gpus',
           ],

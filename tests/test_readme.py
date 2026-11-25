@@ -159,6 +159,16 @@ class ReadmeTest(unittest.TestCase):
     def test_the_skills_table_lists_the_rag_skill(self):
         self.assertIn("[`airgap-rag`](plugins/airgap-anything/skills/airgap-rag/SKILL.md)", self.text)
 
+    def test_the_skills_table_lists_the_install_skill(self):
+        self.assertIn("[`airgap-install`](plugins/airgap-anything/skills/airgap-install/SKILL.md)", self.text)
+
+    def test_every_skill_is_in_the_offline_install_loops(self):
+        loops = re.findall(r"for skill in ([^;]+); do", self.text)
+        self.assertEqual(len(loops), 2)
+        skills = sorted(p.name for p in (PLUGIN_DIR / "skills").iterdir() if p.is_dir())
+        for loop in loops:
+            self.assertEqual(sorted(loop.split()), skills)
+
     def test_no_owner_token_is_left(self):
         self.assertNotIn("GITHUB_OWNER", self.text)
 

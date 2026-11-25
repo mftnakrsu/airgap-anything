@@ -1,21 +1,23 @@
 ---
 title: Scope
-description: What version 0.5 covers, and what it leaves out.
+description: What version 0.6 covers, and what it leaves out.
 ---
 
-## In version 0.5
+## In version 0.6
 
-- Four skills in plain markdown: `SKILL.md`, references and a catalog, read by Claude Code, Codex, Cursor or any agent that reads Agent Skills. Nothing to install but the skill folder, and no script to run.
+- Five skills in plain markdown: `SKILL.md`, references and a catalog, read by Claude Code, Codex, Cursor or any agent that reads Agent Skills. Nothing to install but the skill folder, and no script to run.
 - Decision tables for the inference engine and the LLM gateway.
 - Fixed per-tier defaults for UI, identity, observability, orchestration, state stores and artifact registry.
 - Tier and sizing from organization answers, with every step written out, a transfer manifest, and a self-review before approval.
 - `airgap-transfer`: a plan from the transfer manifest, documented fetch commands that run only after your approval, a bundle with checksum lists split across media, and a runbook or agent rules that check it inside with `sha256sum` alone.
 - `airgap-agent`: the choice of coding-agent tool, its configuration and central policy with outbound connections off, the model server's requirements, offline MCP servers, and three checks for the inside ([Coding agents inside](/guides/coding-agents/)).
 - `airgap-rag`: the choice of platform (yours), extraction and OCR, embedding and reranker models, the vector store, a sizing of the first load, the configuration, a bulk-load runbook, and five checks for the inside ([Searchable documents inside](/guides/searchable-documents/)).
+- `airgap-install`: an install plan you approve, the deployment files (Docker Compose, or Kubernetes manifests for k3s, RKE2 or an existing cluster), a runbook of commands with the output to expect and what to do when it differs, and the rows the files add to the transfer manifest ([Installing inside](/guides/installing-inside/)).
 
-## Not in version 0.5
+## Not in version 0.6
 
-- Deployment files such as Docker Compose or Helm. The skill decides; it does not operate. For running each tool, catalog entries point to existing per-tool skills.
+- Helm charts, upgrades, high availability beyond what the blueprint decides, CI/CD and GitOps. `airgap-install` installs the design; it does not operate it. For running each tool, catalog entries point to existing per-tool skills.
+- A cluster install on a cluster you already run: its owners' process is a step of the runbook.
 - A recommendation of which model to run, for the architect, the coding agents or the chat model. The embedding and reranker models of `airgap-rag` are chosen with their reasons, not ranked.
 - Connectors that sync Confluence, SharePoint or Jira into a knowledge base.
 - Decision tables for data, CI/CD and security layers.
