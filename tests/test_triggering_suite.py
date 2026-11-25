@@ -18,15 +18,18 @@ def skill_match(skill):
 # Grader files that check a Skill call, and the skill each one names. The architect names
 # are the ones of the first suite; the transfer, agent and rag ones carry the skill's name.
 POSITIVE = {"fires.md": "airgap-architect", "fires-transfer.md": "airgap-transfer", "fires-agent.md": "airgap-agent",
-            "fires-rag.md": "airgap-rag"}
+            "fires-rag.md": "airgap-rag", "fires-install.md": "airgap-install"}
 NEGATIVE = {"does-not-fire.md": "airgap-architect", "does-not-fire-transfer.md": "airgap-transfer",
-            "does-not-fire-agent.md": "airgap-agent", "does-not-fire-rag.md": "airgap-rag"}
+            "does-not-fire-agent.md": "airgap-agent", "does-not-fire-rag.md": "airgap-rag",
+            "does-not-fire-install.md": "airgap-install"}
 # The reply each skill's auto case is graded on.
 STARTS = {"airgap-architect": "starts-the-interview.md", "airgap-transfer": "starts-the-transfer.md",
-          "airgap-agent": "starts-the-agent-interview.md", "airgap-rag": "starts-the-rag-interview.md"}
+          "airgap-agent": "starts-the-agent-interview.md", "airgap-rag": "starts-the-rag-interview.md",
+          "airgap-install": "starts-the-install-plan.md"}
 TRANSFER_CASES = {"auto-en-build-bundle", "auto-tr-usb-hazirla", "auto-en-verify-inside", "skip-en-docker-save"}
 AGENT_CASES = {"auto-en-coding-agent", "auto-tr-kodlama-ajani", "skip-en-cloud-copilot"}
 RAG_CASES = {"auto-en-searchable-docs", "auto-tr-belge-arama", "skip-en-cloud-search"}
+INSTALL_CASES = {"auto-en-install-inside", "auto-tr-kurulum-adimlari", "skip-en-install-docker-ubuntu"}
 
 
 def frontmatter(path):
@@ -54,6 +57,7 @@ class TriggeringSuiteTest(unittest.TestCase):
         self.assertTrue(TRANSFER_CASES <= set(names))
         self.assertTrue(AGENT_CASES <= set(names))
         self.assertTrue(RAG_CASES <= set(names))
+        self.assertTrue(INSTALL_CASES <= set(names))
 
     def test_every_session_can_call_the_skill(self):
         for case in self.cases:
@@ -118,6 +122,18 @@ class TriggeringSuiteTest(unittest.TestCase):
             ["airgap-architect", "airgap-rag"],
         )
 
+    def test_install_is_kept_apart_from_transfer(self):
+        # Carrying a bundle in and checking it is airgap-transfer's work, not the install skill's;
+        # installing an approved design fires airgap-install and not the architect; a plain Docker
+        # install question starts neither.
+        for case in ("auto-en-build-bundle", "auto-en-verify-inside"):
+            self.assertIn("does-not-fire-install.md", self.graders(SUITE / case))
+        self.assertIn("does-not-fire.md", self.graders(SUITE / "auto-en-install-inside"))
+        self.assertEqual(
+            sorted(NEGATIVE[name] for name in self.graders(SUITE / "skip-en-install-docker-ubuntu") if name in NEGATIVE),
+            ["airgap-architect", "airgap-install"],
+        )
+
 
 class TriggeringWorkflowTest(unittest.TestCase):
     def setUp(self):
@@ -135,6 +151,7 @@ class TriggeringWorkflowTest(unittest.TestCase):
             "plugins/airgap-anything/skills/airgap-transfer/SKILL.md",
             "plugins/airgap-anything/skills/airgap-agent/SKILL.md",
             "plugins/airgap-anything/skills/airgap-rag/SKILL.md",
+            "plugins/airgap-anything/skills/airgap-install/SKILL.md",
             "plugins/airgap-anything/evals/triggering/**",
             ".github/workflows/triggering.yml",
         ):

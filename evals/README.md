@@ -218,18 +218,19 @@ The runs above tell the agent to read `SKILL.md`, so they do not show whether Cl
 | `auto-*` | A natural request in English or Turkish that does not name the skill | Claude calls the Skill tool for `airgap-architect`, and its reply starts the interview instead of answering from memory |
 | `auto-*` for `airgap-transfer` | A request to prepare, carry or check a bundle for a design that has a transfer manifest | Claude calls the Skill tool for `airgap-transfer`, and its reply starts the transfer (or, inside, points to the bundle's runbook and its `sha256sum -c` checks) |
 | `auto-*` for `airgap-rag` | A request to make internal documents searchable on a local model, in English or Turkish, naming no platform | Claude calls the Skill tool for `airgap-rag`, and its reply asks the platform question with its three options (Open WebUI knowledge bases, a RAG server such as RAGFlow, something else) and waits; stating defaults and continuing without that question fails |
+| `auto-*` for `airgap-install` | A request to install an approved design inside the network, in English or Turkish, with no deployment files yet | Claude calls the Skill tool for `airgap-install`, and its reply starts the install plan (asks whether the blueprint is approved or says it was told so, asks or states defaults for host names, paths and TLS) and writes no Compose file or script before the plan is approved; answering with a generic Compose file from memory fails |
 | `manual-*` | `/airgap-anything:airgap-architect` and a request | The skill's instructions load (the agent reads its `references/`), and the reply starts the interview |
 | `skip-*` | A request the skill must leave alone, including a near miss ("what does air-gapped mean") | Claude does not call the skill |
 
 A slash command is expanded before the session starts, so a manual start makes no Skill tool call; the manual case looks for the skill's own files in the session trace instead.
 
-Cross-negative graders keep the skills apart: `auto-tr-tasima-listesi` must not start `airgap-transfer`, `skip-en-docker-save` starts neither, `auto-en-searchable-docs` must not start `airgap-architect`, `auto-en-offline-platform` and `auto-en-coding-agent` must not start `airgap-rag`, and `skip-en-cloud-search` starts neither `airgap-architect` nor `airgap-rag`.
+Cross-negative graders keep the skills apart: `auto-tr-tasima-listesi` must not start `airgap-transfer`, `skip-en-docker-save` starts neither, `auto-en-searchable-docs` must not start `airgap-architect`, `auto-en-offline-platform` and `auto-en-coding-agent` must not start `airgap-rag`, `skip-en-cloud-search` starts neither `airgap-architect` nor `airgap-rag`, `auto-en-build-bundle` and `auto-en-verify-inside` must not start `airgap-install`, `auto-en-install-inside` must not start `airgap-architect`, and `skip-en-install-docker-ubuntu` starts neither `airgap-architect` nor `airgap-install`.
 
 Run from the repository root. Each run is a real Claude Code session on your account and costs money, so set a ceiling:
 
 ```bash
 claude plugin eval plugins/airgap-anything --eval-dir evals/triggering --runs 3 --ablation none -j 3 \
-  --no-publish --trust-plugin --max-cost-usd 14 --json /tmp/triggering.json --threshold 0
+  --no-publish --trust-plugin --max-cost-usd 16 --json /tmp/triggering.json --threshold 0
 ```
 
 `--ablation none` skips the no-plugin arm, which can never call the skill and so tells nothing here. `--no-publish` keeps the report on your machine. Raw results land in `plugins/airgap-anything/evals/triggering/results/`, which git ignores; record the summary under `evals/results/`, with the model, the Claude Code version and the commit. Rerun when the `description` in a `SKILL.md` changes.
