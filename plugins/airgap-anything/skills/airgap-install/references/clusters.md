@@ -42,7 +42,8 @@ configs:
     tls:
       ca_file: CERT_DIR/ca.crt
 ```
- When the registry needs a login to pull, add `auth: {username: REGISTRY_USER, password: REGISTRY_PASSWORD}` under `configs` with those placeholders; the runbook fills them on the node, never in the file the skill writes.
+
+When the registry needs a login to pull, add `auth: {username: REGISTRY_USER, password: REGISTRY_PASSWORD}` under `configs` with those placeholders; the runbook fills them on the node, never in the file the skill writes.
 
 Commands, on every node, as root (SELinux nodes first):
 

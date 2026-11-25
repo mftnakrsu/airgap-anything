@@ -20,7 +20,7 @@ Goal: `docs/airgap/install/INSTALL.md` for people, `docs/airgap/install/AGENTS-I
 
 ## INSTALL.md template
 
-Fill in the parts in capitals. Steps 2 and the cluster parts only for k3s and RKE2 (an existing cluster's step 2 is the owners' list of `references/clusters.md`); the Compose or the Kubernetes variant of steps 3 to 6 by orchestration; one step 5 block per row of `plan.md`, in its order.
+Fill in the parts in capitals. Step 4b only on Kubernetes with GPUs, and always before step 5, so the GPU check runs before any serving rollout. Steps 2 and the cluster parts only for k3s and RKE2 (an existing cluster's step 2 is the owners' list of `references/clusters.md`); the Compose or the Kubernetes variant of steps 3 to 6 by orchestration; one step 5 block per row of `plan.md`, in its order.
 
 ````markdown
 # Install inside the network: PROJECT NAME
@@ -96,7 +96,7 @@ sed -i "s/HARBOR_DB_PASSWORD/$(openssl rand -hex 32)/" harbor/harbor.yml
 cd harbor && sudo ./install.sh
 ```
 
-Harbor only, before the first push: Harbor accepts a push only into an existing project ("you must create a corresponding project in the Harbor interface"). In the portal (`https://REGISTRY_HOST`, or `http://` without TLS), signed in as `admin` with the password from `harbor/harbor.yml`: **Projects**, **New Project**, the name, **Public** checked (any user may then pull, so the cluster nodes need no pull credentials), **OK**; one project per first path segment of the manifest's Target paths (`vllm`, `berriai`, …). A Target path without a project segment (`REGISTRY_HOST/postgres:18.7`) cannot be pushed to Harbor: `plan.md` lists it as an open item with the project to use, and the install stops here until the files and the manifest name that path. Then sign in from the host that pushes:
+Harbor only, before the first push: Harbor accepts a push only into an existing project ("you must create a corresponding project in the Harbor interface"). In the portal (`https://REGISTRY_HOST`, or `http://` without TLS), signed in as `admin` with the password from `harbor/harbor.yml`: **Projects**, **New Project**, the name, **Public** checked (any user may then pull, so the cluster nodes need no pull credentials), **OK**; one project per first path segment of the manifest's Target paths (`vllm`, `berriai`, …). A Target path without a project segment (`REGISTRY_HOST/postgres:18.7`) cannot be pushed to Harbor: `plan.md` lists it as an open item with the project to use, and the install stops here until the files and the manifest name that path. Then sign in from the host that pushes; `docker login` asks for the user name and password, which a person types (an agent stops here and asks a person):
 
 ```sh
 docker login REGISTRY_HOST
@@ -111,7 +111,11 @@ docker push REGISTRY_HOST/TARGET
 echo $?
 ```
 
-**Expect:** `cat` shows the `insecure-registries` line (without TLS only); `docker compose up --wait` returns with exit code 0; Harbor's `install.sh` ends without an error; every project of the Target paths is listed under **Projects**; every `echo $?` prints `0`.
+**Expect:**
+
+- Without TLS: `cat` shows the `insecure-registries` line.
+- Distribution Registry only: `docker compose up --wait registry` returns with exit code 0, and every `echo $?` after a push prints `0`.
+- Harbor only: `install.sh` ends without an error; every project of the Target paths is listed under **Projects**; the `echo $?` after `docker login` and after every push prints `0`.
 
 **If not:** stop and report `docker compose logs --tail 200 registry`, or the last lines of `install.sh`. Notes: the archive's top folder `harbor/` is `unverified` (the installer's file list is in the `harbor` catalog entry, its folder name is not); `ls -l harbor/install.sh` shows it. Harbor's `install.sh` runs `docker compose down -v` before `up -d`; its data stays in the bind-mounted `data_volume` (`/data`). It renders its Compose file with the `goharbor/prepare` container from the installer's archive; that this works offline is `unverified`. The admin password is the `harbor_admin_password` line of `harbor/harbor.yml`, readable only by root. After a change of `daemon.json` with Harbor already running, Harbor's documentation restarts it with `docker compose down -v` and `docker compose up -d` in the installer folder. A tag listing of the registry is `unverified`; the starts of step 5 prove every tag.
 
@@ -144,9 +148,26 @@ kubectl create secret generic vllm -n NAMESPACE --from-literal=api-key="$(openss
 
 **If not:** stop; delete `.env` and repeat the step from the top, so that no name is written twice. The account that runs `docker compose` must be able to read `.env`.
 
+## 4b. GPU nodes (Kubernetes with GPUs only)
+
+**Why:** this runs after the registry (the device plugin's image comes from it) and before any step 5 block, because a serving pod only schedules when its node offers `nvidia.com/gpu`, and the count must be blueprint §5's.
+
+```sh
+kubectl apply -f docs/airgap/install/kubernetes/05-nvidia-device-plugin.yaml
+kubectl get node NODE -o jsonpath='{.status.allocatable}'
+```
+
+The first command on k3s and RKE2 only (on an existing cluster, the owners' device plugin or operator provides the resource); the second once per GPU node of `plan.md`.
+
+**Expect:** for each GPU node, `"nvidia.com/gpu":` followed by the number of GPUs blueprint §5 gives that node (GPUS).
+
+**If not:** stop and report the output; on k3s and RKE2 also `kubectl get pods -n kube-system` (`unverified`, not in the sources read), and see `nvidia-datacenter-bringup` for the host's drivers and runtime.
+
 ## 5. COMPONENT (one step per row of plan.md)
 
 **Why:** ONE LINE FROM plan.md: what this component serves and what depends on it.
+
+The step 5 blocks follow `plan.md`'s rows in order (state, serving, extraction, gateway, UI, observability); on Kubernetes with GPUs, step 4b is already done before the first of them.
 
 Compose:
 
@@ -177,21 +198,6 @@ The check runs inside the vLLM container, so it works whether or not vLLM publis
 **Expect:** `docker compose config -q` prints nothing; `up --wait` returns with exit code 0 once the service is healthy (or running, when it has no health check); `rollout status` prints `deployment "COMPONENT" successfully rolled out`; the models list (a JSON answer) names SERVED_NAME. For a component without a documented health check: `docker compose ps` lists it as running, and that it works is `unverified` until step 7.
 
 **If not:** stop and report `docker compose logs --tail 200 SERVICE` (Compose) or `kubectl logs deployment/COMPONENT -n NAMESPACE --tail=200` (Kubernetes; `unverified`, not in the sources read).
-
-## 5a. GPU nodes (Kubernetes with GPUs, before the first serving step)
-
-**Why:** a serving pod only schedules when its node offers `nvidia.com/gpu`, and the count must be blueprint §5's.
-
-```sh
-kubectl apply -f docs/airgap/install/kubernetes/05-nvidia-device-plugin.yaml
-kubectl get node NODE -o jsonpath='{.status.allocatable}'
-```
-
-The first command on k3s and RKE2 only (on an existing cluster, the owners' device plugin or operator provides the resource); the second once per GPU node of `plan.md`.
-
-**Expect:** for each GPU node, `"nvidia.com/gpu":` followed by the number of GPUs blueprint §5 gives that node (GPUS).
-
-**If not:** stop and report the output; on k3s and RKE2 also `kubectl get pods -n kube-system` (`unverified`, not in the sources read), and see `nvidia-datacenter-bringup` for the host's drivers and runtime.
 
 ## 6. Egress settings applied
 
@@ -267,7 +273,8 @@ You work inside a network without internet access. These rules come before any o
 1. Run only the commands listed below, one step at a time, exactly as written. Do not combine, shorten or reorder them.
 2. Never pull an image and never download anything; a missing image or file is carried in again from outside.
 3. Never edit a file outside `docs/airgap/install/`, except those a step's own commands write (`/etc/docker/daemon.json`, the cluster's files); inside it, only the files a step names (`.env`).
-4. Compare every output with "Expect". At the first difference, stop, report the command, its exit code, its output and the step's log command, and ask a person. Never improvise a step that is not written below. The placeholders are values you ask a person for.
+4. `docker login` (step 3, Harbor) asks for a password: stop before it and ask a person to run it; never read, write or type the password yourself.
+5. Compare every output with "Expect". At the first difference, stop, report the command, its exit code, its output and the step's log command, and ask a person. Never improvise a step that is not written below. The placeholders are values you ask a person for.
 ```
 
 ## Sources

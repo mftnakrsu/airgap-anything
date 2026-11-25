@@ -59,7 +59,7 @@ A component the files need and the manifest lacks (a TLS proxy the blueprint cho
 
 Why this order: each step depends only on steps above it, so a failed health check points at one component; the registry comes first because every later start reads images from it, and observability last because a scrape target that does not run yet looks like a monitoring fault. A step whose layer the blueprint does not have is left out; the numbers stay in this order.
 
-The cluster itself (k3s or RKE2, `references/clusters.md`) comes before step 1 and after the preconditions; an existing cluster has no such step.
+The cluster itself (k3s or RKE2, `references/clusters.md`) comes before step 1 and after the preconditions; an existing cluster has no such step. On Kubernetes with GPUs, the GPU-node check (the NVIDIA device plugin applied on k3s and RKE2, and every GPU node reporting `nvidia.com/gpu` with blueprint §5's count) is its own row after step 1 and before step 2, so no inference pod starts before the GPUs are proven; it is `INSTALL.md` step 4b (`references/runbook.md`).
 
 ## Sources
 

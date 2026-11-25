@@ -189,7 +189,7 @@ spec:
           type: Directory
 ```
 
-On RKE2, drop the two `k3s only` parts unless the hosts' NVIDIA runtime is not the default; the plugin's README requires the NVIDIA runtime as the default low-level runtime or a RuntimeClass. Whether the RKE2 hosts have it as the default is `unverified` and checked by `INSTALL.md` step 5a (`references/runbook.md`): `kubectl get node NODE -o jsonpath='{.status.allocatable}'` shows `"nvidia.com/gpu":` with blueprint §5's GPU count for every GPU node, before the first serving rollout.
+On RKE2, drop the two `k3s only` parts unless the hosts' NVIDIA runtime is not the default; the plugin's README requires the NVIDIA runtime as the default low-level runtime or a RuntimeClass. Whether the RKE2 hosts have it as the default is `unverified` and checked by `INSTALL.md` step 4b (`references/runbook.md`): `kubectl get node NODE -o jsonpath='{.status.allocatable}'` shows `"nvidia.com/gpu":` with blueprint §5's GPU count for every GPU node, after the registry and before any step 5 rollout.
 
 ## Sources
 
