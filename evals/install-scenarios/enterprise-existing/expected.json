@@ -13,6 +13,10 @@
     "docs/airgap/install/kubernetes/cluster/"
   ],
   "must_not": [
+    "an image tag latest",
+    "a secret value in a file",
+    "a GPU count other than blueprint §5",
     "a cluster install step for the existing cluster"
-  ]
+  ],
+  "manifest_marker": "(from airgap-install)"
 }

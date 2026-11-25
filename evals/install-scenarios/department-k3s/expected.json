@@ -3,7 +3,7 @@
   "must_mention": [
     "INSTALL_K3S_SKIP_DOWNLOAD=true",
     "registries.yaml",
-    "pull_policy: never",
+    "imagePullPolicy",
     "Ready",
     "harbor.yml"
   ],
@@ -12,5 +12,14 @@
     "docs/airgap/install/kubernetes/",
     "docs/airgap/install/kubernetes/cluster/registries.yaml",
     "docs/airgap/install/compose/"
+  ],
+  "must_not_files": [
+    "docs/airgap/install/AGENTS-INSTALL.md"
+  ],
+  "manifest_marker": "(from airgap-install)",
+  "must_not": [
+    "an image tag latest",
+    "a secret value in a file",
+    "a GPU count other than blueprint §5"
   ]
 }

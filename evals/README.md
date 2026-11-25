@@ -186,7 +186,7 @@ The fifth skill, `airgap-install`, is evaluated on the scenarios in `install-sce
 | `department-k3s/` | `department` with `org.kubernetes_experience` true, so k3s, and Harbor as the registry | the same message | a k3s install with `INSTALL_K3S_SKIP_DOWNLOAD=true` and `registries.yaml`, Kubernetes manifests, and `compose/` holding Harbor's `harbor.yml` (Harbor's offline installer generates its own Compose file with `install.sh`, `catalog/harbor.md`) |
 | `enterprise-existing/` | `enterprise`: T3, an existing OpenShift cluster, vLLM in 18 replicas of 1 GPU on 3 servers, `inside.operator` `people_then_agent` | the same message | manifests for the existing cluster with no cluster install step, `replicas: 18` and `nvidia.com/gpu`, and `AGENTS-INSTALL.md` next to `INSTALL.md` |
 | `family-custom/` | `lab` with `hardware.cpu_arch` `arm64`, `rag.md` (docling-serve and a custom Elasticsearch 8 platform), `agents.md` (Qwen Code), and manifest rows "(from airgap-rag)" and "(from airgap-agent)" | "The blueprint is approved. Also deploy our in-house service `ticket-search`: image `registry.internal/ticket-search:2.3.1`, port 9300. Write the install files and the runbook. Use the defaults for anything you need to ask." | docling-serve installed, the custom platform and `ticket-search` marked `unverified` with no invented setting, Qwen Code left as a tool for the developers' machines and not deployed as a service |
-| `unapproved/` | `lab`, blueprint status still "draft, waiting for approval" | "Write the install files for docs/airgap/. We are still deciding between the 8B and a 32B model, so the blueprint may change." | nothing written under `docs/airgap/install/`; the reply sends the user back to `airgap-architect` |
+| `unapproved/` | `lab`; the prompt states that the design is still open (every fixture keeps "Status: draft, waiting for approval.") | "Write the install files for docs/airgap/. We are still deciding between the 8B and a 32B model, so the blueprint may change." | nothing written under `docs/airgap/install/`; the reply sends the user back to `airgap-architect` |
 
 The fixtures hold the blueprint in the format of `examples/department/blueprint.md` (ten sections, `Status: draft, waiting for approval.`) and a transfer manifest in the format of `examples/department/transfer-manifest.md`. Every version, image reference and setting in them is copied from the catalogs of `airgap-architect`, `airgap-rag` and `airgap-agent`, and no fixture holds a key. `department-compose` and `department-k3s` share their stack; the first runs it under Compose, the second under k3s. `unapproved` has the same files as `lab-compose`, and the prompt is what differs.
 
@@ -195,15 +195,15 @@ Each folder has `prompt.md` (what the user says, given as is) and `expected.json
 | Key | Meaning |
 |---|---|
 | `orchestration` | The orchestration the install files must use: `docker-compose`, `k3s` or `existing` (an existing cluster, nothing installed for it); absent in `unapproved` |
-| `must_mention` | Strings that must appear somewhere in `docs/airgap/install/` or in `docs/airgap/transfer-manifest.md`. Each occurs literally in the skill's references or in the catalog, so the check is a plain search. An item that is a list means any one of them (for example `["count: 8", "device_ids"]`, two valid Compose GPU reservations) |
+| `must_mention` | Strings that must appear somewhere under `docs/airgap/install/`, the files the run wrote; the transfer manifest is not searched, because the fixture manifests already contain many of them. Each is checked against the finished references before the first scored run, so that the check is a plain search. An item that is a list means any one of them (for example `["count: 8", "device_ids"]`, two valid Compose GPU reservations) |
 | `files` | Paths that must exist after the run, relative to the project (a path ending in `/` is a folder with at least one file) |
 | `must_not_files` | Paths that must not exist (a path ending in `/` is a folder that holds no file) |
-| `manifest_marker` | The marker that every row the run adds to `docs/airgap/transfer-manifest.md` ends its Component cell with |
+| `manifest_marker` | The marker that every row the run adds to `docs/airgap/transfer-manifest.md` ends its Component cell with: the manifest is scored only by this key, as a row the run added ending "(from airgap-install)" |
 | `writes_nothing` | Only in `unapproved`: `true` when no file under `docs/airgap/install/` and no change to `docs/airgap/transfer-manifest.md` exists after the run |
 | `must_mention_reply` | Only in `unapproved`: strings that the reply must contain (the skill to go back to) |
 | `must_not` | Failures. Each is scored by reading the files and the reply |
 
-The search scope of `must_mention` is everything under `docs/airgap/install/` and `docs/airgap/transfer-manifest.md`.
+The search scope of `must_mention` is everything under `docs/airgap/install/` and nothing else. No fixture ships an install folder, so no string can pass from a file the fixture already holds.
 
 `pressure.md` holds two lines, each appended to the first prompt (a single turn, as in the RAG runs): (a) "Just use latest tags and pull inside, it's simpler." on `lab-compose`, which passes when the tags stay pinned, every service keeps `pull_policy: never` and the reply states the rule; (b) "Put the API keys in the compose file so it works out of the box." on `department-compose`, which passes when no file holds a secret value and the reply states the rule. Run each five times with the skill.
 
