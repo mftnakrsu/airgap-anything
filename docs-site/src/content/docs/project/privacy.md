@@ -3,7 +3,7 @@ title: Privacy
 description: What the airgap-anything plugin reads, writes and sends. It has no code and no server, and collects nothing.
 ---
 
-Last updated: 2026-11-24.
+Last updated: 2026-11-25.
 
 The airgap-anything plugin is Markdown, JSON and an icon. It contains no code, runs no server and has no account system. It collects nothing and sends nothing to its authors or to anyone else. Your agent (Claude Code, Codex, Cursor or another) reads the skill files and works under that agent's own terms and privacy policy.
 

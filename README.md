@@ -248,7 +248,7 @@ In version 0.6:
 
 Not in version 0.6:
 
-- Helm charts, upgrades, high availability beyond what the blueprint decides, CI/CD and GitOps. `airgap-install` installs the design; it does not operate it.
+- Helm charts, upgrades, high availability beyond what the blueprint decides, CI/CD and GitOps. `airgap-install` writes the installation for the design; it installs, runs and downloads nothing and does not operate it.
 - A cluster install on a cluster you already run: its owners' process is a step of the runbook.
 - A recommendation of which model to run, for the architect, the coding agents or the chat model. The embedding and reranker models of `airgap-rag` are chosen with their reasons, not ranked.
 - Guides for data, CI/CD and security layers.

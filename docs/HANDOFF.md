@@ -9,7 +9,7 @@ Version 0.6.0 is prepared on branch `feat/airgap-install` and is not merged, tag
 ### Version 0.6 (prepared, not merged)
 
 - **Done on the branch (0.6).** The skill `airgap-install`: `SKILL.md` and six references (questions, plan, compose, kubernetes, clusters, runbook). On the connected side it writes the deployment files (Docker Compose, or Kubernetes manifests for k3s, RKE2 or an existing cluster) and a runbook, `docs/airgap/install/INSTALL.md` (plus `AGENTS-INSTALL.md` when an agent works inside), in which every step is a command, the output to expect and what to do when it differs. It deploys the blueprint's server components and those `airgap-rag` chose; `airgap-agent`'s tools are handed off to `docs/airgap/agents.md`. It downloads nothing, runs nothing, writes no programs or scripts into the project and no secret into any file. It runs between `airgap-architect` and `airgap-transfer`: `airgap-transfer` carries `docs/airgap/install/` as a project path, accepts rows marked "(from airgap-install)", and its `INSIDE.md` ends with "continue with install/INSTALL.md". Six behavior scenarios with pressure prompts under `evals/install-scenarios/`, three new triggering cases (21 in the suite), the README, a guide (`docs-site/src/content/docs/guides/installing-inside.md`), generated reference pages (no catalog), and the sidebar entries. 122 tests, all passing on Python 3.11 and 3.13 on 2026-11-25. `claude plugin validate .` and `claude plugin validate plugins/airgap-anything --profile directory` were run for the manifests. The site build (`npm run build`) was not run locally, since `node_modules` is absent; CI builds it.
-- **Baseline (0.6).** `evals/results/2026-11-25-install-baseline.md`: without the skill, no run used `docs/airgap/install/`, 4 of 5 wrote 8 to 13 scripts, and none marked its manifest rows.
+- **Baseline (0.6).** `evals/results/2026-11-25-install-baseline.md`: without the skill, no run used `docs/airgap/install/`, 4 of 5 wrote 8 to 13 scripts, and three of five needed new manifest rows, none of which ended "(from airgap-install)" (the manifest was left unchanged or another marker was used); the other two needed none.
 - **Not yet run (0.6):** the triggering suite and the behavior and pressure evals on the final text of the skill.
 - **Unverified (0.6).** The NVIDIA device plugin's offline behavior and Harbor's `goharbor/prepare` offline are unverified; the runbook labels them `unverified`. No live install inside a network was done.
 
@@ -70,7 +70,7 @@ The triggering suite ran on the 0.3 descriptions on 2026-11-24: 12 of 12 cases p
 ## Later
 
 - The ideas of #12, each as its own `airgap-<role>` skill in the same markdown-only form.
-- Run the triggering suite and the install behavior and pressure evals on the final text of `airgap-install`, and make `airgap-transfer`'s `INSIDE.md` step 6b name `docs/airgap/install/` (below).
+- Run the triggering suite and the install behavior and pressure evals on the final text of `airgap-install`, and make `airgap-transfer`'s `INSIDE.md` step 6b name `docs/airgap/install/` (see Known limitations).
 - Eval scenarios that state `inside.operator` (`local_agent`, `people_then_agent`) and `hardware.cpu_arch = arm64`, and one whose hardware does not fit.
 - Turn the behavior evals into `claude plugin eval` cases, so that contributors can run them.
 - Split `code_assistant` into code completion and coding agent; make concurrency depend on organization size.

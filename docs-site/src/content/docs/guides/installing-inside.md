@@ -43,15 +43,17 @@ Every step of a runbook has the same four parts: a **Why**, the commands, the ou
 
 Every image tag is the manifest's, never `latest`. In Compose each service has `pull_policy: never`; in Kubernetes each container names the local registry and sets its pull policy ([Docker Compose files](/reference/install/compose/), [Kubernetes manifests](/reference/install/kubernetes/)). A missing image then fails at once, instead of trying an internet that is not there, and it is carried in again. GPU counts are the blueprint's numbers written out (`count: 8`, `--tensor-parallel-size 8`, `nvidia.com/gpu: 1` with `replicas: 18`), never `all`. Every outbound switch of the manifest's section 4 is applied in a file and checked in the runbook's egress step.
 
-## Which cluster
+## Which orchestration
 
-| Your design | What you get |
+The skill copies the orchestration from the blueprint's decision; it does not choose it, and the size of the organization does not change it. A department can be on Compose or on k3s.
+
+| The blueprint's orchestration | What you get |
 |---|---|
-| A small team or a lab on Docker Compose | `compose/` and a runbook of about the same size as the design: registry, secrets, services in order, egress check, smoke test |
-| A department on k3s or RKE2 | `kubernetes/` manifests and `cluster/` configuration that points the cluster at the local registry; the runbook installs the cluster from the bundle first. Harbor, when the design has it, still runs from its own installer in `compose/` |
-| An enterprise on a cluster you already run | `kubernetes/` manifests and their deployment, and a step that lists what the cluster's owners must answer. The skill writes no cluster install: the cluster is theirs |
-| A design with a service of your own, such as an in-house search | That service is written only from the facts you give (image, port, health endpoint) and labeled `unverified`; a missing fact is asked, never filled in |
-| A blueprint with an open decision | Nothing is written; the skill names `airgap-architect` |
+| Docker Compose | `compose/` (`compose.yaml`, `.env.example`, `config/`) and `INSTALL.md`: registry, secrets, services in their start order, egress check, smoke test. No `kubernetes/` folder |
+| k3s or RKE2 | `kubernetes/` manifests and `cluster/` configuration that points the cluster at the local registry; the runbook installs the cluster from the bundle first. Harbor, when the design has it, still runs from its own installer in `compose/` |
+| An existing cluster | `kubernetes/` manifests and their deployment, and a step that lists what the cluster's owners must answer. The skill writes no cluster install: the cluster is theirs |
+| A service of your own, such as an in-house search, in either | That service is written only from the facts you give (image, port, health endpoint) and labeled `unverified`; a missing fact is asked, never filled in |
+| A decision still open in the blueprint | Nothing is written; the skill names `airgap-architect` |
 
 On Kubernetes with GPUs there is one more step before any serving rollout: the NVIDIA device plugin is applied and every GPU node must report the blueprint's GPU count, so no inference pod starts before the GPUs are proven ([Clusters](/reference/install/clusters/)).
 
