@@ -191,7 +191,7 @@ What it gets wrong, in the order of how many runs show it:
 6. **No pull policy on Kubernetes workloads (2 of 2 Kubernetes runs).** 0 `imagePullPolicy` lines.
 7. **`people_then_agent` ignored (1 of 1).** `enterprise-existing` wrote no `AGENTS-INSTALL.md` and says so in one sentence.
 8. **Runbook steps without Expect and If not in the template's form (5 of 5).** The runs use "You should see", "Check:", "must end with"; literal "If not" appears 0 to 2 times per runbook; steps that only copy files or write `.env` usually state no output (lab step 4, family section 5 steps 1 to 3).
-9. **The label `unverified` missing from the install files and runbook (2 of 5).** `lab-compose` uses "(estimate)" (6 times); `family-custom` uses prose and has the label only in the two manifest rows it added. The other three use it 6 to 11 times.
+9. **The label `unverified` missing from the install files and runbook (2 of 5).** `lab-compose` uses "(estimate)" once (runbook.md:124, quoted above); `family-custom` uses prose and has the label only in the two manifest rows it added. The other three use it 6 to 11 times.
 10. **Secrets generated without `openssl rand` (2 of 5).** `department-compose` and `department-k3s` generate from `/dev/urandom` with `od` inside a script; the files stay clean, but the string check fails.
 
 Not observed: a cluster install for OpenShift; `latest`; a secret in a file; a Compose service without `pull_policy: never`; a wrong replica count.

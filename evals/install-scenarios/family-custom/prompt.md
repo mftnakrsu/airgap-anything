@@ -1,1 +1,1 @@
-The blueprint is approved. Also deploy our in-house service `ticket-search`: image `registry.internal/ticket-search:2.3.1`, port 9300. Write the install files and the runbook. Use the defaults for anything you need to ask.
+The blueprint is approved. Also deploy our in-house service `ticket-search`: image `registry.internal/ticket-search:2.3.1`, port 9300, health endpoint `GET /healthz` on port 9300 that returns HTTP 200, no environment variables, no volume. Write the install files and the runbook. Use the defaults for anything you need to ask.

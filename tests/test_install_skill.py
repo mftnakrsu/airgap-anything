@@ -1,8 +1,11 @@
-"""Content the airgap-install skill must carry, from its spec (2026-11-25-airgap-install-design.md)."""
+"""Content the airgap-install skill must carry, and the shape of its eval scenarios."""
+import json
 import re
 import unittest
 
-from tests import INSTALL_DIR, TRANSFER_DIR
+from tests import INSTALL_DIR, REPO_ROOT, TRANSFER_DIR
+
+INSTALL_SCENARIOS = REPO_ROOT / "evals" / "install-scenarios"
 
 REFS = INSTALL_DIR / "references"
 REFERENCES = ("questions", "plan", "compose", "kubernetes", "clusters", "runbook")
@@ -10,6 +13,11 @@ REFERENCES = ("questions", "plan", "compose", "kubernetes", "clusters", "runbook
 
 def read(name):
     return (REFS / f"{name}.md").read_text(encoding="utf-8")
+
+
+def code_blocks(text, language="sh"):
+    """The lines of every ```LANGUAGE block, also inside an outer four-backtick template."""
+    return re.findall(rf"^```{language}\n(.*?)^```$", text, flags=re.S | re.M)
 
 
 def section(text, heading):
@@ -81,6 +89,88 @@ class ReferencesTest(unittest.TestCase):
                 self.assertIsNone(re.search(r"(?i)\bdocker (compose )?pull\b", text))
 
 
+class PathsTest(unittest.TestCase):
+    ROOTS = ("/", "PROJECT_FOLDER", "HARBOR_DIR")
+
+    def test_every_cd_in_the_runbook_is_absolute(self):
+        for block in code_blocks(read("runbook")):
+            for target in re.findall(r"(?:^|&& )cd (\S+)", block, flags=re.M):
+                with self.subTest(target=target):
+                    self.assertTrue(target.startswith(self.ROOTS), target)
+
+    def test_compose_blocks_start_in_the_absolute_compose_folder(self):
+        for block in code_blocks(read("runbook")):
+            if "docker compose" in block and "HARBOR_DIR" not in block:
+                with self.subTest(block=block[:60]):
+                    self.assertTrue(block.startswith("cd PROJECT_FOLDER/docs/airgap/install/compose\n"))
+
+    def test_kubernetes_files_are_named_by_absolute_paths(self):
+        for name in ("runbook", "clusters"):
+            for block in code_blocks(read(name)):
+                for path in re.findall(r"(?:-f|cp) (\S*kubernetes/\S+)", block):
+                    with self.subTest(name=name, path=path):
+                        self.assertTrue(path.startswith("PROJECT_FOLDER/docs/airgap/install/"), path)
+
+    def test_bundle_copies_and_installs_in_clusters_use_absolute_paths(self):
+        for block in code_blocks(read("clusters")):
+            for line in block.splitlines():
+                words = line.split()
+                if not words or words[0] not in ("cp", "yum"):
+                    continue
+                sources = [w for w in words[1:] if not w.startswith("-") and w not in ("install",)]
+                if words[0] == "cp":
+                    sources = sources[:-1]
+                for source in sources:
+                    with self.subTest(line=line, source=source):
+                        self.assertTrue(source.startswith(("/srv/airgap-bundle/", "PROJECT_FOLDER/", "/root/", "/etc/")), source)
+
+    def test_rke2_kubernetes_blocks_put_kubectl_on_the_path(self):
+        text = read("runbook")
+        template = text[text.index("## INSTALL.md template"):text.index("## AGENTS-INSTALL.md template")]
+        blocks = [block for block in code_blocks(template)
+                  if re.search(r"^kubectl ", block, flags=re.M)]
+        self.assertGreaterEqual(len(blocks), 5)
+        for block in blocks:
+            with self.subTest(block=block[:60]):
+                self.assertIn("export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin", block)
+
+
+class ExposureTest(unittest.TestCase):
+    def test_kubernetes_holds_an_ingress_template(self):
+        text = read("kubernetes")
+        exposure = section(text, "## Exposure: the Ingress")
+        for word in ("kind: Ingress", "networking.k8s.io/v1", "GATEWAY_HOSTNAME", "pathType: Prefix", "70-ingress.yaml"):
+            with self.subTest(word=word):
+                self.assertIn(word, exposure)
+
+    def test_k3s_keeps_traefik_and_ships_its_config(self):
+        text = read("clusters")
+        self.assertNotRegex(text, r"--disable[= ]traefik'")
+        self.assertIn("traefik-config.yaml", text)
+        self.assertIn("traefik-config.yaml", (INSTALL_DIR / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertIn("traefik-config.yaml", section(read("runbook"), "## 6. Egress settings applied"))
+
+
+class ScenarioTest(unittest.TestCase):
+    def scenarios(self):
+        return sorted(p for p in INSTALL_SCENARIOS.iterdir() if p.is_dir())
+
+    def test_two_phases_except_unapproved(self):
+        for folder in self.scenarios():
+            expected = json.loads((folder / "expected.json").read_text(encoding="utf-8"))
+            with self.subTest(scenario=folder.name):
+                if folder.name == "unapproved":
+                    self.assertTrue(expected["writes_nothing"])
+                    self.assertNotIn("phase_a", expected)
+                    continue
+                self.assertEqual(expected["phase_a"]["only_files"], ["docs/airgap/install/plan.md"])
+                phase_b = expected["phase_b"]
+                self.assertTrue(any("script" in item for item in phase_b["must_not"]))
+                self.assertIn("docs/airgap/install/INSIDE.md", phase_b["must_not_files"])
+                self.assertIn("docs/airgap/install/", phase_b["manifest_marker"]["required_rows"])
+                self.assertEqual(phase_b["manifest_marker"]["marker"], "(from airgap-install)")
+
+
 class SkillTest(unittest.TestCase):
     def setUp(self):
         self.text = (INSTALL_DIR / "SKILL.md").read_text(encoding="utf-8")
@@ -101,6 +191,10 @@ class SkillTest(unittest.TestCase):
 
     def test_the_rules_forbid_programs_and_scripts(self):
         self.assertIn("programs or scripts", section(self.text, "## Rules"))
+
+    def test_the_rules_allow_only_the_plan_before_approval(self):
+        self.assertIn("Before the plan is approved, only `docs/airgap/install/plan.md` is written",
+                      section(self.text, "## Rules"))
 
 
 class HandOverTest(unittest.TestCase):
