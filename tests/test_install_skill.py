@@ -2,7 +2,7 @@
 import re
 import unittest
 
-from tests import INSTALL_DIR
+from tests import INSTALL_DIR, TRANSFER_DIR
 
 REFS = INSTALL_DIR / "references"
 REFERENCES = ("questions", "plan", "compose", "kubernetes", "clusters", "runbook")
@@ -79,6 +79,39 @@ class ReferencesTest(unittest.TestCase):
                 for line in text.splitlines():
                     self.assertNotRegex(line, r"(?i)\bcurl\b.*(\||https?://)")
                 self.assertIsNone(re.search(r"(?i)\bdocker (compose )?pull\b", text))
+
+
+class SkillTest(unittest.TestCase):
+    def setUp(self):
+        self.text = (INSTALL_DIR / "SKILL.md").read_text(encoding="utf-8")
+
+    def test_short_and_names_every_reference(self):
+        self.assertLess(len(self.text.splitlines()), 200)
+        for name in REFERENCES:
+            with self.subTest(name=name):
+                self.assertIn(f"references/{name}.md", self.text)
+
+    def test_workflow_checklist_rules_and_self_check(self):
+        self.assertGreaterEqual(self.text.count("- [ ] "), 7)
+        for word in ("## Rules", "## Self-check", "## Common mistakes", "pull_policy: never",
+                     "blueprint §5", "unverified", "airgap-architect", "docs/airgap/agents.md",
+                     "(from airgap-rag)"):
+            with self.subTest(word=word):
+                self.assertIn(word, self.text)
+
+    def test_the_rules_forbid_programs_and_scripts(self):
+        self.assertIn("programs or scripts", section(self.text, "## Rules"))
+
+
+class HandOverTest(unittest.TestCase):
+    def test_transfer_accepts_rows_from_airgap_install_and_hands_off(self):
+        install = (INSTALL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        transfer = (TRANSFER_DIR / "SKILL.md").read_text(encoding="utf-8")
+        inside = (TRANSFER_DIR / "references" / "inside.md").read_text(encoding="utf-8")
+        self.assertIn("(from airgap-install)", install)
+        self.assertIn("(from airgap-install)", transfer)
+        self.assertIn("docs/airgap/install/", transfer)
+        self.assertIn("continue with `install/INSTALL.md`", inside)
 
 
 if __name__ == "__main__":
