@@ -2,7 +2,7 @@ name: triggering
 
 # Runs plugins/airgap-anything/evals/triggering: does Claude Code pick the skill by itself, start it
 # from its command, and leave other requests alone? Every run is a set of real
-# Claude sessions (about USD 11.6 a run with 22 cases, scaled from USD 9.47 measured for 18), so it runs only when what decides
+# Claude sessions (about USD 11.05 a run with 21 cases, scaled from USD 9.47 measured for 18), so it runs only when what decides
 # triggering changes, on a release tag, or by hand. It needs a credential in
 # the repository secrets: ANTHROPIC_API_KEY, or CLAUDE_CODE_OAUTH_TOKEN from
 # `claude setup-token` (untested with plugin eval). Without one, the job
