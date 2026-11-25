@@ -50,16 +50,17 @@ A component the files need and the manifest lacks (a TLS proxy the blueprint cho
 ## Start order
 
 1. registry: the blueprint's registry first, and the loaded images pushed to it. In a Kubernetes design Harbor's installer (Compose, on its host) runs before any push to the cluster's registry and before the cluster pulls anything.
-2. state: databases, caches and the vector store (from `airgap-rag`, for example pgvector or Qdrant).
-3. serving: the inference engine, including the embedding and reranking instances of `airgap-rag`.
-4. extraction: docling-serve or another extractor of `rag.md`.
-5. gateway: the LLM gateway and the identity provider in front of it.
-6. UI and RAG server: the chat interface, and RAGFlow or the user's own platform.
-7. observability: metrics and dashboards last, because they scrape what is already running.
+2. GPU nodes (Kubernetes with GPUs only): the NVIDIA device plugin applied on k3s and RKE2, and every GPU node reports `nvidia.com/gpu` with blueprint §5's count (`INSTALL.md` step 4b, `references/runbook.md`).
+3. state: databases, caches and the vector store (from `airgap-rag`, for example pgvector or Qdrant).
+4. serving: the inference engine, including the embedding and reranking instances of `airgap-rag`.
+5. extraction: docling-serve or another extractor of `rag.md`.
+6. gateway: the LLM gateway and the identity provider in front of it.
+7. UI and RAG server: the chat interface, and RAGFlow or the user's own platform.
+8. observability: metrics and dashboards last, because they scrape what is already running.
 
 Why this order: each step depends only on steps above it, so a failed health check points at one component; the registry comes first because every later start reads images from it, and observability last because a scrape target that does not run yet looks like a monitoring fault. A step whose layer the blueprint does not have is left out; the numbers stay in this order.
 
-The cluster itself (k3s or RKE2, `references/clusters.md`) comes before step 1 and after the preconditions; an existing cluster has no such step. On Kubernetes with GPUs, the GPU-node check (the NVIDIA device plugin applied on k3s and RKE2, and every GPU node reporting `nvidia.com/gpu` with blueprint §5's count) is its own row after step 1 and before step 2, so no inference pod starts before the GPUs are proven; it is `INSTALL.md` step 4b (`references/runbook.md`).
+The cluster itself (k3s or RKE2, `references/clusters.md`) comes before step 1 and after the preconditions; an existing cluster has no such step. Row 2 exists only on Kubernetes with GPUs, so no inference pod starts before the GPUs are proven.
 
 ## Sources
 
