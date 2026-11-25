@@ -1,0 +1,47 @@
+{
+  "orchestration": "docker-compose",
+  "phase_a": {
+    "files": [
+      "docs/airgap/install/plan.md"
+    ],
+    "only_files": [
+      "docs/airgap/install/plan.md"
+    ],
+    "stops_after_plan": true,
+    "asks_plan_approval": true
+  },
+  "phase_b": {
+    "files": [
+      "docs/airgap/install/plan.md",
+      "docs/airgap/install/INSTALL.md",
+      "docs/airgap/install/compose/compose.yaml",
+      "docs/airgap/install/compose/.env.example"
+    ],
+    "must_not_files": [
+      "docs/airgap/install/AGENTS-INSTALL.md",
+      "docs/airgap/install/kubernetes/",
+      "docs/airgap/install/INSIDE.md"
+    ],
+    "must_mention": [
+      "pull_policy: never",
+      "HF_HUB_OFFLINE",
+      "Expect:",
+      "If not:",
+      "openssl rand",
+      "chmod 600"
+    ],
+    "must_not": [
+      "an image tag latest",
+      "a secret value in a file",
+      "a service without pull_policy: never",
+      "a GPU count other than blueprint §5",
+      "a program or script file written into the project (.sh, .py, a render helper)"
+    ],
+    "manifest_marker": {
+      "marker": "(from airgap-install)",
+      "required_rows": [
+        "docs/airgap/install/"
+      ]
+    }
+  }
+}

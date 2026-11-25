@@ -14,7 +14,7 @@ In a Claude Code session:
 /plugin install airgap-anything --marketplace mftnakrsu/airgap-anything
 ```
 
-Claude Code asks you to confirm the new marketplace, then lets you choose where to install. The plugin carries all four skills. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
+Claude Code asks you to confirm the new marketplace, then lets you choose where to install. The plugin carries all five skills. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
 
 ```
 /plugin marketplace add mftnakrsu/airgap-anything
@@ -35,7 +35,7 @@ Then install airgap-anything from the plugin directory in Codex or the ChatGPT d
 npx skills add mftnakrsu/airgap-anything -g
 ```
 
-This installs all four skills. To install one, add `--skill`, for example `npx skills add mftnakrsu/airgap-anything -g --skill airgap-transfer`.
+This installs all five skills. To install one, add `--skill`, for example `npx skills add mftnakrsu/airgap-anything -g --skill airgap-transfer`.
 
 `-g` installs them for your user, so every project has them; without `-g` they go into the current project only. Add `-a` and an agent ID to choose the agent, for example `-a cursor`, `-a codex`, `-a opencode` or `-a antigravity`. The [skills CLI](https://github.com/vercel-labs/skills) supports Claude Code, Codex, Cursor, OpenCode and 75 more agents; its [agent list](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) has the IDs. This route needs Node.js 22.20 or newer.
 
@@ -44,16 +44,16 @@ This installs all four skills. To install one, add `--skill`, for example `npx s
 On a connected machine, in a clone of this repository:
 
 ```bash
-for skill in airgap-architect airgap-transfer airgap-agent airgap-rag; do
+for skill in airgap-architect airgap-transfer airgap-agent airgap-rag airgap-install; do
   git archive --format=tar.gz --prefix=$skill/ -o $skill.tar.gz HEAD:plugins/airgap-anything/skills/$skill
   sha256sum $skill.tar.gz > $skill.tar.gz.sha256
 done
 ```
 
-Carry the eight files in, then:
+Carry the ten files in, then:
 
 ```bash
-for skill in airgap-architect airgap-transfer airgap-agent airgap-rag; do
+for skill in airgap-architect airgap-transfer airgap-agent airgap-rag airgap-install; do
   sha256sum -c $skill.tar.gz.sha256 && mkdir -p ~/.claude/skills && tar -xzf $skill.tar.gz -C ~/.claude/skills/
 done
 ```

@@ -4,7 +4,7 @@ Nothing in docs-site/src/content/docs/reference/ is written by hand, and neither
 example page, the install page, the contributing page or the images the site shares with the
 README. The skills ship markdown, so most pages are that markdown with a front matter and links:
 
-- reference/architect/, reference/transfer/, reference/agent/ and reference/rag/: each skill's SKILL.md workflow and its references/
+- reference/architect/, reference/transfer/, reference/agent/, reference/rag/ and reference/install/: each skill's SKILL.md workflow and its references/
 - reference/catalog/: one page per catalog entry, and an index (the architect's)
 - reference/gpus.md: the GPU table
 - start/install.md: the Install section of the README
@@ -31,6 +31,7 @@ ARCHITECT = SKILLS / "airgap-architect"
 TRANSFER = SKILLS / "airgap-transfer"
 AGENT = SKILLS / "airgap-agent"
 RAG = SKILLS / "airgap-rag"
+INSTALL = SKILLS / "airgap-install"
 CATALOG = ARCHITECT / "catalog"
 AGENT_CATALOG = AGENT / "catalog"
 RAG_CATALOG = RAG / "catalog"
@@ -87,6 +88,14 @@ SKILL_PAGES = [
         ("references/ingestion.md", "ingestion", "Bulk load, updates and queries", "The runbook for loading a folder into a knowledge base, updating it, granting access and querying it over the API."),
         ("references/wiki.md", "wiki", "The LLM wiki", "Documents as plain markdown files in a git repository, for coding agents that read files."),
         ("references/verification.md", "verification", "Verification inside", "The five checks a person runs inside the network: install, retrieval, OCR per language, access and egress."),
+    ]),
+    (INSTALL, "install", [
+        ("references/questions.md", "questions", "Install questions", "The questions airgap-install asks before it plans, with their defaults, and why it asks whether the blueprint is approved unless you already said so."),
+        ("references/plan.md", "plan", "Install plan", "The plan template, the table that copies the GPUs of blueprint section 5, the manifest rows the install adds and the start order."),
+        ("references/compose.md", "compose", "Docker Compose files", "The rules for every Compose service, the template, the .env.example, where each outbound switch goes and Harbor's configuration."),
+        ("references/kubernetes.md", "kubernetes", "Kubernetes manifests", "The rules for every workload, the manifests, and the NVIDIA device plugin for GPU nodes."),
+        ("references/clusters.md", "clusters", "Clusters", "What k3s, RKE2 and an existing cluster each need: the registry mirror, the server configuration and the cluster owners' list."),
+        ("references/runbook.md", "runbook", "Install runbooks", "The runbook for people and the rules for an agent inside: every step has a Why, commands, the output to expect and what to do if it differs."),
     ]),
 ]
 
@@ -240,8 +249,33 @@ def component_page(entry: dict, order: int, ids: set[str]) -> str:
 
 
 def _text_outside_code(markdown: str) -> str:
-    """Angle brackets in prose would become HTML in the site; inside code spans and blocks they stay."""
-    parts = re.split(r"(```.*?```|`[^`\n]*`)", markdown, flags=re.S)
+    """Angle brackets in prose would become HTML in the site; inside code spans and blocks they stay.
+
+    Fences are tracked by their length, as CommonMark does: a block opened with four backticks
+    (a template that holds ```sh blocks) closes only at a line of four or more backticks, so the
+    inner fences and every line between them stay code.
+    """
+    out, prose, fence = [], [], None
+    for line in markdown.splitlines(keepends=True):
+        match = re.match(r" {0,3}(`{3,}|~{3,})", line)
+        if fence is None and match:
+            out.append(_text_inline(prose))
+            prose, fence = [], match.group(1)
+            out.append(line)
+        elif fence is not None:
+            out.append(line)
+            closing = re.fullmatch(r" {0,3}(`{3,}|~{3,})[ \t]*\n?", line)
+            if closing and closing.group(1)[0] == fence[0] and len(closing.group(1)) >= len(fence):
+                fence = None
+        else:
+            prose.append(line)
+    out.append(_text_inline(prose))
+    return "".join(out)
+
+
+def _text_inline(lines: list[str]) -> str:
+    """Prose lines with their code spans kept as they are."""
+    parts = re.split(r"(`[^`\n]*`)", "".join(lines))
     return "".join(part if part.startswith("`") else _text(part) for part in parts)
 
 

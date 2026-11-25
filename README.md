@@ -37,6 +37,7 @@ The skills are plain markdown: no scripts, no dependencies, nothing to install b
 | [`airgap-transfer`](plugins/airgap-anything/skills/airgap-transfer/SKILL.md) | Turns the transfer manifest into a bundle that checks itself: fetch commands you approve first, a SHA-256 list, a split across media, an inventory, and a runbook or agent rules for the inside | A connected workstation; its runbook runs inside |
 | [`airgap-agent`](plugins/airgap-anything/skills/airgap-agent/SKILL.md) | Sets up a coding agent for the network without internet: picks the tool, writes its configuration and central policy with telemetry, updates and web access off, states what the model server must support, chooses MCP servers that work offline, and adds everything to the transfer manifest | A connected workstation; its checks run inside |
 | [`airgap-rag`](plugins/airgap-anything/skills/airgap-rag/SKILL.md) | Makes your documents searchable inside the network: asks which platform you want (Open WebUI knowledge bases, a RAG server such as RAGFlow, or your own choice), picks extraction and OCR, embedding and reranker models and the vector store, sizes the first load step by step, writes the configuration and a bulk-load runbook, and adds everything to the transfer manifest | A connected workstation; its checks run inside |
+| [`airgap-install`](plugins/airgap-anything/skills/airgap-install/SKILL.md) | Writes the installation for the approved design: the deployment files (Docker Compose, or Kubernetes manifests for k3s, RKE2 or a cluster you already run) and a runbook in which every step is a command, the output to expect and what to do when it differs, with the blueprint's GPU counts copied in and the rows the files need added to the transfer manifest | A connected workstation; its runbook runs inside |
 
 Ideas for more are in [#12](https://github.com/mftnakrsu/airgap-anything/issues/12).
 
@@ -60,7 +61,7 @@ In a Claude Code session:
 /plugin install airgap-anything --marketplace mftnakrsu/airgap-anything
 ```
 
-Claude Code asks you to confirm the new marketplace, then lets you choose where to install. The plugin carries all four skills. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
+Claude Code asks you to confirm the new marketplace, then lets you choose where to install. The plugin carries all five skills. This form needs Claude Code 2.1.275 or newer; from your shell, `claude plugin install airgap-anything --marketplace mftnakrsu/airgap-anything` does the same with 2.1.292 or newer. On older versions, add the marketplace first:
 
 ```
 /plugin marketplace add mftnakrsu/airgap-anything
@@ -81,7 +82,7 @@ Then install airgap-anything from the plugin directory in Codex or the ChatGPT d
 npx skills add mftnakrsu/airgap-anything -g
 ```
 
-This installs all four skills. To install one, add `--skill`, for example `npx skills add mftnakrsu/airgap-anything -g --skill airgap-transfer`.
+This installs all five skills. To install one, add `--skill`, for example `npx skills add mftnakrsu/airgap-anything -g --skill airgap-transfer`.
 
 `-g` installs them for your user, so every project has them; without `-g` they go into the current project only. Add `-a` and an agent ID to choose the agent, for example `-a cursor`, `-a codex`, `-a opencode` or `-a antigravity`. The [skills CLI](https://github.com/vercel-labs/skills) supports Claude Code, Codex, Cursor, OpenCode and 75 more agents; its [agent list](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) has the IDs. This route needs Node.js 22.20 or newer.
 
@@ -90,16 +91,16 @@ This installs all four skills. To install one, add `--skill`, for example `npx s
 On a connected machine, in a clone of this repository:
 
 ```bash
-for skill in airgap-architect airgap-transfer airgap-agent airgap-rag; do
+for skill in airgap-architect airgap-transfer airgap-agent airgap-rag airgap-install; do
   git archive --format=tar.gz --prefix=$skill/ -o $skill.tar.gz HEAD:plugins/airgap-anything/skills/$skill
   sha256sum $skill.tar.gz > $skill.tar.gz.sha256
 done
 ```
 
-Carry the eight files in, then:
+Carry the ten files in, then:
 
 ```bash
-for skill in airgap-architect airgap-transfer airgap-agent airgap-rag; do
+for skill in airgap-architect airgap-transfer airgap-agent airgap-rag airgap-install; do
   sha256sum -c $skill.tar.gz.sha256 && mkdir -p ~/.claude/skills && tar -xzf $skill.tar.gz -C ~/.claude/skills/
 done
 ```
@@ -171,6 +172,17 @@ The first load is sized step by step: extraction time, chunks, embedding time an
 
 Five checks run inside, with no LLM: install, retrieval, OCR for each language, access and egress. A service whose egress check shows an unexpected address is not released to users. The skill writes a bulk-load runbook too; the Open WebUI API endpoints in it were read from source at v0.13.4, because the docs no longer document them.
 
+### Installing inside
+
+The blueprint leaves deployment files out on purpose, and the transfer's runbook ends at "continue with the implementation plan". Without a plan, the people inside write the Compose file or the manifests, place the egress settings, pick a start order and guess what "healthy" looks like, with no internet and often no LLM. Once the blueprint is approved, ask in your own words, for example "write the install for our design". `airgap-install` asks the few questions the blueprint and the manifest leave open (whether the blueprint is approved, the hosts, where data and models live, TLS, who runs the install), each with a default, and writes `docs/airgap/install/plan.md`: the start order, the files, the ports, the health checks and a table that copies the GPUs of blueprint section 5. It shows the plan and waits; nothing else is written before your yes.
+
+Then it writes, under `docs/airgap/install/`:
+
+- **The deployment files.** Docker Compose, or Kubernetes manifests for k3s, RKE2 or an existing cluster. Every image carries the manifest's tag, never `latest`; Compose services have `pull_policy: never` and Kubernetes containers name the local registry, so a missing image fails at once instead of reaching for an internet that is not there. For k3s and RKE2 it also writes the registry and server configuration; for an existing cluster it writes the manifests and a step for the cluster owners' answers, never a cluster install.
+- **The runbook.** `INSTALL.md` for people, or `AGENTS-INSTALL.md` for an agent inside, or both. Every step has a Why, the commands, the output to **Expect** and what to do **If not**. Secrets are generated inside, in a step with `openssl rand`; no secret is written to any file.
+
+It deploys the blueprint's server components and those `airgap-rag` chose. The coding agents of `airgap-agent` are command-line programs on each developer's machine, so the runbook hands off to `docs/airgap/agents.md`. It adds the rows the files need to the transfer manifest (the project files `docs/airgap/install/` and, for example, the NVIDIA device plugin image), marked "(from airgap-install)", and `airgap-transfer` carries the folder in like every other project file; its `INSIDE.md` ends with "continue with install/INSTALL.md". It downloads nothing, runs nothing and writes no programs or scripts into the project.
+
 ## What you get
 
 ```
@@ -182,6 +194,7 @@ your-project/
 ├── docs/airgap/agents/<tool>/          the configuration (user/) and central policy (central/) per tool
 ├── docs/airgap/rag.md                  the document-search decisions, the sizing and the checks to run inside
 ├── docs/airgap/rag/                    the platform's configuration, the bulk-load runbook and the wiki steps
+├── docs/airgap/install/                the install plan, the runbook (INSTALL.md), and the Compose or Kubernetes files
 └── AGENTS.md                           instructions for the agent that builds it inside the network
 ```
 
@@ -224,17 +237,19 @@ A decision inherits the weakest label among its inputs. Every decision that rest
 
 ## Scope
 
-In version 0.5:
+In version 0.6:
 
 - Layer guides for the inference engine and the LLM gateway, and per-tier defaults for UI, identity, observability, orchestration, state stores and artifact registry.
 - Sizing from organization answers, a transfer manifest, and a self-review.
 - `airgap-transfer`: a plan and fetch commands from the transfer manifest, a checked bundle split across media, and a runbook or agent rules for the inside.
 - `airgap-agent`: the choice of coding-agent tool, its configuration and central policy with outbound connections off, the model server's requirements, offline MCP servers, and three checks for the inside.
 - `airgap-rag`: the choice of platform (the user's), extraction and OCR, embedding and reranker models, the vector store, a sizing of the first load, the configuration, a bulk-load runbook, and five checks for the inside.
+- `airgap-install`: an install plan you approve, the deployment files (Docker Compose, or Kubernetes manifests for k3s, RKE2 or an existing cluster), a runbook of commands with the output to expect and what to do when it differs, and the rows the files add to the transfer manifest.
 
-Not in version 0.5:
+Not in version 0.6:
 
-- Deployment files such as Docker Compose or Helm.
+- Helm charts, upgrades, high availability beyond what the blueprint decides, CI/CD and GitOps. `airgap-install` writes the installation for the design; it installs, runs and downloads nothing and does not operate it.
+- A cluster install on a cluster you already run: its owners' process is a step of the runbook.
 - A recommendation of which model to run, for the architect, the coding agents or the chat model. The embedding and reranker models of `airgap-rag` are chosen with their reasons, not ranked.
 - Guides for data, CI/CD and security layers.
 - Compliance mappings.
@@ -251,6 +266,7 @@ The plugin is Markdown, JSON and an icon: no code, no server, nothing collected,
 - `airgap-transfer` proposes download commands for what the transfer manifest lists: container images from their registries (for example Docker Hub, `ghcr.io`, `quay.io`), model files from Hugging Face, and packages from the release pages the catalog names. It runs them only after you approve the plan, from your machine straight to those services. A Hugging Face token is read only from `HF_TOKEN` in your environment and never written to a file.
 - `airgap-agent` downloads nothing and runs nothing: it writes configuration and the checks, with keys named as environment variables and never written to a file. The tools it sets up have outbound connections of their own; switching them off is its job, and the egress check proves it inside.
 - `airgap-rag` downloads nothing and runs nothing: it writes configuration, a bulk-load runbook and the checks, with keys named as environment variables and never written to a file. The platforms and extractors it sets up have outbound connections of their own; its egress check proves they are off inside. Documents from inside the network never go to a cloud agent.
+- `airgap-install` downloads nothing and runs nothing: it writes deployment files and a runbook, with secrets generated inside the network by a runbook step and never written to a file. It writes no programs or scripts into your project.
 - The interview asks about the organization (headcount, departments, hardware), not about people.
 
 The full policy is on the [privacy page](https://airgap-anything.mefby.com/project/privacy/).
@@ -275,7 +291,7 @@ MIT. See [LICENSE](LICENSE).
 
 Skill'ler düz markdown'dır: betik yok, bağımlılık yok, klasörden başka kurulacak bir şey yok. Claude Code, Codex, Cursor ve [Agent Skills](https://agentskills.io) okuyan her agent'ta çalışır; internete kapalı ağın içinde, yerel bir modelle de çalışır.
 
-`airgap-architect` kurumunuzla kısa bir görüşme yapar ve bir blueprint yazar: her katman için gerekçesi ve alternatifleriyle bir karar, her adımı yazılmış GPU, sunucu ve güç hesabı, ağa taşınacak her şeyin listesi. `airgap-transfer` bu listeyi kendini denetleyen bir pakete çevirir: önce sizin onayladığınız indirme komutları, SHA-256 listesi, disklere bölme, envanter ve içeride insanlar için bir çalıştırma kılavuzu ya da içerideki agent için kurallar. İçeride hiçbir adım internet ya da LLM gerektirmez. `airgap-agent` ise içerideki geliştiriciler için bir kodlama agent'ı hazırlar: aracı seçer, telemetri, güncelleme ve web erişimini kapatan yapılandırmayı yazar ve tüm dosyaları aktarım listesine ekler; hiçbir şey indirmez ya da çalıştırmaz. `airgap-rag` ise içerideki belgelerinizi aranabilir yapar: platformu siz seçersiniz, ilk yüklemenin süresi adım adım hesaplanır, ağın içindeki belgeler hiçbir zaman dışarıdaki bir bulut agent'a gönderilmez ve hiçbir şey indirilmez ya da çalıştırılmaz.
+`airgap-architect` kurumunuzla kısa bir görüşme yapar ve bir blueprint yazar: her katman için gerekçesi ve alternatifleriyle bir karar, her adımı yazılmış GPU, sunucu ve güç hesabı, ağa taşınacak her şeyin listesi. `airgap-transfer` bu listeyi kendini denetleyen bir pakete çevirir: önce sizin onayladığınız indirme komutları, SHA-256 listesi, disklere bölme, envanter ve içeride insanlar için bir çalıştırma kılavuzu ya da içerideki agent için kurallar. İçeride hiçbir adım internet ya da LLM gerektirmez. `airgap-agent` ise içerideki geliştiriciler için bir kodlama agent'ı hazırlar: aracı seçer, telemetri, güncelleme ve web erişimini kapatan yapılandırmayı yazar ve tüm dosyaları aktarım listesine ekler; hiçbir şey indirmez ya da çalıştırmaz. `airgap-rag` ise içerideki belgelerinizi aranabilir yapar: platformu siz seçersiniz, ilk yüklemenin süresi adım adım hesaplanır, ağın içindeki belgeler hiçbir zaman dışarıdaki bir bulut agent'a gönderilmez ve hiçbir şey indirilmez ya da çalıştırılmaz. `airgap-install` ise onaylanmış tasarımın kurulumunu yazar: Docker Compose dosyaları ya da Kubernetes manifest'leri ve ağın içindeki kişiler için, her adımında komutu, beklenen çıktıyı ve çıktı farklıysa ne yapılacağını söyleyen bir çalışma kılavuzu; hiçbir şey indirmez ya da çalıştırmaz, projeye betik yazmaz ve hiçbir parolayı dosyaya koymaz.
 
 **Kurulum.** Bir kez kurarsınız; sonrasında yalnızca sorarsınız. Claude Code oturumunda:
 

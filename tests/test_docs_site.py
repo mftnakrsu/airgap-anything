@@ -28,6 +28,23 @@ def _slug(path):
     return "" if slug == "index" else slug.removesuffix("/index")
 
 
+class CodeStaysVerbatimTest(unittest.TestCase):
+    def test_redirects_inside_nested_fences_are_not_escaped(self):
+        generator = _generator()
+        source = "Prose with <b>.\n\n````markdown\n# Title\n\n```sh\necho x >> .env\n```\n\nText a > b inside the template.\n````\n\nAfter: a > b and `c > d`.\n"
+        text = generator._text_outside_code(source)
+        self.assertIn("echo x >> .env", text)
+        self.assertIn("Text a > b inside the template.", text)
+        self.assertIn("Prose with &lt;b&gt;.", text)
+        self.assertIn("After: a &gt; b and `c > d`.", text)
+
+    def test_the_generated_install_runbook_keeps_its_redirects(self):
+        page = DOCS / "reference" / "install" / "runbook.md"
+        text = page.read_text(encoding="utf-8")
+        self.assertIn(">> .env", text)
+        self.assertNotIn("&gt;&gt;", text)
+
+
 class GeneratedFilesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

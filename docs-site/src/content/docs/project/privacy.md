@@ -3,7 +3,7 @@ title: Privacy
 description: What the airgap-anything plugin reads, writes and sends. It has no code and no server, and collects nothing.
 ---
 
-Last updated: 2026-11-24.
+Last updated: 2026-11-25.
 
 The airgap-anything plugin is Markdown, JSON and an icon. It contains no code, runs no server and has no account system. It collects nothing and sends nothing to its authors or to anyone else. Your agent (Claude Code, Codex, Cursor or another) reads the skill files and works under that agent's own terms and privacy policy.
 
@@ -14,6 +14,7 @@ The files in your project that you point the agent to, and your answers in the c
 ## What the skills write
 
 - `airgap-architect` writes the blueprint (under `docs/airgap/` or, with superpowers, `docs/superpowers/specs/`), `docs/airgap/transfer-manifest.md` and a block in `AGENTS.md`, all in your project.
+- `airgap-install` writes the plan, the runbook and the deployment files under `docs/airgap/install/` in your project, and adds rows to the transfer manifest. It writes no key, password or token: a runbook step generates each secret inside the network.
 - `airgap-transfer` writes `docs/airgap/transfer-plan.md` in your project and the bundle in a folder you choose.
 - `airgap-agent` writes `docs/airgap/agents.md` and the configuration under `docs/airgap/agents/` in your project, and adds rows to the transfer manifest. It writes no key or token: keys come from environment variables.
 - `airgap-rag` writes `docs/airgap/rag.md` and the configuration and runbook under `docs/airgap/rag/` in your project, and adds rows to the transfer manifest. It writes no key or token: keys come from environment variables.
@@ -25,6 +26,7 @@ Nothing is written anywhere else, and nothing leaves your machine through the pl
 - `airgap-architect` needs none.
 - `airgap-agent` downloads nothing and runs nothing: it writes configuration and the steps to check it. The tools it sets up make outbound connections of their own; the skill switches them off, and its egress check shows inside whether any remain.
 - `airgap-rag` downloads nothing and runs nothing: it writes configuration, a bulk-load runbook and the steps to check them. The platforms and extractors it sets up make outbound connections of their own; the skill switches them off, and its egress check shows inside whether any remain. Documents from inside the network never go to a cloud agent outside it.
+- `airgap-install` downloads nothing and runs nothing: it writes deployment files and a runbook that people or an agent inside type, and no programs or scripts into your project.
 - `airgap-transfer` proposes download commands for what your transfer manifest lists: container images from their registries (for example Docker Hub, `ghcr.io` and `quay.io`), model files from Hugging Face, and packages from the release pages that the catalog names. It runs them only after you approve the plan in the conversation. The requests go from your machine straight to those services, under their terms. A Hugging Face token is read only from the `HF_TOKEN` variable in your environment; the skill never asks for it and never writes it to a file.
 - Inside the air-gapped network, nothing needs a network connection.
 
