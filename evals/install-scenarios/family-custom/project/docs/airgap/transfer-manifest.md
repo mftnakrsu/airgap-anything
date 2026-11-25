@@ -1,0 +1,118 @@
+# Transfer manifest: Research lab chat assistant (arm64, with retrieval and a coding agent)
+
+- Blueprint: `docs/airgap/blueprint.md`, dated 2026-11-25
+- Generated: 2026-11-25
+- Hardware: nvidia
+- Platform: linux/arm64
+
+Replace `REGISTRY_HOST` with the address of the registry inside the network. `airgap-transfer` fills in digests, sizes and checksums when it fetches each artifact.
+
+## 1. Container images
+
+| Component | Version | Image | For | Target path |
+|---|---|---|---|---|
+| `vllm` | `v0.34.0` | `vllm/vllm-openai:v0.34.0` | nvidia | `REGISTRY_HOST/vllm/vllm-openai:v0.34.0` |
+| `open-webui` | `v0.13.4` | `ghcr.io/open-webui/open-webui:v0.13.4` | any | `REGISTRY_HOST/open-webui/open-webui:v0.13.4` |
+| `distribution-registry` | `v3.1.2` | `registry:3.1.2` | any | `REGISTRY_HOST/registry:3.1.2` |
+| `docling-serve` (from airgap-rag) | `v1.39.0` | `quay.io/docling-project/docling-serve-cpu:v1.39.0` | amd64, arm64 | `REGISTRY_HOST/docling-project/docling-serve-cpu:v1.39.0` |
+
+Notes:
+
+- `vllm`: the NVIDIA image is a multi-architecture manifest list: copy the platform of the target hosts.
+- `docling-serve`: the CPU image is a multi-architecture manifest list (amd64 and arm64); the `-cu128` image is amd64 only and is not carried.
+- `docker-compose`: no image rows; it is a binary in section 3.
+- Before the registry runs, these images are loaded into Docker Engine directly from the media (`docker load`), then pushed to it.
+
+## 2. Model artifacts
+
+| Model | Role | Files to carry |
+|---|---|---|
+| `lab-8b`, 8 billion parameters, 8-bit (`fp8` or `int8`; name not given) | chat | weights (about 8 GB by params × bytes; the real files may differ), tokenizer and configuration files including `config.json`; the exact repository and revision are chosen during the transfer |
+
+## 3. Packages and binaries
+
+| Component | Version | File | Arch | URL | Publisher checksums |
+|---|---|---|---|---|---|
+| `docker-compose` | `v5.8.0` | `docker-compose-linux-aarch64` | arm64 | https://github.com/docker/compose/releases/download/v5.8.0/docker-compose-linux-aarch64 | https://github.com/docker/compose/releases/download/v5.8.0/checksums.txt |
+| custom: Docker Engine | | enumerate the artifacts by hand (packages for the server's operating system, which is unknown) | arm64 | | |
+| custom: host GPU stack | | enumerate the artifacts by hand (for NVIDIA: the driver and the NVIDIA Container Toolkit) | arm64 | | |
+| custom: Elasticsearch 8 platform (from airgap-rag) | `unverified` | enumerate the artifacts by hand (the version, images and files of the user's own Elasticsearch 8 are not in the catalog) | arm64 | `unverified` | |
+| `airgap-rag` (from airgap-rag) | | `docs/airgap/rag.md` | any | project path, copied | |
+| `airgap-agent` (from airgap-agent) | | `docs/airgap/agents.md` | any | project path, copied | |
+| `qwen-code` (from airgap-agent) | `v0.28.4` | `qwen-code-linux-arm64.tar.gz` | arm64 | https://github.com/QwenLM/qwen-code/releases/download/v0.28.4/qwen-code-linux-arm64.tar.gz | https://github.com/QwenLM/qwen-code/releases/download/v0.28.4/SHA256SUMS |
+| `qwen-code` (from airgap-agent) | `v0.28.4` | `install-qwen-standalone.sh` | any | https://raw.githubusercontent.com/QwenLM/qwen-code/v0.28.4/scripts/installation/install-qwen-standalone.sh | |
+
+## 4. Telemetry and egress settings to switch off before first start
+
+| Component | What | Setting |
+|---|---|---|
+| `vllm` | Anonymous usage statistics (hardware, platform, version, model architecture, some engine settings, a random UUID) sent by default to `https://stats.vllm.ai` | `VLLM_NO_USAGE_STATS=1`, or `DO_NOT_TRACK=1`, or create `~/.config/vllm/do_not_track` |
+| `vllm` | Hugging Face library telemetry (transformers, huggingface_hub) | `HF_HUB_DISABLE_TELEMETRY=1` |
+| `vllm` | Hub update checks of the `hf` command-line tool (connected staging host only) | `HF_HUB_DISABLE_UPDATE_CHECK=1` |
+| `open-webui` | Analytics switches of bundled libraries (Scarf, DO_NOT_TRACK, ChromaDB) | Keep `SCARF_NO_ANALYTICS=true`, `DO_NOT_TRACK=true`, `ANONYMIZED_TELEMETRY=false` (set in the official image) |
+| `open-webui` | Version update check at `https://api.github.com/repos/open-webui/open-webui/releases/latest`; on by default | `ENABLE_VERSION_UPDATE_CHECK=false`, or `OFFLINE_MODE=true` |
+| `open-webui` | Open WebUI Community sharing options; on by default | `ENABLE_COMMUNITY_SHARING=false` |
+| `open-webui` | External avatar redirects exposing viewer IP, User-Agent and Referer; on by default | `ENABLE_PROFILE_IMAGE_URL_FORWARDING=false` (read at startup only) |
+| `open-webui` | OpenTelemetry export; off by default | Leave `ENABLE_OTEL=false` |
+| `open-webui` | `CUSTOM_NAME` polls `api.openwebui.com`; off while unset | Leave `CUSTOM_NAME` unset |
+| `docker-compose` | — | None documented |
+| `distribution-registry` | OpenTelemetry trace export: by default the registry tries to export traces to an OTLP collector on localhost:4318; nothing leaves the host unless an OTEL variable points elsewhere | `OTEL_TRACES_EXPORTER=none` |
+| custom: Elasticsearch 8 platform (from airgap-rag) | Telemetry and update checks: not documented (`unverified`) | Not documented; the egress check covers it |
+| `docling-serve` (from airgap-rag) | Remote services (documents sent to an outside API); off by default | Keep `DOCLING_SERVE_ENABLE_REMOTE_SERVICES=false` |
+| `docling-serve` (from airgap-rag) | Bundled web UI; off by default | Keep `DOCLING_SERVE_ENABLE_UI=false` |
+| `docling-serve` (from airgap-rag) | Metrics at `/metrics`, served locally only; on by default | Nothing leaves the host; keep traces and OTLP export off |
+| `docling-serve` (from airgap-rag) | Model download at start, only when `DOCLING_SERVE_ARTIFACTS_PATH` is empty | Keep the baked path or mount a staged one |
+| `qwen-code` (from airgap-agent) | Usage statistics and crash data to an Alibaba Cloud RUM endpoint; on by default | `privacy.usageStatisticsEnabled: false` or `QWEN_USAGE_STATISTICS_ENABLED=false` |
+| `qwen-code` (from airgap-agent) | Daily models.dev catalog download; on by default | `model.catalogRefresh: false`; `QWEN_CODE_MODELS_DEV=off` disables the catalog |
+| `qwen-code` (from airgap-agent) | Auto update; on by default | `general.enableAutoUpdate: false` |
+| `qwen-code` (from airgap-agent) | Web search (DashScope or Qwen service); not auto-enabled for local models | `tools.webSearch.enabled: false` or `ENABLE_WEB_SEARCH=false` |
+| `qwen-code` (from airgap-agent) | Web fetch tool; not documented | Deny `"WebFetch"` in `permissions.deny` |
+| `qwen-code` (from airgap-agent) | OpenTelemetry; off by default | Keep `telemetry.enabled: false` (`--no-telemetry`) |
+
+## 5. Runtime downloads to stage in advance
+
+| Component | Download |
+|---|---|
+| `vllm` | Model weights, configuration and tokenizer: stage on the connected host (for example `hf download <model>`) and give `vllm serve` a local path |
+| `vllm` | Hugging Face offline switch: `HF_HUB_OFFLINE=1` so no call reaches the Hub and a missing file fails |
+| `vllm` | Internal mirror alternative: `HF_ENDPOINT` to a Hugging Face-compatible mirror (not used by this design) |
+| `vllm` | Compiled kernels (CUDA): `vllm download-kernels` installs FlashInfer's precompiled kernels; without them vLLM downloads and compiles kernels at startup. Run it on the connected host and in custom images; check the stock image's offline start (blueprint section 9) |
+| `vllm` | API documentation page needs the internet by default: start with `--enable-offline-docs` |
+| `vllm` | vLLM Recipes (CPU image only, `serve_with_recipe.sh`) query `recipes.vllm.ai`: not used |
+| `open-webui` | Models baked into the standard image (embedding `sentence-transformers/all-MiniLM-L6-v2`, `TaylorAI/bge-micro-v2`, faster-whisper `base`, `cl100k_base`): nothing to stage while the defaults are kept |
+| `open-webui` | A different embedding, reranking or Whisper model: stage with `snapshot_download` and copy into `/app/backend/data/cache/...` (not used) |
+| `open-webui` | Hugging Face check at every start while `RAG_EMBEDDING_MODEL_AUTO_UPDATE` is true: `OFFLINE_MODE=true` (also `HF_HUB_OFFLINE=1`, `RAG_EMBEDDING_MODEL_AUTO_UPDATE=false`, `RAG_RERANKING_MODEL_AUTO_UPDATE=false`, `WHISPER_MODEL_AUTO_UPDATE=false`) |
+| `open-webui` | pip installs of tool and function requirements: `OFFLINE_MODE` skips them; `ENABLE_PIP_INSTALL_FRONTMATTER_REQUIREMENTS=false` |
+| `open-webui` | Slim image only (tiktoken encoding, code interpreter packages from `cdn.jsdelivr.net`): not used, the standard image is carried |
+| `open-webui` | Content extraction and web loading services (Tika, Docling, web search): docling-serve is added by airgap-rag (rows marked as such); keep any later addition on the internal network |
+| `docker-compose` | Images of the application: load them beforehand or name the internal registry, and set `pull_policy: never` per service |
+| `distribution-registry` | Images stored in the registry: it holds only what is pushed to it; build the data volume on a connected host that can `docker pull` the images wanted and migrate the volume, or push the carried images from inside |
+| `distribution-registry` | Pull-through cache (only when configured): leave `proxy` unset in an air-gapped site |
+| `docling-serve` (from airgap-rag) | `code_formula` model and the VLMs: not used |
+| `docling-serve` (from airgap-rag) | EasyOCR models for other scripts (`cyrillic_g2`, `arabic_g1`, ...): only when those languages are in the documents; none here |
+| `qwen-code` (from airgap-agent) | Sandbox image `ghcr.io/qwenlm/qwen-code:<version>` (tag form: check the sandbox page), only when a Docker or Podman sandbox is chosen; not used |
+
+## 6. Per-tool skills
+
+| Component | Repository | Skill |
+|---|---|---|
+| `vllm` | `ScaleDockHQ/llm-skills` | `vllm` |
+| `vllm` | `air-gapped/skills` | `vllm-configuration` |
+| `open-webui` | `ScaleDockHQ/llm-skills` | `open-webui` |
+| `open-webui` | `air-gapped/skills` | `open-webui-valkey-websocket` |
+| `open-webui` | `air-gapped/skills` | `open-webui-embeddings` |
+
+## 7. Verification steps
+
+1. On the connected side, record a SHA-256 checksum for every file and the digest of every image.
+2. Verify publisher checksums where the publisher provides them.
+3. After the transfer, recompute every checksum inside the network before importing anything.
+4. Import only artifacts whose checksums match, then apply the settings of section 4 before first start.
+5. Install check: the images and model folders of the manifest are present, the first start waited on no download, and the embedding endpoint answers (from airgap-rag).
+6. Retrieval check: a question with a known answer returns the right passage (from airgap-rag).
+7. OCR check: one scanned page converts with the network cut (from airgap-rag).
+8. Access check: a person outside a group cannot read that group's documents (from airgap-rag).
+9. Egress check: no service of the retrieval stack opens a connection outside the network (from airgap-rag).
+10. Install check of Qwen Code: `sha256sum -c SHA256SUMS --ignore-missing` passes and `qwen --version` prints the pinned version (from airgap-agent).
+11. Smoke test of Qwen Code: `qwen -p` answers through the vLLM endpoint (from airgap-agent).
+12. Egress check of Qwen Code: no address outside the network is contacted (from airgap-agent).

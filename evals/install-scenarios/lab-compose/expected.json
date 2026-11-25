@@ -1,0 +1,28 @@
+{
+  "orchestration": "docker-compose",
+  "must_mention": [
+    "pull_policy: never",
+    "HF_HUB_OFFLINE",
+    "Expect",
+    "If not",
+    "openssl rand",
+    "chmod 600"
+  ],
+  "files": [
+    "docs/airgap/install/plan.md",
+    "docs/airgap/install/INSTALL.md",
+    "docs/airgap/install/compose/compose.yaml",
+    "docs/airgap/install/compose/.env.example"
+  ],
+  "must_not_files": [
+    "docs/airgap/install/AGENTS-INSTALL.md",
+    "docs/airgap/install/kubernetes/"
+  ],
+  "manifest_marker": "(from airgap-install)",
+  "must_not": [
+    "an image tag latest",
+    "a secret value in a file",
+    "a service without pull_policy: never",
+    "a GPU count other than blueprint §5"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "orchestration": "docker-compose",
+  "must_mention": [
+    "unverified",
+    "ticket-search",
+    "docling",
+    "arm64",
+    "docs/airgap/agents.md"
+  ],
+  "must_not": [
+    "Qwen Code deployed as a service",
+    "an Elasticsearch setting presented as sourced",
+    "a health check for ticket-search presented as sourced"
+  ]
+}

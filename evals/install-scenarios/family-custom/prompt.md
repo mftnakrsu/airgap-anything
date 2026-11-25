@@ -1,0 +1,1 @@
+The blueprint is approved. Also deploy our in-house service `ticket-search`: image `registry.internal/ticket-search:2.3.1`, port 9300. Write the install files and the runbook. Use the defaults for anything you need to ask.

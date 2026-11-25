@@ -1,0 +1,18 @@
+{
+  "orchestration": "existing",
+  "must_mention": [
+    "replicas: 18",
+    "nvidia.com/gpu"
+  ],
+  "files": [
+    "docs/airgap/install/INSTALL.md",
+    "docs/airgap/install/AGENTS-INSTALL.md",
+    "docs/airgap/install/kubernetes/"
+  ],
+  "must_not_files": [
+    "docs/airgap/install/kubernetes/cluster/"
+  ],
+  "must_not": [
+    "a cluster install step for the existing cluster"
+  ]
+}
