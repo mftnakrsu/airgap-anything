@@ -18,17 +18,19 @@ Goal: `docs/airgap/install/INSTALL.md` for people, `docs/airgap/install/AGENTS-I
 ## Rules for both runbooks
 
 - **Four parts per step.** **Why:** one line; the commands in a fenced block; **Expect:** the output; **If not:** stop, report the command, its output and the log command the step names, and change nothing. A step that only copies a file expects the output of `ls -l` on it. Why: inside, nobody can ask what a step meant, so every step says how to tell success from failure.
+- **Sub-steps too.** A step split into parts (1a, 1b, 5a, 5b or 5.1, 5.2) gives each part all four: **Why:**, the commands, **Expect:** and **If not:**, in those words; a heading such as "Why for the roles" does not replace **Why:**. Why: a person may start at any part, and a part without its Expect cannot be checked.
+- **Carried files are never edited inside.** No step runs `sed -i` on, or asks a person to edit, a file under `PROJECT_FOLDER/docs/airgap/install/` that `airgap-transfer` carried (`compose.yaml`, `config/…`, `harbor/harbor.yml`, `kubernetes/…`); the only files a step writes there are `compose/.env` and the working copy `PROJECT_FOLDER/docs/airgap/install/work/`. Compose files read site values from `.env` ([`references/compose.md`](/reference/install/compose/), "Site values are variables"); Kubernetes manifests and cluster files, which have no variables, are copied to `work/` in step 1b and filled there; `harbor.yml` is copied to HARBOR_DIR and filled there (step 3). Why: every carried file is the one `airgap-transfer` checksummed (`/srv/airgap-bundle/SHA256SUMS`, `/srv/airgap-bundle/files/`); an edited file can no longer be told from a damaged one or compared with what the connected side wrote, and a repeated step would start from a file already filled.
 - **Commands only, no programs.** The skill writes no script or program into the project (no `.sh`, no `.py`, no render or template helper, no `@@VAR@@` files filled by a script): only deployment files, configuration files, `.env.example`, `plan.md` and the runbooks. Every step is a command typed from the runbook. Why: a person can read and check a command before running it, and a script hides its steps; it is the same rule `airgap-rag` carries. Checksums and loading the images from the media belong to `INSIDE.md`; step 1 asks that it is finished.
 - **No pulls, no downloads.** Never pull images inside; a missing image or file is carried in again from outside.
 - **Expected outputs** come from the catalog entries and the sources below (ports, endpoints, rollout messages). Where none is documented, the step checks that the container or pod runs and is labeled `unverified`.
 - **Language.** Prose follows the blueprint's `Language:` line (English when it has none). Commands, file names, paths and expected outputs are never translated.
-- **Absolute paths.** Every Compose block starts with `cd PROJECT_FOLDER/docs/airgap/install/compose`, every Kubernetes file is named as `PROJECT_FOLDER/docs/airgap/install/kubernetes/…`, and bundle files as `/srv/airgap-bundle/…`, so no block depends on the folder the previous one left, and no step `cd`s into a relative path. Why: a person who opens a new shell, or repeats one step, must get the same result.
+- **Absolute paths.** Every Compose block starts with `cd PROJECT_FOLDER/docs/airgap/install/compose`, every Kubernetes file is named as `PROJECT_FOLDER/docs/airgap/install/work/kubernetes/…` (the filled working copy of step 1b), and bundle files as `/srv/airgap-bundle/…`, so no block depends on the folder the previous one left, and no step `cd`s into a relative path. Why: a person who opens a new shell, or repeats one step, must get the same result.
 - **RKE2's `kubectl`.** On RKE2, `kubectl` is not on the `PATH`, so every Kubernetes block of the runbook starts with `export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin` ([`references/clusters.md`](/reference/install/clusters/), "RKE2"); on k3s and an existing cluster, leave the line out.
 - **Placeholders** only for what nobody on the connected side knows, in capitals, listed at the top of the runbook with where each value comes from. The blueprint's numbers (GPU counts, replicas, ports) are written out, never left as placeholders.
 
 ## INSTALL.md template
 
-Fill in the parts in capitals. Step 4b only on Kubernetes with GPUs, and always before step 5, so the GPU check runs before any serving rollout. Steps 2 and the cluster parts only for k3s and RKE2 (an existing cluster's step 2 is the owners' list of [`references/clusters.md`](/reference/install/clusters/)); the Compose or the Kubernetes variant of steps 3 to 6 by orchestration; one step 5 block per row of `plan.md`, in its order.
+Fill in the parts in capitals. Step 1a only on a Compose host (or Harbor's host) whose `docker compose version` fails; step 1b only on Kubernetes. Step 4b only on Kubernetes with GPUs, and always before step 5, so the GPU check runs before any serving rollout. Steps 2 and the cluster parts only for k3s and RKE2 (an existing cluster's step 2 is the owners' list of [`references/clusters.md`](/reference/install/clusters/)); the Compose or the Kubernetes variant of steps 3 to 6 by orchestration; one step 5 block per row of `plan.md`, in its order.
 
 ````markdown
 # Install inside the network: PROJECT NAME
@@ -47,6 +49,8 @@ Placeholders, filled once here before step 1:
 | GATEWAY_HOSTNAME, UI_HOSTNAME | | Kubernetes only: `plan.md`, Answers (`exposure`) |
 | HARBOR_DIR | | Harbor only: an absolute folder on the registry host for the installer, for example `/opt/harbor-installer` |
 
+A placeholder is typed where it stands, except in a `sed` command or a `grep` check, where the capital word is the text searched for in the files: steps 1b and 3 take the values into shell variables on their first lines (`REGISTRY=REGISTRY_HOST`), and only those lines are typed with values.
+
 ## 1. Preconditions
 
 **Why:** the install starts where `INSIDE.md` ends, on hosts that see their GPUs.
@@ -56,9 +60,54 @@ ping -c 1 HOST_1
 nvidia-smi
 ```
 
-**Expect:** `INSIDE.md` is finished (its checksums passed and the images are loaded); `ping` reports one packet received from every host of `plan.md`; on each GPU host, `nvidia-smi` lists the GPUS GPUs that blueprint §5 gives this host, with the indexes the files use (DEVICE IDS).
+On each Compose host, and on Harbor's host:
 
-**If not:** stop. A missing or failing GPU is a host problem, not an install problem: see the per-tool skill `nvidia-datacenter-bringup`.
+```sh
+docker compose version
+```
+
+**Expect:** `INSIDE.md` is finished (its checksums passed and the images are loaded); `ping` reports one packet received from every host of `plan.md`; on each GPU host, `nvidia-smi` lists the GPUS GPUs that blueprint §5 gives this host, with the indexes the files use (DEVICE IDS); `docker compose version` prints a version line with the manifest's `v5.8.0` (its exact wording is `unverified`).
+
+**If not:** stop. A missing or failing GPU is a host problem, not an install problem: see the per-tool skill `nvidia-datacenter-bringup`. When only `docker compose version` fails, continue with step 1a on that host.
+
+## 1a. Compose plugin (only where `docker compose version` failed)
+
+**Why:** every Compose step runs `docker compose`, and the manifest's `docker-compose` row carried the binary; Docker's manual install puts it in `/usr/local/lib/docker/cli-plugins` ("for _all users_") under the name `docker-compose`, with execute permission.
+
+```sh
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo cp /srv/airgap-bundle/packages/docker-compose/docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+docker compose version
+```
+
+On arm64 the file is `docker-compose-linux-aarch64`. The bundle folder `packages/docker-compose/` is `airgap-transfer`'s layout (`packages/COMPONENT/`); on a host other than the bundle host, a person first copies the file there by the network's own means.
+
+**Expect:** the three commands print nothing; `docker compose version` prints the version line of step 1 with `v5.8.0`.
+
+**If not:** stop and report the output and `ls -l /usr/local/lib/docker/cli-plugins/`. No `docker-compose` file in the bundle means the manifest lacked the row: it is carried in again ([`references/compose.md`](/reference/install/compose/)).
+
+## 1b. Working copy of the Kubernetes files (Kubernetes only)
+
+**Why:** the manifests hold placeholders that only the inside knows, and the carried files are never edited (Rules); they are copied once to `work/`, filled there, and every later step applies the copy.
+
+```sh
+REGISTRY=REGISTRY_HOST
+GATEWAY=GATEWAY_HOSTNAME
+UI=UI_HOSTNAME
+mkdir -p PROJECT_FOLDER/docs/airgap/install/work
+cp -R PROJECT_FOLDER/docs/airgap/install/kubernetes PROJECT_FOLDER/docs/airgap/install/work/
+sed -i -e "s|REGISTRY_HOST|$REGISTRY|g" -e "s|GATEWAY_HOSTNAME|$GATEWAY|g" -e "s|UI_HOSTNAME|$UI|g" PROJECT_FOLDER/docs/airgap/install/work/kubernetes/*.yaml
+sed -i -e "s|REGISTRY_HOST|$REGISTRY|g" PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/*.yaml
+grep -rn -e REGISTRY_HOST -e GATEWAY_HOSTNAME -e UI_HOSTNAME PROJECT_FOLDER/docs/airgap/install/work/
+diff -r PROJECT_FOLDER/docs/airgap/install/kubernetes /srv/airgap-bundle/files/docs/airgap/install/kubernetes
+```
+
+Type values only on the first three lines; the `sed` and `grep` lines stay exactly as written. The `cluster/` line on k3s and RKE2 only. One `-e` per placeholder the files hold (with TLS, also `CERT_DIR` of `registries.yaml`).
+
+**Expect:** `grep` prints nothing (no placeholder is left in the copy); `diff` prints nothing (the carried files are unchanged and equal the bundle's).
+
+**If not:** stop. A `grep` line names a placeholder the `sed` lines missed: delete `PROJECT_FOLDER/docs/airgap/install/work/` and repeat the step with that placeholder added. A `diff` line means a carried file was changed: copy it again from `/srv/airgap-bundle/files/docs/airgap/install/kubernetes/` before repeating.
 
 ## 2. Cluster (k3s or RKE2)
 
@@ -90,15 +139,22 @@ systemctl restart docker
 
 The file holds `{"insecure-registries" : ["REGISTRY_HOST"]}` (REGISTRY_HOST with its port, `5000` for the Distribution Registry). Harbor's documentation gives this for Harbor over HTTP; it is Docker's setting, so a Distribution Registry reached over HTTP by its host name needs it too.
 
-Distribution Registry (Compose). `.env` is created empty here, readable only by its owner: Compose reads the `env_file` of every service in the file even when one service is started, and step 4 fills it.
+Compose (also the Distribution Registry): `.env` is created here, readable only by its owner, with the site values of `.env.example` (not secrets): Compose interpolates the whole file even when one service is started, so every `${NAME}` needs its value before the first `docker compose` command; step 4 adds the secrets. Type the value only on the `REGISTRY=` line.
 
 ```sh
 cd PROJECT_FOLDER/docs/airgap/install/compose
 touch .env
 chmod 600 .env
+REGISTRY=REGISTRY_HOST
+echo "REGISTRY_HOST=$REGISTRY" >> .env
+echo "MODEL_DIR=THE MODEL FOLDER OF MANIFEST SECTION 2" >> .env
+echo "SERVED_NAME=THE SERVED NAME OF THE BLUEPRINT" >> .env
+grep -c -e '^REGISTRY_HOST=.' -e '^MODEL_DIR=.' -e '^SERVED_NAME=.' .env
 docker compose up -d --wait registry
 echo $?
 ```
+
+The skill writes the model folder and the served name out in this block; they are not placeholders.
 
 Harbor: the offline installer is in the bundle, `/srv/airgap-bundle/packages/harbor/` (manifest section 3, the `harbor` catalog entry); it is copied into a folder of its own (HARBOR_DIR, for example `/opt/harbor-installer`) and extracted there:
 
@@ -133,6 +189,7 @@ echo $?
 **Expect:**
 
 - Without TLS: `cat` shows the `insecure-registries` line.
+- Compose: `grep -c` prints the number of site values of `.env.example` (`3` in the template).
 - Distribution Registry only: the `echo $?` after `docker compose up --wait registry` prints `0`, and every `echo $?` after a push prints `0`.
 - Harbor only: `install.sh` ends without an error; every project of the Target paths, and `library`, is listed under **Projects**; the `echo $?` after `docker login` and after every push prints `0`.
 
@@ -161,13 +218,15 @@ Kubernetes:
 ```sh
 # RKE2 only:
 export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin
-kubectl apply -f PROJECT_FOLDER/docs/airgap/install/kubernetes/00-namespace.yaml
+kubectl apply -f PROJECT_FOLDER/docs/airgap/install/work/kubernetes/00-namespace.yaml
 kubectl create secret generic vllm -n NAMESPACE --from-literal=api-key="$(openssl rand -hex 32)"
 ```
 
+A secret another skill keeps out of files (docling-serve's `DOCLING_SERVE_API_KEY`, `docs/airgap/rag.md`) is not written here: its step 5 block exports it in the shell (`export DOCLING_SERVE_API_KEY=$(openssl rand -hex 32)`) before its `docker compose up`, and [`references/compose.md`](/reference/install/compose/) says what that costs.
+
 **Expect:** `ls -l .env` starts with `-rw-------`; the two counts are equal (one line per name of `.env.example`). On Kubernetes, each command prints one line naming the namespace or the secret.
 
-**If not:** stop; delete `.env` and repeat the step from the top, so that no name is written twice. The account that runs `docker compose` must be able to read `.env`. On Kubernetes, when `kubectl create secret` reports that the Secret already exists (a repeated step), delete it and create it again; a new key means every client of the old one gets the new value:
+**If not:** stop; delete `.env`, repeat the `.env` lines of step 3 and then this step from the top, so that no name is written twice. The account that runs `docker compose` must be able to read `.env`. On Kubernetes, when `kubectl create secret` reports that the Secret already exists (a repeated step), delete it and create it again; a new key means every client of the old one gets the new value:
 
 ```sh
 # RKE2 only:
@@ -183,7 +242,7 @@ kubectl create secret generic vllm -n NAMESPACE --from-literal=api-key="$(openss
 ```sh
 # RKE2 only:
 export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin
-kubectl apply -f PROJECT_FOLDER/docs/airgap/install/kubernetes/05-nvidia-device-plugin.yaml
+kubectl apply -f PROJECT_FOLDER/docs/airgap/install/work/kubernetes/05-nvidia-device-plugin.yaml
 kubectl get node NODE -o jsonpath='{.status.allocatable}'
 ```
 
@@ -203,7 +262,9 @@ On an existing cluster, the owners' device plugin or operator is theirs to check
 
 **Why:** ONE LINE FROM plan.md: what this component serves and what depends on it.
 
-The step 5 blocks follow `plan.md`'s rows in order (state, serving, extraction, gateway, UI, observability); on Kubernetes with GPUs, step 4b is already done before the first of them.
+The step 5 blocks follow `plan.md`'s rows in order (state, serving, extraction, gateway, UI, observability); on Kubernetes with GPUs, step 4b is already done before the first of them. When a block is split (5a, 5b, …), each part has its own **Why:**, commands, **Expect:** and **If not:**.
+
+On Kubernetes, the Why of each Deployment also says what a later apply does to availability ([`references/kubernetes.md`](/reference/install/kubernetes/), "Rollout strategy"): `Recreate` stops the component until its new pod is ready; `RollingUpdate` with `maxUnavailable: 1` keeps all replicas but one serving; the default rolling update keeps a non-GPU component up.
 
 Compose:
 
@@ -219,7 +280,7 @@ Kubernetes:
 ```sh
 # RKE2 only:
 export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin
-kubectl apply -f PROJECT_FOLDER/docs/airgap/install/kubernetes/NN-COMPONENT.yaml
+kubectl apply -f PROJECT_FOLDER/docs/airgap/install/work/kubernetes/NN-COMPONENT.yaml
 kubectl rollout status deployment/COMPONENT -n NAMESPACE --timeout=30m
 ```
 
@@ -252,7 +313,7 @@ docker compose config | grep -n -e HF_HUB_OFFLINE -e VLLM_NO_USAGE_STATS -e OFFL
 Kubernetes, the files that step 5 applied, and on k3s the Traefik setting on the server:
 
 ```sh
-grep -n -e HF_HUB_OFFLINE -e VLLM_NO_USAGE_STATS PROJECT_FOLDER/docs/airgap/install/kubernetes/*.yaml
+grep -n -e HF_HUB_OFFLINE -e VLLM_NO_USAGE_STATS PROJECT_FOLDER/docs/airgap/install/work/kubernetes/*.yaml
 grep -n checkNewVersion /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
 ```
 
@@ -300,7 +361,7 @@ ls -l PROJECT_FOLDER/docs/airgap/agents.md PROJECT_FOLDER/docs/airgap/rag.md
 | `docker compose down` (in `PROJECT_FOLDER/docs/airgap/install/compose`) | named volumes (databases, registry data, UI data) | containers and networks, recreated by `up` |
 | `docker compose down -v` | nothing of the project's volumes | every named volume: all data. Only with a backup |
 | `docker compose down` in `HARBOR_DIR/harbor` | `data_volume` (`/data`) | Harbor's containers |
-| `kubectl delete -f PROJECT_FOLDER/docs/airgap/install/kubernetes/NN-COMPONENT.yaml` (`unverified`) | other components | that component; with a file that holds a claim, its data |
+| `kubectl delete -f PROJECT_FOLDER/docs/airgap/install/work/kubernetes/NN-COMPONENT.yaml` (`unverified`) | other components | that component; with a file that holds a claim, its data |
 
 After a host reboot nothing is typed: every service has `restart: unless-stopped`, so Docker starts again what was running before. That Docker itself starts at boot is the host's setting (`unverified`); check with `docker compose ps` after the first reboot. A service stopped by hand stays stopped.
 
@@ -320,7 +381,7 @@ You work inside a network without internet access. These rules come before any o
 
 1. Run only the commands listed below, one step at a time, exactly as written. Do not combine, shorten or reorder them.
 2. Never pull an image and never download anything; a missing image or file is carried in again from outside.
-3. Never edit a file outside `docs/airgap/install/`, except those a step's own commands write (`/etc/docker/daemon.json`, the cluster's files); inside it, only the files a step names (`.env`).
+3. Never edit a file outside `docs/airgap/install/`, except those a step's own commands write (`/etc/docker/daemon.json`, the cluster's files, `HARBOR_DIR`); inside it, only `compose/.env` and the working copy `work/` of step 1b. Never edit a carried file (`compose.yaml`, `config/`, `harbor/`, `kubernetes/`): `airgap-transfer`'s checksums cover them.
 4. `docker login` (step 3, Harbor) asks for a password: stop before it and ask a person to run it; never read, write or type the password yourself.
 5. Compare every output with "Expect". At the first difference, stop, report the command, its exit code, its output and the step's log command, and ask a person. Never improvise a step that is not written below. The placeholders are values you ask a person for.
 ```
@@ -331,6 +392,10 @@ You work inside a network without internet access. These rules come before any o
 |---|---|---|
 | NVIDIA | `nvidia-smi` shows the GPU device IDs | https://github.com/docker/docs/blob/747e4c7528c703b357b1ae83cbbf411229ce59d2/content/manuals/compose/how-tos/gpu-support.md |
 | iputils | `ping -c 1` | not in the sources read: `unverified` |
+| Docker Compose | manual plugin install: `/usr/local/lib/docker/cli-plugins` for all users, the file named `docker-compose`, `chmod +x`, `docker compose version` | https://github.com/docker/docs/blob/747e4c7528c703b357b1ae83cbbf411229ce59d2/content/manuals/compose/install/linux.md |
+| Docker Compose | `docker compose version` prints a line with `v5.8.0` (exact wording) | not in the pages read: `unverified` |
+| Docker Compose | site values interpolated from `.env` in the project directory | https://github.com/docker/docs/blob/747e4c7528c703b357b1ae83cbbf411229ce59d2/content/manuals/compose/how-tos/environment-variables/variable-interpolation.md |
+| airgap-transfer | bundle layout `packages/COMPONENT/`, project files under `/srv/airgap-bundle/files/` | `airgap-transfer`'s fetch reference (`B/packages/COMPONENT/`) and its inside runbook, step 6b (`cp -R /srv/airgap-bundle/files/. PROJECT_FOLDER/`) |
 | Docker Compose | `docker compose config`, `-q` | https://github.com/docker/compose/blob/v5.8.0/docs/reference/compose_config.md |
 | Docker Compose | `docker compose up -d --wait --wait-timeout` | https://github.com/docker/compose/blob/v5.8.0/docs/reference/compose_up.md |
 | Docker Compose | `docker compose ps`, `--all` | https://github.com/docker/compose/blob/v5.8.0/docs/reference/compose_ps.md |
@@ -365,4 +430,4 @@ You work inside a network without internet access. These rules come before any o
 | Harbor | offline installer in the bundle's `packages/harbor/`, `harbor-offline-installer-v2.16.0-amd64.tgz` and `-arm64.tgz` | the `harbor` catalog entry; `airgap-transfer`'s bundle layout |
 | Harbor | default public project `library` | https://github.com/goharbor/website/blob/1ce1ac23f8d4969ce587b7ced8afb7954f76115d/docs/working-with-projects/create-projects/_index.md |
 | Kubernetes | Ingress, `host` rules | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/concepts/services-networking/ingress.md |
-| Shell tools | `touch`, `ls -l`, `grep`, `sed -i`, `cut`, `echo $?`, `base64 -d`, `mkdir -p`, `cp`, `tar xzvf` outside Harbor's page | not in the sources read: `unverified`; their output is what each step's Expect names |
+| Shell tools | `touch`, `ls -l`, `grep`, `grep -rn`, `sed -i`, `cut`, `echo $?`, `base64 -d`, `mkdir -p`, `cp`, `cp -R`, `diff -r`, `export`, `tar xzvf` outside Harbor's page | not in the sources read: `unverified`; their output is what each step's Expect names |

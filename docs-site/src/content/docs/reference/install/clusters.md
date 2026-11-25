@@ -15,7 +15,7 @@ sidebar:
 - Existing cluster
 - Sources
 
-Goal: the cluster part of `INSTALL.md` step 2 and the files under `docs/airgap/install/kubernetes/cluster/` (k3s and RKE2 only). The commands below are the runbook's lines; [`references/runbook.md`](/reference/install/runbook/) puts each into the four-part step form. Versions are the catalog's (`v1.37.2+k3s1`, `v1.37.2+rke2r1`): the documentation pages use older example versions in their file names, and the files carried are always those of the manifest.
+Goal: the cluster part of `INSTALL.md` step 2 and the files under `docs/airgap/install/kubernetes/cluster/` (k3s and RKE2 only). The commands below are the runbook's lines; [`references/runbook.md`](/reference/install/runbook/) puts each into the four-part step form. Versions are the catalog's (`v1.37.2+k3s1`, `v1.37.2+rke2r1`): the documentation pages use older example versions in their file names, and the files carried are always those of the manifest. The commands copy the cluster files from the working copy `PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/` that `INSTALL.md` step 1b filled ([`references/kubernetes.md`](/reference/install/kubernetes/), "Placeholders are filled in a working copy"), never from the carried `kubernetes/cluster/`, which keeps its placeholders and its checksums.
 
 ## What every path shares
 
@@ -32,16 +32,16 @@ The bundle is on one host, where `INSIDE.md` ran. Every other node of `plan.md` 
 
 | Node | Files, at the same paths as on the bundle host |
 |---|---|
-| every k3s node | `/srv/airgap-bundle/SHA256SUMS`; `/srv/airgap-bundle/packages/k3s/` (the binary, the image archive, `install.sh`, and on SELinux nodes the RPMs); `PROJECT_FOLDER/docs/airgap/install/kubernetes/cluster/registries.yaml` |
-| the k3s server, also | `PROJECT_FOLDER/docs/airgap/install/kubernetes/cluster/traefik-config.yaml` |
-| every RKE2 node | `/srv/airgap-bundle/SHA256SUMS`; `/srv/airgap-bundle/packages/rke2/` (the four artifacts, and on SELinux nodes the RPMs); `PROJECT_FOLDER/docs/airgap/install/kubernetes/cluster/config.yaml` and `registries.yaml` |
+| every k3s node | `/srv/airgap-bundle/SHA256SUMS`; `/srv/airgap-bundle/packages/k3s/` (the binary, the image archive, `install.sh`, and on SELinux nodes the RPMs); `PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/registries.yaml` |
+| the k3s server, also | `PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/traefik-config.yaml` |
+| every RKE2 node | `/srv/airgap-bundle/SHA256SUMS`; `/srv/airgap-bundle/packages/rke2/` (the four artifacts, and on SELinux nodes the RPMs); `PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/config.yaml` and `registries.yaml` |
 | every GPU node | the model files under `/srv/models/` (where `INSIDE.md` step 6 copied them on the bundle host), because `20-vllm.yaml` mounts that folder from the node |
 
 Check on each node after the copy:
 
 ```sh
 cd /srv/airgap-bundle && sha256sum -c --quiet --ignore-missing SHA256SUMS
-ls -l PROJECT_FOLDER/docs/airgap/install/kubernetes/cluster/
+ls -l PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/
 ```
 
 Expect: the first command prints nothing (every copied bundle file matches; files not copied are skipped), the second lists the files of the table. `SHA256SUMS` names the model files under `models/` in the bundle, not under `/srv/models/`, so on a GPU node `ls -l /srv/models/MODEL_DIR` is their check.
@@ -99,7 +99,7 @@ chmod +x /usr/local/bin/k3s
 mkdir -p /root/k3s /etc/rancher/k3s
 cp /srv/airgap-bundle/packages/k3s/install.sh /root/k3s/install.sh
 chmod +x /root/k3s/install.sh
-cp PROJECT_FOLDER/docs/airgap/install/kubernetes/cluster/registries.yaml /etc/rancher/k3s/registries.yaml
+cp PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/registries.yaml /etc/rancher/k3s/registries.yaml
 ```
 
 The first line only on SELinux nodes: it installs `k3s-selinux` for the node's distribution and its dependencies (`container-selinux`, `policycoreutils`, `selinux-policy`), which manifest section 3 carries in `packages/k3s/` (`yum -y install` on local RPM files is the form of RKE2's SELinux page; for k3s, `unverified`). On arm64 the files are `k3s-arm64` and `k3s-airgap-images-arm64.tar.zst`.
@@ -108,7 +108,7 @@ The server only, before its first start, so that Traefik starts with the version
 
 ```sh
 mkdir -p /var/lib/rancher/k3s/server/manifests
-cp PROJECT_FOLDER/docs/airgap/install/kubernetes/cluster/traefik-config.yaml /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
+cp PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/traefik-config.yaml /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
 ls -l /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
 ```
 
@@ -157,8 +157,8 @@ Then on every node; the artifact folder holds exactly `rke2-images.linux-amd64.t
 ```sh
 mkdir -p /root/rke2-artifacts /etc/rancher/rke2
 cp /srv/airgap-bundle/packages/rke2/rke2-images.linux-amd64.tar.zst /srv/airgap-bundle/packages/rke2/rke2.linux-amd64.tar.gz /srv/airgap-bundle/packages/rke2/sha256sum-amd64.txt /srv/airgap-bundle/packages/rke2/install.sh /root/rke2-artifacts/
-cp PROJECT_FOLDER/docs/airgap/install/kubernetes/cluster/config.yaml /etc/rancher/rke2/config.yaml
-cp PROJECT_FOLDER/docs/airgap/install/kubernetes/cluster/registries.yaml /etc/rancher/rke2/registries.yaml
+cp PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/config.yaml /etc/rancher/rke2/config.yaml
+cp PROJECT_FOLDER/docs/airgap/install/work/kubernetes/cluster/registries.yaml /etc/rancher/rke2/registries.yaml
 ```
 
 The server:

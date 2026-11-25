@@ -100,6 +100,10 @@ class PathsTest(unittest.TestCase):
 
     def test_compose_blocks_start_in_the_absolute_compose_folder(self):
         for block in code_blocks(read("runbook")):
+            # A block that only checks the plugin (step 1, 1a) runs on any host, in any folder.
+            uses = re.findall(r"docker compose \S+", block)
+            if uses and all(use == "docker compose version" for use in uses):
+                continue
             if "docker compose" in block and "HARBOR_DIR" not in block:
                 with self.subTest(block=block[:60]):
                     self.assertTrue(block.startswith("cd PROJECT_FOLDER/docs/airgap/install/compose\n"))
@@ -133,6 +137,87 @@ class PathsTest(unittest.TestCase):
         for block in blocks:
             with self.subTest(block=block[:60]):
                 self.assertIn("export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/var/lib/rancher/rke2/bin", block)
+
+
+class CarriedFilesTest(unittest.TestCase):
+    """Eval findings a, b, c, d of 2026-11-25: carried files stay as checksummed, secrets per service."""
+
+    def test_compose_template_reads_site_values_and_secrets_per_service(self):
+        template = section(read("compose"), "## Template")
+        yaml = "\n".join(code_blocks(template, "yaml"))
+        self.assertNotIn("env_file", yaml)
+        for name in ("${REGISTRY_HOST}", "${MODEL_DIR}", "${SERVED_NAME}", "${VLLM_API_KEY}"):
+            with self.subTest(name=name):
+                self.assertIn(name, yaml)
+        self.assertNotRegex(yaml, r"image: REGISTRY_HOST/")
+        env_example = "\n".join(code_blocks(section(read("compose"), "## `.env.example` template")))
+        for name in ("REGISTRY_HOST=", "MODEL_DIR=", "SERVED_NAME="):
+            with self.subTest(name=name):
+                self.assertIn(name, env_example)
+        self.assertIn("Site values, not secrets", env_example)
+
+    def test_compose_rules_forbid_env_file_for_secrets(self):
+        rules = section(read("compose"), "## Rules for every service")
+        self.assertIn("never `env_file`", rules)
+        self.assertNotIn("`env_file: .env` on every service", rules)
+
+    def test_no_reference_seds_a_carried_file(self):
+        for name in REFERENCES:
+            for block in code_blocks(read(name)):
+                for line in block.splitlines():
+                    if "sed -i" in line and "docs/airgap/install/" in line:
+                        with self.subTest(name=name, line=line[:80]):
+                            paths = re.findall(r"\S*docs/airgap/install/\S*", line)
+                            for path in paths:
+                                self.assertIn("docs/airgap/install/work/", path)
+
+    def test_runbook_copies_kubernetes_files_to_a_work_folder(self):
+        text = read("runbook")
+        self.assertIn("Carried files are never edited inside", section(text, "## Rules for both runbooks"))
+        self.assertIn("cp -R PROJECT_FOLDER/docs/airgap/install/kubernetes PROJECT_FOLDER/docs/airgap/install/work/", text)
+        for block in code_blocks(text) + code_blocks(read("clusters")):
+            for path in re.findall(r"(?:-f|cp) (PROJECT_FOLDER/docs/airgap/install/kubernetes/\S+)", block):
+                with self.subTest(path=path):
+                    self.fail(f"applies or copies a carried file instead of work/: {path}")
+
+    def test_runbook_installs_the_compose_plugin_when_missing(self):
+        text = read("runbook")
+        self.assertIn("## 1a. Compose plugin", text)
+        self.assertIn("/usr/local/lib/docker/cli-plugins/docker-compose", text)
+        self.assertIn("content/manuals/compose/install/linux.md", section(text, "## Sources"))
+
+    def test_every_sub_step_has_four_parts(self):
+        text = read("runbook")
+        template = text[text.index("## INSTALL.md template"):text.index("## AGENTS-INSTALL.md template")]
+        steps = re.split(r"^## (?=\d)", template, flags=re.M)[1:]
+        self.assertGreaterEqual(len(steps), 10)
+        for step in steps:
+            with self.subTest(step=step.splitlines()[0]):
+                for part in ("**Why:**", "**Expect:**", "**If not:**"):
+                    self.assertIn(part, step)
+                # The commands: a block, or step 9's table of commands.
+                self.assertTrue("```sh" in step or "| Command |" in step)
+
+    def test_recreate_only_for_one_replica_on_all_gpus(self):
+        rules = section(read("kubernetes"), "## Rules for every workload")
+        line = next(l for l in rules.splitlines() if "Recreate" in l)
+        for word in ("replicas: 1", "all GPUs of its node", "maxSurge: 0", "maxUnavailable: 1"):
+            with self.subTest(word=word):
+                self.assertIn(word, line)
+        self.assertIn("type: RollingUpdate", section(read("kubernetes"), "## Manifests"))
+
+    def test_skill_self_check_names_the_marker_row(self):
+        text = (INSTALL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        check = section(text, "## Self-check")
+        self.assertIn("project-files row for `docs/airgap/install/`", check)
+        self.assertIn('exactly "(from airgap-install)"', check)
+        self.assertIn("exactly the text `(from airgap-install)` at the end of the Component cell", read("plan"))
+
+    def test_skill_rules_allow_build_inputs_and_defer_to_stricter_skills(self):
+        rules = section((INSTALL_DIR / "SKILL.md").read_text(encoding="utf-8"), "## Rules")
+        for word in ("built inside from IMAGE", "Dockerfile", "SQL init file", "stricter rules", "docling"):
+            with self.subTest(word=word):
+                self.assertIn(word, rules)
 
 
 class ExposureTest(unittest.TestCase):

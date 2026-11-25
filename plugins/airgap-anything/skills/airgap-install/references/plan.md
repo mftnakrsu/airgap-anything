@@ -47,7 +47,12 @@ Orchestration: ORCHESTRATION (`docker-compose`, `k3s`, `rke2` or existing cluste
 
 ## Manifest rows added "(from airgap-install)"
 
+- Section 3: `airgap-install` (from airgap-install), `docs/airgap/install/`, project path, copied (the files of this plan)
 - SECTION: ROW (why the files need it)
+
+## Images built inside
+
+- IMAGE NAME: built inside from CARRIED IMAGE, by `docker compose build SERVICE` in step STEP (no manifest row; its base image has one)
 
 ## Open items
 
@@ -60,7 +65,9 @@ The GPUs column copies blueprint §5: GPUs per replica, replicas and the total, 
 
 The Health check column copies the catalog entry: vLLM's OpenAI API (`/v1/models`, port 8000), LiteLLM's port 4000, Open WebUI's port 8080. An entry that documents no health endpoint gets "`unverified`: container running", and the runbook step checks only that.
 
-A component the files need and the manifest lacks (a TLS proxy the blueprint chose, the NVIDIA device plugin image, the Compose plugin binary) gets a row in the matching manifest section ending "(from airgap-install)", and the plan lists it. Everything else in the manifest stays as it is.
+A component the files need and the manifest lacks (a TLS proxy the blueprint chose, the NVIDIA device plugin image, the Compose plugin binary) gets a row in the matching manifest section, and the plan lists it. The marker is exactly the text `(from airgap-install)` at the end of the Component cell, with nothing else inside that parenthesis: `` `ticket-search` (from airgap-install) ``, never "(custom, from airgap-install)" or "(from airgap-install, `unverified`)". Words such as "custom" go before it in the cell (`custom: ticket-search (from airgap-install)`), and `unverified` goes in the Version or a later column. Why: `airgap-transfer` accepts a row that the blueprint does not name only when it is marked so after its component, as it does for "(from airgap-rag)", and otherwise sends the user back to `airgap-architect`. The first row is always the project files: section 3, `` `airgap-install` (from airgap-install) ``, `docs/airgap/install/`, a project path, copied, not fetched; without it `airgap-transfer` does not carry the files at all. Everything else in the manifest stays as it is.
+
+An image built inside (a `Dockerfile` whose `FROM` is a carried image, built offline by a runbook step) is listed under "Images built inside" as "built inside from IMAGE" and gets no manifest row: nothing is fetched for it, and its base image already has one. Leave the section out when nothing is built.
 
 ## Start order
 
