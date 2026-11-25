@@ -189,7 +189,7 @@ spec:
           type: Directory
 ```
 
-On RKE2, drop the two `k3s only` parts unless the hosts' NVIDIA runtime is not the default; the plugin's README requires the NVIDIA runtime as the default low-level runtime or a RuntimeClass. Whether the RKE2 hosts have it as the default is `unverified` and checked by the runbook: each GPU node reports `nvidia.com/gpu` allocatable.
+On RKE2, drop the two `k3s only` parts unless the hosts' NVIDIA runtime is not the default; the plugin's README requires the NVIDIA runtime as the default low-level runtime or a RuntimeClass. Whether the RKE2 hosts have it as the default is `unverified` and checked by `INSTALL.md` step 5a (`references/runbook.md`): `kubectl get node NODE -o jsonpath='{.status.allocatable}'` shows `"nvidia.com/gpu":` with blueprint §5's GPU count for every GPU node, before the first serving rollout.
 
 ## Sources
 
@@ -198,7 +198,8 @@ On RKE2, drop the two `k3s only` parts unless the hosts' NVIDIA runtime is not t
 | Kubernetes | `imagePullPolicy` values and defaults | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/concepts/containers/images.md |
 | Kubernetes | `resources.limits` `nvidia.com/gpu` | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/tasks/manage-gpus/scheduling-gpus.md |
 | Kubernetes | `kubectl create secret generic --from-literal` | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/tasks/configmap-secret/managing-secret-using-kubectl.md |
-| Kubernetes | `valueFrom.secretKeyRef` | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/tasks/inject-data-application/distribute-credentials-secure.md |
+| Kubernetes | `valueFrom.secretKeyRef` (`name`, `key`) | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/examples/pods/inject/pod-single-secret-env-variable.yaml |
+| Kubernetes | allocatable check `kubectl get node NODE -o jsonpath='{.status.allocatable}'` | https://github.com/rancher/rke2-docs/blob/3931bc85192e5d74abdfc43a499b0c6fae2274d2/docs/add-ons/gpu_operators.md |
 | Kubernetes | `kubectl apply -f DIR` lexical order, `-R` | https://github.com/kubernetes/kubernetes/blob/v1.37.2/staging/src/k8s.io/cli-runtime/pkg/resource/visitor.go |
 | Kubernetes | Deployment (`replicas`, `selector`, `template`) | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/concepts/workloads/controllers/deployment.md |
 | Kubernetes | Service (`port`, `targetPort`) | https://github.com/kubernetes/website/blob/adf3bf8ca5ad2caf642cbe4d7dd82e8b0eead607/content/en/docs/concepts/services-networking/service.md |

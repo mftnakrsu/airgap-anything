@@ -21,7 +21,16 @@ Goal: the cluster part of `INSTALL.md` step 2 and the files under `docs/airgap/i
 
 ## k3s
 
-Files the skill writes: `kubernetes/cluster/registries.yaml`.
+Files the skill writes: `kubernetes/cluster/registries.yaml`. Without TLS, the default of `questions.md` question 5 (that an `http` endpoint works is `unverified`: the page's examples use `https`):
+
+```yaml
+mirrors:
+  REGISTRY_HOST:
+    endpoint:
+      - "http://REGISTRY_HOST"
+```
+
+With the internal CA:
 
 ```yaml
 mirrors:
@@ -33,8 +42,7 @@ configs:
     tls:
       ca_file: CERT_DIR/ca.crt
 ```
-
-Without TLS (`questions.md`, question 5) the endpoint is `http://REGISTRY_HOST` and `configs` is left out; that an `http` endpoint works is `unverified`. When the registry needs a login to pull, add `auth: {username: REGISTRY_USER, password: REGISTRY_PASSWORD}` under `configs` with those placeholders; the runbook fills them on the node, never in the file the skill writes.
+ When the registry needs a login to pull, add `auth: {username: REGISTRY_USER, password: REGISTRY_PASSWORD}` under `configs` with those placeholders; the runbook fills them on the node, never in the file the skill writes.
 
 Commands, on every node, as root (SELinux nodes first):
 
