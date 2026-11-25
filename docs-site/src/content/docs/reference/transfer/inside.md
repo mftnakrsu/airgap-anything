@@ -110,7 +110,7 @@ Write each of these into the deployment files before any service starts (section
 
 ## After these steps
 
-When the bundle holds `docs/airgap/install/INSTALL.md`, continue with `install/INSTALL.md`; it starts the registry and every service. Otherwise: install the registry from its package if it is not running yet, push the loaded images to it, stage the runtime downloads, and continue with the implementation plan of the blueprint.
+When the bundle holds `docs/airgap/install/INSTALL.md`, continue with `install/INSTALL.md` under `PROJECT_FOLDER/docs/airgap/` (copied in step 6b); it starts the registry and every service. Otherwise: install the registry from its package if it is not running yet, push the loaded images to it, stage the runtime downloads, and continue with the implementation plan of the blueprint.
 
 ## Not carried, on purpose
 

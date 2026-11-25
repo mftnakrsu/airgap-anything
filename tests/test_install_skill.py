@@ -92,7 +92,7 @@ class SkillTest(unittest.TestCase):
                 self.assertIn(f"references/{name}.md", self.text)
 
     def test_workflow_checklist_rules_and_self_check(self):
-        self.assertGreaterEqual(self.text.count("- [ ] "), 7)
+        self.assertGreaterEqual(self.text.count("- [ ] "), 8)
         for word in ("## Rules", "## Self-check", "## Common mistakes", "pull_policy: never",
                      "blueprint §5", "unverified", "airgap-architect", "docs/airgap/agents.md",
                      "(from airgap-rag)"):
