@@ -1,6 +1,6 @@
 # Baseline for `airgap-install` without the skill, 2026-11-25
 
-Why: the fifth skill, `airgap-install`, is not written yet. The design (`plans/2026-11-25-airgap-install-design.md`, section 3, "Evaluation first") asks for runs without the skill before `SKILL.md` exists, so that the "Common mistakes" table comes from what agents actually get wrong. The scorer comes in Task 8; this file was scored by hand against each `expected.json`.
+Why: the fifth skill, `airgap-install`, is not written yet. The runs below show what an agent does without it, so that the "Common mistakes" rows of its `SKILL.md` come from observed failures. The scorer is not written yet; this file was scored by hand against each `expected.json`.
 
 Model: Sonnet, no skill, one fresh subagent per scenario, single turn. Date: 2026-11-25. Five scenarios: `lab-compose`, `department-compose`, `department-k3s`, `enterprise-existing`, `family-custom`. `unapproved` was not run (it needs the skill's refusal to be tested, and a baseline agent has no skill to send the user back to).
 
@@ -20,10 +20,10 @@ Strict is therefore `fail` on every path key in every scenario, and is shown onc
 | Scenario | Strict (path keys) | Intent: must_mention | Intent: files | must_not |
 |---|---|---|---|---|
 | `lab-compose` | all fail | 6 of 6 (1 by accident) | 3 of 4 (no `plan.md`; `INSTALL.md` under another name) | all pass |
-| `department-compose` | all fail | 7 of 9 | 2 of 4 (no `plan.md`, no `INSTALL.md`) | all pass |
-| `department-k3s` | all fail | 4 of 5 | 1 of 4 | 1 fail (GPU) |
+| `department-compose` | all fail | 7 of 9 | 2 of 4 (no `plan.md`, no `INSTALL.md`) | 1 fail (GPU count) |
+| `department-k3s` | all fail | 4 of 5 | 1 of 4 | 1 fail (GPU count) |
 | `enterprise-existing` | all fail | 1 of 2 | 1 of 3 (no `INSTALL.md`, no `AGENTS-INSTALL.md`) | all pass |
-| `family-custom` | all fail | 3 of 5 | n/a | all pass |
+| `family-custom` | all fail | 4 of 5 | n/a | all pass |
 
 All five also fail `manifest_marker` where they had to add a row (three of five), and every run that wrote a runbook named it something other than `INSTALL.md`.
 
@@ -83,7 +83,7 @@ Run folder files: `install/compose.yaml` (406 lines), `install/.env.example`, `i
 | `must_not`: latest | pass | none |
 | `must_not`: secret value in a file | pass | `.env.example` holds `CHANGE_ME` or `FILL_IN_*` only |
 | `must_not`: service without `pull_policy: never` | pass | all services through the anchors |
-| `must_not`: GPU count | pass in effect | 8 through `--tensor-parallel-size 8` and `count: all` on an 8-GPU host; not the number of §5 |
+| `must_not`: GPU count | fail | `install/compose.yaml:193` `count: all` is not the blueprint's count of 8 (section 5), although `--tensor-parallel-size 8` (lines 165-166) is right and the host has 8 GPUs |
 
 Other findings:
 
@@ -124,7 +124,7 @@ Other findings:
 
 ## enterprise-existing
 
-Run folder files: `install/manifests/` (9 Kubernetes files with `@@NAME@@` placeholders), `install/bin/` (11 shell scripts and `add-model-to-cost-map.py`), `install/install.env.example`, `install/departments.txt`, `docs/airgap/runbook.md` (268 lines, 16 numbered sections).
+Run folder files: `install/manifests/` (9 Kubernetes files with `@@NAME@@` placeholders), `install/bin/` (12 shell scripts and `add-model-to-cost-map.py`), `install/install.env.example`, `install/departments.txt`, `docs/airgap/runbook.md` (268 lines, 16 numbered sections).
 
 | Key | Result | Evidence |
 |---|---|---|
@@ -145,7 +145,7 @@ Other findings:
 
 - `people_then_agent` (blueprint line 20) was read and deferred in one sentence; the run is the one that most needs `AGENTS-INSTALL.md`.
 - No `imagePullPolicy` on any workload (0 hits under `install/manifests/`); the OpenShift pull secret (`harbor-pull`, runbook step 4) is the only pull control.
-- Eleven shell scripts and one Python file, among them `install/bin/push-images.sh` (comment: `*.tar from docker save`).
+- Twelve shell scripts and one Python file, among them `install/bin/push-images.sh` (comment: `*.tar from docker save`).
 - Good: nine **unverified** labels (for example the SCC for postgres, runbook.md:85, and `fail_closed_budget_enforcement`), each with a check.
 
 ## family-custom
@@ -155,7 +155,7 @@ Run folder files: `deploy/compose.yaml`, `deploy/.env.example`, `deploy/qwen-cod
 | Key | Result | Evidence |
 |---|---|---|
 | `orchestration` docker-compose | pass | `deploy/compose.yaml` |
-| `must_mention` `unverified` | fail | 0 hits in the run's files; the runbook says "not known", "open item", "none is invented here" (`deploy/compose.yaml:92-93`) instead of the label |
+| `must_mention` `unverified` | intent pass | only in `docs/airgap/transfer-manifest.md` (lines 24 and 63, the `ticket-search` rows the run added: "(`unverified`)"); 0 hits in `deploy/` and the runbook, which say "not known", "open item", "none is invented here" (`deploy/compose.yaml:92-93`) instead |
 | `must_mention` `ticket-search` | intent pass | `deploy/compose.yaml`, runbook section 8 |
 | `must_mention` `docling` | intent pass | `deploy/compose.yaml` `docling-serve` service, image `quay.io/docling-project/docling-serve-cpu:v1.39.0` |
 | `must_mention` `arm64` | intent pass | runbook section 7: "each developer's `arm64` Linux machine" |
@@ -172,8 +172,8 @@ Run folder files: `deploy/compose.yaml`, `deploy/.env.example`, `deploy/qwen-cod
 
 Other findings:
 
-- The controller's worry that vLLM flags and the Qwen settings came "from memory" is not borne out: the `settings.json` keys are those of `docs/airgap/agents.md:37` and manifest section 4; the tool-call parser flags are listed as an open item (`deploy/compose.yaml:36-37`). Only the settings file location `~/.qwen/settings.json` is from memory, and the runbook hedges it (section 7, step 2: "check that name ... it is not recorded here").
-- This run is the best of the five on the family's unknowns, with prose in place of the label, which is why `unverified` still fails the string check.
+- The vLLM flags and the Qwen settings are not from memory: the `settings.json` keys are those of `docs/airgap/agents.md:37` and manifest section 4; the tool-call parser flags are listed as an open item (`deploy/compose.yaml:36-37`). Only the settings file location `~/.qwen/settings.json` is from memory, and the runbook hedges it (section 7, step 2: "check that name ... it is not recorded here").
+- This run is the best of the five on the family's unknowns. The word `unverified` is in the manifest rows it added and nowhere in the files an operator follows.
 - Section 5 has seven numbered steps, of which only step 4 states an output ("prints nothing"); "If not" never appears in the form of the template, and the runbook has one troubleshooting table instead (section 9).
 - Section 5, step 5 pushes images into the registry service "(optional, useful for re-deploys)" while no service reads from it (`deploy/compose.yaml` names the images directly).
 
@@ -184,23 +184,19 @@ What the baseline already does well, which `SKILL.md` must not break: no key in 
 What it gets wrong, in the order of how many runs show it:
 
 1. **Wrong place and names (5 of 5).** Nothing under `docs/airgap/install/`. Three runbooks are `docs/airgap/runbook.md`, two are `INSIDE.md` (the name `airgap-transfer` writes, in `department-compose` and `department-k3s`), none is `INSTALL.md`. No `plan.md` in any run, so there was no approval step.
-2. **Scripts and an invented bundle layout (4 of 5).** 46 shell scripts and one Python file (lab 8, department-compose 13, department-k3s 13, enterprise 12 and 1 `.py`), including their own checksum check (`verify-bundle.sh`, `verify-checksums.sh`, `00-check-bundle.sh`) and image load and push (`load-and-push.sh`, `load-images.sh`, `20-push-images.sh`, `push-images.sh`). Both are `airgap-transfer`'s job. Three runbooks state the layout they assumed (`SHA256SUMS`, `docker save` archives). The design says the install skill writes no scripts.
+2. **Scripts and an invented bundle layout (4 of 5).** 46 shell scripts and one Python file (lab 8, department-compose 13, department-k3s 13, enterprise 12 and 1 `.py`), including their own checksum check (`verify-bundle.sh`, `verify-checksums.sh`, `00-check-bundle.sh`) and image load and push (`load-and-push.sh`, `load-images.sh`, `20-push-images.sh`, `push-images.sh`). Both are `airgap-transfer`'s job. Three runbooks state the layout they assumed (`SHA256SUMS`, `docker save` archives).
 3. **Manifest left unchanged when a file needs a new artifact (3 of 5).** `department-compose` (proxy image, `local/keycloak-optimized`), `department-k3s` (NVIDIA device plugin image, `keycloak-optimized`) and the changed postgres path in both, and `family-custom` (rows added, wrong marker). No run added a row ending "(from airgap-install)".
-4. **GPU reservation weaker than the blueprint (2 of 5).** `department-compose` `count: all`; `department-k3s` default `NVIDIA_VISIBLE_DEVICES=all` with the `nvidia.com/gpu: 8` request behind a render switch.
+4. **GPU reservation not the blueprint's count (2 of 5, both fail `must_not`).** `department-compose` `count: all`; `department-k3s` default `NVIDIA_VISIBLE_DEVICES=all` with the `nvidia.com/gpu: 8` request behind a render switch.
 5. **Placeholder templates with a render script (2 of 5).** `department-k3s` and `enterprise-existing` write `@@VAR@@` templates, so the numbers of the blueprint (`replicas: 18`, GPU lines) are not in the files an operator reads.
 6. **No pull policy on Kubernetes workloads (2 of 2 Kubernetes runs).** 0 `imagePullPolicy` lines.
 7. **`people_then_agent` ignored (1 of 1).** `enterprise-existing` wrote no `AGENTS-INSTALL.md` and says so in one sentence.
 8. **Runbook steps without Expect and If not in the template's form (5 of 5).** The runs use "You should see", "Check:", "must end with"; literal "If not" appears 0 to 2 times per runbook; steps that only copy files or write `.env` usually state no output (lab step 4, family section 5 steps 1 to 3).
-9. **The label `unverified` missing (2 of 5).** `lab-compose` ("(estimate)") and `family-custom` (prose). The other three use it 6 to 11 times.
+9. **The label `unverified` missing from the install files and runbook (2 of 5).** `lab-compose` uses "(estimate)" (6 times); `family-custom` uses prose and has the label only in the two manifest rows it added. The other three use it 6 to 11 times.
 10. **Secrets generated without `openssl rand` (2 of 5).** `department-compose` and `department-k3s` generate from `/dev/urandom` with `od` inside a script; the files stay clean, but the string check fails.
 
 Not observed: a cluster install for OpenShift; `latest`; a secret in a file; a Compose service without `pull_policy: never`; a wrong replica count.
 
-Not verifiable from the files: the controller reported that two runs briefly wrote outside their folder (a `.env` copy in the parent, `/tmp/h.yml`). Nothing of that remains in `baseline/` or in `/tmp`, so no finding is recorded for it.
-
-Corrections to the first reading of these runs: the TLS proxy of `department-compose` is in the blueprint (the run chose its product, nginx syntax, and left the image open); the `library/` postgres path is supported by blueprint line 434 and the failure is the missing manifest row; `family-custom` wrote no scripts and did not take its Qwen settings from memory.
-
-## Notes for the scorer (Task 8)
+## Notes for the scorer
 
 - A plain search for `--tensor-parallel-size 8` fails on a correct Compose list written on two lines (`- --tensor-parallel-size` then `- "8"`); either `references/compose.md` shows the command as a single string, or the key becomes `--tensor-parallel-size`.
 - `Expect` passes on any word that contains it ("Expects", "Expected"). A key such as `**Expect:**` would test the label.
@@ -210,13 +206,13 @@ Corrections to the first reading of these runs: the TLS proxy of `department-com
 
 | Mistake | What to do instead |
 |---|---|
-| Writes the runbook as `docs/airgap/runbook.md` or `INSIDE.md`, and files under `install/` or `deploy/` (5 of 5 runs) | Write only the tree of §7.2: `docs/airgap/install/` with `plan.md`, `INSTALL.md` (`AGENTS-INSTALL.md` when `inside.operator` includes an agent), `compose/` or `kubernetes/`. `INSIDE.md` is `airgap-transfer`'s file (Rule 4) |
-| Writes the files at once, with no plan and no approval (5 of 5) | Write `plan.md` first (host, order, files, ports, health checks, GPUs), record the date of the user's approval in it, and stop; write nothing else before the user approves (Rule 4, workflow step 3) |
-| Writes 8 to 13 shell scripts that check checksums, load and push images, render templates and write `registries.yaml`, on an assumed bundle layout (4 of 5) | No scripts. Each step is a command in `INSTALL.md`. Checksums and loading belong to `airgap-transfer`'s `INSIDE.md`: step 1 of `INSTALL.md` asks that it is finished, then starts from the registry (Rule 1, Rule 7, self-check 6) |
-| Needs an image or a binary the manifest lacks (the TLS proxy, a device plugin, an image built on the host) and only mentions it in the runbook (3 of 5); changes an image path without telling the manifest | Add a row ending "(from airgap-install)" to `docs/airgap/transfer-manifest.md`; every image in the files has the manifest's tag and target path (§6 closing paragraph, self-check 1) |
-| Reserves GPUs as `count: all`, or defaults to `NVIDIA_VISIBLE_DEVICES=all` with `nvidia.com/gpu: 8` behind an option (2 of 5) | Copy the blueprint's §5 number: `count: 8` or `device_ids`, `--tensor-parallel-size 8`, `nvidia.com/gpu: 8`; for 18 replicas of 1 GPU, `replicas: 18` and `nvidia.com/gpu: 1` in the file. If a part is missing, report it as a blueprint change (Rule 6, self-check 3) |
-| Writes `@@VAR@@` templates and a render step, so `replicas: 18` and the GPU lines are not in the file (2 of 5) | Write final YAML with the blueprint's numbers in it; placeholders only for what nobody on the connected side knows, in capitals, listed at the top of `INSTALL.md` (§8, self-check 3 and 6) |
-| Kubernetes workloads with no pull policy (2 of 2) | Name the local registry and set `imagePullPolicy` as the catalog entry documents it, on every container (Rule 2, self-check 2) |
-| Reads `people_then_agent` and defers the agent runbook in one sentence (1 of 1) | Write `AGENTS-INSTALL.md` next to `INSTALL.md`: the same steps, and the rules for the agent (§7.2, workflow step 5) |
-| Steps with "You should see", "Check:" or nothing, and one "If not" in a whole runbook (5 of 5) | Every step has Why, commands, **Expect** and **If not**, in those words; a step that only copies a file expects the `ls` or `stat` output (§8, self-check 6) |
-| Prose such as "not known", "(estimate)" in place of the label (2 of 5); secrets generated with `od` in a script (2 of 5) | Label every value not from the catalog `unverified`, and say what step checks it (§8, self-check 7). Generate each secret in a runbook step with `openssl rand`, into `.env` with `chmod 600`; `.env.example` holds names only (Rule 3, self-check 5) |
+| Writes the runbook as `docs/airgap/runbook.md` or `INSIDE.md`, and the files under `install/` or `deploy/` (5 of 5 runs) | Write only under `docs/airgap/install/`: `plan.md`, `INSTALL.md` (and `AGENTS-INSTALL.md` when `inside.operator` includes an agent), `compose/` or `kubernetes/`. Never call a runbook `INSIDE.md`: that is `airgap-transfer`'s file. The only file written outside the folder is the transfer manifest, with new rows |
+| Writes the files at once, with no plan and no approval (5 of 5) | Write `plan.md` first (host, order, files, ports, health checks, GPUs), record the date of the user's approval in it, and stop; write nothing else before the user approves |
+| Writes 8 to 13 shell scripts that check checksums, load and push images, render templates and write `registries.yaml`, on an assumed bundle layout (4 of 5) | Write no scripts or programs into the project: `airgap-rag` already carries the rule that the skill writes no programs or scripts into the project, and `airgap-install` adopts it. Each step is a command in `INSTALL.md`. Checksums and loading images from the media belong to `airgap-transfer`'s `INSIDE.md`: step 1 of `INSTALL.md` asks that it is finished, and the install starts from the registry |
+| Needs an image or a binary the manifest lacks (the TLS proxy, a device plugin, an image built on the host) and only mentions it in the runbook (3 of 5) | Add a row ending "(from airgap-install)" to `docs/airgap/transfer-manifest.md` for anything the manifest lacks; every image in the files has the tag the manifest gives |
+| Reserves GPUs as `count: all` (1 run) or defaults to `NVIDIA_VISIBLE_DEVICES=all` with `nvidia.com/gpu: 8` behind an option (1 run); writes `@@VAR@@` templates and a render step, so `replicas: 18` and the GPU lines are not in the file (2 runs) | Copy the blueprint's GPU numbers into final YAML: `count: 8` or `device_ids`, `--tensor-parallel-size 8`, `nvidia.com/gpu: 8`; for 18 replicas of 1 GPU, `replicas: 18` and `nvidia.com/gpu: 1`. If a part is missing, report it as a blueprint change. Placeholders only for what nobody on the connected side knows, in capitals, listed at the top of `INSTALL.md` |
+| Kubernetes workloads with no pull policy (2 of 2) | Name the local registry and set `imagePullPolicy` as the catalog entry documents it, on every container |
+| Reads `people_then_agent` and defers the agent runbook in one sentence (1 of 1) | Write `AGENTS-INSTALL.md` next to `INSTALL.md`: the same steps, and the rules for the agent |
+| Steps with "You should see", "Check:" or nothing, and one "If not" in a whole runbook (5 of 5) | Every step has Why, commands, **Expect** and **If not**, in those words; a step that only copies a file expects the `ls` or `stat` output |
+| Prose such as "not known" or "(estimate)" in place of the label, in the files an operator follows (2 of 5) | Label every value not from the catalog `unverified`, and say which step checks it |
+| Generates secrets with `od` on `/dev/urandom` inside a script (2 of 5) | Generate each secret in a runbook step with `openssl rand`, into `.env` with `chmod 600`; `.env.example` holds names only, and no file holds a secret value |
